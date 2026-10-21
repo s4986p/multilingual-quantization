@@ -1,0 +1,58 @@
+
+[colab] A new version of Colab CLI is available: 0.7.5 (current: 0.6.0)
+[colab] Run 'colab update' to update.
+[colab] To silence this check, set "enable_update_check": false in ~/.config/colab-cli/settings.json
+
+
+Loading weights:   0%|          | 0/1951 [00:00<?, ?it/s]
+Loading weights:  14%|█▎        | 267/1951 [00:00<00:00, 2639.93it/s]
+Loading weights:  27%|██▋       | 531/1951 [00:00<00:00, 2525.95it/s]
+Loading weights:  40%|████      | 784/1951 [00:01<00:03, 345.97it/s] 
+Loading weights:  48%|████▊     | 930/1951 [00:01<00:02, 404.85it/s]
+Loading weights:  54%|█████▎    | 1048/1951 [00:02<00:02, 438.75it/s]
+Loading weights:  59%|█████▊    | 1145/1951 [00:02<00:01, 428.71it/s]
+Loading weights:  63%|██████▎   | 1223/1951 [00:02<00:01, 419.97it/s]
+Loading weights:  66%|██████▌   | 1288/1951 [00:02<00:01, 421.89it/s]
+Loading weights:  81%|████████  | 1572/1951 [00:02<00:00, 787.55it/s]
+Loading weights:  96%|█████████▌| 1876/1951 [00:02<00:00, 1186.44it/s]
+Loading weights: 100%|██████████| 1951/1951 [00:02<00:00, 662.35it/s] 
+layer 1/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m10s memory 16.3GB
+layer 2/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m07s memory 21.7GB
+layer 3/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m07s memory 21.7GB
+layer 4/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m07s memory 21.6GB
+layer 5/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m08s memory 21.5GB
+layer 6/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m08s memory 21.5GB
+layer 7/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m08s memory 21.7GB
+layer 8/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m08s memory 21.7GB
+layer 9/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m09s memory 21.7GB
+layer 10/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m10s memory 21.5GB
+layer 11/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m09s memory 21.5GB
+layer 12/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m10s memory 21.7GB
+layer 13/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m10s memory 21.7GB
+layer 14/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m10s memory 21.7GB
+layer 15/35 groups [['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m12s memory 22.0GB
+layer 16/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m15s memory 23.0GB
+layer 17/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m15s memory 23.7GB
+layer 18/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m16s memory 23.8GB
+layer 19/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m16s memory 23.8GB
+layer 20/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m17s memory 23.5GB
+layer 21/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m17s memory 23.5GB
+layer 22/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m17s memory 23.8GB
+layer 23/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m18s memory 23.8GB
+layer 24/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m18s memory 23.8GB
+layer 25/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m19s memory 23.5GB
+layer 26/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m19s memory 23.5GB
+layer 27/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m19s memory 23.8GB
+layer 28/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m19s memory 23.8GB
+layer 29/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m20s memory 23.8GB
+layer 30/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m21s memory 23.5GB
+layer 31/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m20s memory 23.5GB
+layer 32/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m21s memory 23.8GB
+layer 33/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m21s memory 23.8GB
+layer 34/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m21s memory 23.8GB
+layer 35/35 groups [['self_attn.q_proj'], ['self_attn.o_proj'], ['mlp.gate_proj', 'mlp.up_proj'], ['mlp.down_proj']] time 0m23s memory 23.6GB
+
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]
+Writing model shards: 100%|██████████| 1/1 [00:30<00:00, 30.70s/it]
+Writing model shards: 100%|██████████| 1/1 [00:30<00:00, 30.70s/it]
+saved gptq/google/gemma-4-E2B-it/languages=en,num_bits=4,group_size=128,num_samples=128

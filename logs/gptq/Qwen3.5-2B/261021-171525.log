@@ -1,0 +1,13 @@
+
+[colab] A new version of Colab CLI is available: 0.7.5 (current: 0.6.0)
+[colab] Run 'colab update' to update.
+[colab] To silence this check, set "enable_update_check": false in ~/.config/colab-cli/settings.json
+
+Traceback (most recent call last):
+  File "/content/gptq.py", line 11, in <module>
+    from primitives.model import load_model
+  File "/content/primitives/model.py", line 3, in <module>
+    from vllm import LLM, SamplingParams  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'vllm'
+fail
