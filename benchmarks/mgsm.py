@@ -16,7 +16,7 @@ from utils.paths import make_target_path
 @dataclass
 class Config:
     seed: int = 0
-    max_generation_len: int = 16384
+    max_generation_len: int = 32768
     # model to evaluate
     model_name: str = "Qwen/Qwen3.5-2B"
     method: Literal["bf16", "gptq", "awq"] = "bf16"
@@ -28,7 +28,7 @@ class Config:
 
 def main() -> None:
     config = parse(Config)
-    file_name = f"seed={config.seed}"
+    file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
     target = make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
     if result_exists("mgsm", target, file_name):
         print(f"{target} already evaluated")
