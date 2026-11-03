@@ -3,7 +3,7 @@ import re
 from vllm.outputs import CompletionOutput  # type: ignore
 from vllm.tokenizers import TokenizerLike  # type: ignore
 
-from utils.dataset import MGSM_ANSWER_PREFIXES
+from utils.dataset import MGSM_ANSWER_PREFIXES, MMLU_PROX_LITE_TEMPLATES
 from utils.model import GENERATION_CONFIGS
 
 
@@ -50,6 +50,29 @@ def evaluate_mgsm(
         text = "" if response is None else re.split(rf"{MGSM_ANSWER_PREFIXES[language]}\s*[:：]", response)[-1].replace(",", "")
         numbers = re.findall(r"-?\d+(?:\.\d+)?", text)
         predictions.append(float(numbers[-1]) if numbers else None)
+    corrects = [prediction == answer for prediction, answer in zip(predictions, answers)]
+    return {
+        "accuracy": sum(corrects) / len(outputs),
+        "corrects": corrects,
+        "predictions": predictions,
+        **split,
+    }
+
+
+def evaluate_mmlu_prox_lite(
+    outputs: list[CompletionOutput],
+    answers: list[str],
+    language: str,
+    tokenizer: TokenizerLike,
+    model_name: str,
+) -> dict:
+    split = split_outputs(outputs, tokenizer, model_name)
+    # e.g. "the answer is ({})" -> "the answer is"
+    answer_prefix = MMLU_PROX_LITE_TEMPLATES[language][3].split("(")[0].strip()
+    predictions = []
+    for response in split["responses"]:
+        letters = [] if response is None else re.findall(rf"(?i:{re.escape(answer_prefix)})\s*[:：]?\s*\(?([A-J])\b\)?", response)
+        predictions.append(letters[-1] if letters else None)
     corrects = [prediction == answer for prediction, answer in zip(predictions, answers)]
     return {
         "accuracy": sum(corrects) / len(outputs),

@@ -10,6 +10,17 @@ MGSM_PROMPTS = {
 }
 MGSM_ANSWER_PREFIXES = {"en": "Answer", "zh": "答案", "sw": "Jibu"}
 
+MMLU_PROX_LITE_TEMPLATES = {
+    "en": ("Question:", "Options:", 'The following are multiple choice questions (with answers) about {subject}. Think step by step and then finish your answer with "{answer_format}" where X is the correct letter choice.', "the answer is ({})"),
+    "zh": ("问题：", "选项：", '以下是关于{subject}的选择题（带有答案）。请逐步思考，然后以"{answer_format}"结束您的回答，其中X是正确的选项字母。', "答案是 ({})"),
+    "sw": ("Swali:", "Chaguo:", 'Yafuatayo ni maswali ya chaguo-nyingi (yenye majibu) kuhusu {subject}. Fikiria hatua kwa hatua kisha malizia jibu lako kwa "{answer_format}" ambapo X ni herufi ya chaguo sahihi.', "Jibu ni ({})"),
+}
+MMLU_PROX_LITE_SUBJECTS = {
+    "en": {"biology": "biology", "business": "business", "chemistry": "chemistry", "computer science": "computer_science", "economics": "economics", "engineering": "engineering", "health": "health", "history": "history", "law": "law", "math": "math", "other": "other", "philosophy": "philosophy", "physics": "physics", "psychology": "psychology"},
+    "zh": {"biology": "生物学", "business": "商业", "chemistry": "化学", "computer science": "计算机科学", "economics": "经济学", "engineering": "工程学", "health": "健康", "history": "历史", "law": "法律", "math": "数学", "other": "其他", "philosophy": "哲学", "physics": "物理学", "psychology": "心理学"},
+    "sw": {"biology": "biolojia", "business": "biashara", "chemistry": "kemia", "computer science": "sayansi ya kompyuta", "economics": "uchumi", "engineering": "uhandisi", "health": "afya", "history": "historia", "law": "sheria", "math": "hisabati", "other": "nyingine", "philosophy": "falsafa", "physics": "fizikia", "psychology": "saikolojia"},
+}
+
 
 def load_wikipedia(
     model_name: str,
@@ -44,4 +55,18 @@ def load_mgsm() -> dict[str, list[tuple[str, int]]]:
     for language, prompt in MGSM_PROMPTS.items():
         dataset = load_dataset("juletxara/mgsm", language, split="test")
         problems[language] = [(prompt.format(question=row["question"]), row["answer_number"]) for row in dataset]
+    return problems
+
+
+def load_mmlu_prox_lite() -> dict[str, list[tuple[str, str]]]:
+    problems = {}
+    for language, (question_label, options_label, description, answer_format) in MMLU_PROX_LITE_TEMPLATES.items():
+        dataset = load_dataset("li-lab/MMLU-ProX-Lite", language, split="test")
+        problems[language] = []
+        for row in dataset:
+            options = [row[f"option_{index}"] for index in range(10) if row[f"option_{index}"] is not None]
+            prompt = description.format(subject=MMLU_PROX_LITE_SUBJECTS[language][row["category"]], answer_format=answer_format.format("X"))
+            prompt += f"\n\n{question_label}\n{row['question']}\n{options_label}\n"
+            prompt += "".join(f"{chr(ord('A') + index)}. {option}\n" for index, option in enumerate(options))
+            problems[language].append((prompt, row["answer"]))
     return problems
