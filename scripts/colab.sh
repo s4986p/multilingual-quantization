@@ -1,24 +1,19 @@
 #!/bin/bash
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 session="$(openssl rand -hex 3)"
 tar_path="/tmp/$session.tar.gz"
 argv="$(python3 -c "import sys; print(sys.argv[1:])" "$@")"
-packages="$(grep -E "^(accelerate|datasets|flash-linear-attention|huggingface_hub|math-verify|safetensors|simple-parsing|transformers|vllm)==" requirements.txt | python3 -c "import sys; print([line.strip() for line in sys.stdin])")"
-
-entry_name="$(basename "$1" .py)"
-model_name_pattern=" --model_name[= ]([^ ]+)"
-if [[ " $* " =~ $model_name_pattern ]]; then
-  model_name="${BASH_REMATCH[1]}"
-else
-  model_name="$(sed -nE 's/^ *model_name: str = "([^"]+)".*/\1/p' "$1")"
-fi
-log_path="logs/$entry_name/${model_name##*/}/$(date +%y%m%d-%H%M%S).log"
+# vllm can't install on mac, so pin it here
+packages="$(grep -E "^(accelerate|datasets|huggingface_hub|math-verify|safetensors|simple-parsing|transformers)==" requirements.txt | python3 -c "import sys; print([line.strip() for line in sys.stdin] + ['vllm==0.30.0'])")"
+log_path="logs/$(basename "$1" .py)/$(date +%y%m%d-%H%M%S).log"
 mkdir -p "$(dirname "$log_path")"
 
+# on exit, remove tarball and stop session
 trap 'rm -f "$tar_path"; colab stop -s "$session" || true' EXIT
-colab new -s "$session" --gpu G4
+
+colab new -s "$session" --gpu A100
 COPYFILE_DISABLE=1 tar -czf "$tar_path" --exclude .venv --exclude __pycache__ --exclude logs .
 colab upload -s "$session" "$tar_path" content/project.tar.gz
 
