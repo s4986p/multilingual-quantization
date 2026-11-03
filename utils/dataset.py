@@ -3,6 +3,13 @@ import torch
 from torch import Tensor
 from transformers import AutoTokenizer
 
+MGSM_PROMPTS = {
+    "en": """Solve this math problem. Give the reasoning steps before giving the final answer on the last line by itself in the format of "Answer:". Do not add anything other than the integer answer after "Answer:".\n\n{question}""",
+    "zh": """解决这个数学问题。在最后一行给出答案前，请提供推理步骤。最后一行应该以 "答案: " 的形式独立给出答案。在 "答案：" 后不要添加除整数答案之外的任何内容。\n\n{question}""",
+    "sw": """Suluhisha tatizo hili la hesabu. Toa hatua za mantiki kabla ya kutoa jibu la mwisho kwenye mstari wa mwisho peke yake katika muundo wa "Jibu:". Usiongeze chochote kingine isipokuwa jibu la integer baada ya "Jibu:".\n\n{question}""",
+}
+MGSM_ANSWER_PREFIXES = {"en": "Answer", "zh": "答案", "sw": "Jibu"}
+
 
 def load_wikipedia(
     model_name: str,
@@ -30,3 +37,11 @@ def load_wikipedia(
                 break
         samples.extend(language_samples)
     return samples
+
+
+def load_mgsm() -> dict[str, list[tuple[str, int]]]:
+    problems = {}
+    for language, prompt in MGSM_PROMPTS.items():
+        dataset = load_dataset("juletxara/mgsm", language, split="test")
+        problems[language] = [(prompt.format(question=row["question"]), row["answer_number"]) for row in dataset]
+    return problems
