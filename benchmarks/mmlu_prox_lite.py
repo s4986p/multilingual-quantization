@@ -19,7 +19,7 @@ class Config:
     max_generation_len: int = 32768
     # model to evaluate
     model_name: str = "Qwen/Qwen3.5-2B"
-    method: Literal["bf16", "gptq", "awq"] = "bf16"
+    method: Literal["bf16", "rtn", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
     languages: tuple[Literal["en", "zh", "sw"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128

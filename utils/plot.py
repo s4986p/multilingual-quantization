@@ -4,7 +4,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-METHOD_COLORS = {"bf16": "tab:gray", "gptq": "tab:orange", "awq": "tab:green"}
+METHOD_COLORS = {"bf16": "tab:gray", "rtn": "tab:blue", "gptq": "tab:orange", "awq": "tab:green", "nf4": "tab:purple", "mxfp4": "tab:brown"}
 BAR_INCHES = 0.5
 BAR_GAP = 1
 PANEL_HEIGHT = 3.5
