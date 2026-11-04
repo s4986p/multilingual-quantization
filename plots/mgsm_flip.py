@@ -29,8 +29,6 @@ def main() -> None:
     bf16_target = make_target_path("bf16", config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
     bf16_result = load_result("mgsm", bf16_target, file_name)
     languages = list(bf16_result)
-    # same problems across languages, so keep ones bf16 solves in every language
-    is_used = [all(corrects) for corrects in zip(*[bf16_result[language]["corrects"] for language in languages])]
 
     results = {}
     # bf16 with another seed shows sampling noise
@@ -45,18 +43,19 @@ def main() -> None:
 
     groups = []
     for method, result in results.items():
-        flip_ratios = [get_flip_ratio(result[language], is_used) for language in languages]
+        flip_ratios = [get_flip_ratio(result[language], bf16_result[language]["corrects"]) for language in languages]
         groups.append((flip_ratios, METHOD_COLORS[method], [f"{flip_ratio:.1%}" for flip_ratio in flip_ratios]))
 
     panel_widths = [get_panel_width(len(languages), len(groups))]
     fig, ax = plt.subplots(figsize=get_figsize(panel_widths, 1), layout="constrained")
     plot_bars(ax, languages, groups)
-    ax.set_ylabel("wrong among bf16 correct in all languages")
+    ax.set_ylabel("wrong among bf16 correct")
     ax.margins(y=0.2)
     ax.set_ylim(bottom=0)
     ax.yaxis.set_major_formatter(PercentFormatter(1))
 
-    fig.suptitle(f"{config.model_name} mgsm flip\n{file_name}\n{sum(is_used)} problems bf16 correct in all languages")
+    bf16_counts = ", ".join(f"{language} {sum(bf16_result[language]['corrects'])}" for language in languages)
+    fig.suptitle(f"{config.model_name} mgsm flip\n{file_name}\nbf16 correct {bf16_counts} out of {len(bf16_result[languages[0]]['corrects'])}")
     handles = [Patch(color=METHOD_COLORS[method], label=label) for method, label in labels.items()]
     fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
     fit_bar_width(fig, [ax])
