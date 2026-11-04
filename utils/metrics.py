@@ -13,3 +13,10 @@ def get_length_ratio(
 ) -> float:
     return median(think_len / bf16_think_len for think_len, bf16_think_len, correct, bf16_correct in zip(result["think_lens"], bf16_result["think_lens"], result["corrects"], bf16_result["corrects"]) if correct and bf16_correct)
 
+
+
+def get_flip_ratio(
+    result: dict,
+    is_used: list[bool],
+) -> float:
+    return mean(not correct for correct, used in zip(result["corrects"], is_used) if used)
