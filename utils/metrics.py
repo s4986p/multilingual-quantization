@@ -15,8 +15,11 @@ def get_length_ratio(
 
 
 
-def get_flip_ratio(
+def get_flip_ratios(
     result: dict,
-    is_used: list[bool],
-) -> float:
-    return mean(not correct for correct, used in zip(result["corrects"], is_used) if used)
+    bf16_result: dict,
+) -> tuple[float, float]:
+    pairs = list(zip(bf16_result["corrects"], result["corrects"]))
+    lost_ratio = mean(bf16_correct and not correct for bf16_correct, correct in pairs)
+    gained_ratio = mean(correct and not bf16_correct for bf16_correct, correct in pairs)
+    return lost_ratio, gained_ratio
