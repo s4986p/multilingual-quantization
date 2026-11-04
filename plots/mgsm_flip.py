@@ -35,7 +35,7 @@ def main() -> None:
     noise_file_name = f"max_generation_len={config.max_generation_len},seed={config.seed + 1}"
     if result_exists("mgsm", bf16_target, noise_file_name):
         results["bf16"] = load_result("mgsm", bf16_target, noise_file_name)
-    for method in ["gptq", "awq"]:
+    for method in ["rtn", "gptq", "awq", "nf4", "mxfp4"]:
         target = make_target_path(method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
         if result_exists("mgsm", target, file_name):
             results[method] = load_result("mgsm", target, file_name)

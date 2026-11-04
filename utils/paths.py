@@ -4,6 +4,26 @@ def make_bf16_path(
     return f"bf16/{model_name}"
 
 
+def make_rtn_path(
+    model_name: str,
+    num_bits: int,
+    group_size: int,
+) -> str:
+    return f"rtn/{model_name}/num_bits={num_bits},group_size={group_size}"
+
+
+def make_nf4_path(
+    model_name: str,
+) -> str:
+    return f"nf4/{model_name}"
+
+
+def make_mxfp4_path(
+    model_name: str,
+) -> str:
+    return f"mxfp4/{model_name}"
+
+
 def make_quantized_path(
     method: str,
     model_name: str,
@@ -12,6 +32,12 @@ def make_quantized_path(
     group_size: int,
     num_samples: int,
 ) -> str:
+    if method == "rtn":
+        return make_rtn_path(model_name, num_bits, group_size)
+    if method == "nf4":
+        return make_nf4_path(model_name)
+    if method == "mxfp4":
+        return make_mxfp4_path(model_name)
     return f"{method}/{model_name}/languages={'_'.join(languages)},num_bits={num_bits},group_size={group_size},num_samples={num_samples}"
 
 

@@ -27,7 +27,7 @@ def main() -> None:
     config = parse(Config)
     file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
     results = {}
-    for method in ["bf16", "gptq", "awq"]:
+    for method in ["bf16", "rtn", "gptq", "awq", "nf4", "mxfp4"]:
         target = make_target_path(method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
         if result_exists("mgsm", target, file_name):
             results[method] = load_result("mgsm", target, file_name)
