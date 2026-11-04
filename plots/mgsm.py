@@ -49,7 +49,7 @@ def main() -> None:
             length_ratios.append(get_length_ratio(result, bf16_result[language]))
             loop_ratios.append(get_loop_ratio(result))
         panels = [
-            ("accuracy", accuracies, [f"{accuracy:.1%} ({accuracy / accuracies[0] - 1:+.1%})\ntruncated {truncated:.1%}" for accuracy, truncated in zip(accuracies, truncateds)]),
+            ("accuracy", accuracies, [f"{accuracy:.1%}\ntruncated {truncated:.1%}" for accuracy, truncated in zip(accuracies, truncateds)]),
             ("median reasoning tokens / bf16, both correct", length_ratios, [f"{length_ratio:.2f}x" for length_ratio in length_ratios]),
             ("looped reasoning ratio", loop_ratios, [f"{loop_ratio:.1%}" for loop_ratio in loop_ratios]),
         ]

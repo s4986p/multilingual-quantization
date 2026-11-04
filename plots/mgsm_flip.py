@@ -7,7 +7,7 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
 from utils.hub import load_result, result_exists
-from utils.metrics import get_flip_ratio
+from utils.metrics import get_flip_ratios
 from utils.paths import make_target_path
 from utils.plot import METHOD_COLORS, fit_bar_width, get_figsize, get_panel_width, plot_bars, save_figure
 
@@ -41,21 +41,23 @@ def main() -> None:
             results[method] = load_result("mgsm", target, file_name)
     labels = {method: f"bf16 seed={config.seed + 1}" if method == "bf16" else method for method in results}
 
-    groups = []
+    gained_groups = []
+    lost_groups = []
     for method, result in results.items():
-        flip_ratios = [get_flip_ratio(result[language], bf16_result[language]["corrects"]) for language in languages]
-        groups.append((flip_ratios, METHOD_COLORS[method], [f"{flip_ratio:.1%}" for flip_ratio in flip_ratios]))
+        lost_ratios, gained_ratios = zip(*[get_flip_ratios(result[language], bf16_result[language]) for language in languages])
+        gained_groups.append((gained_ratios, METHOD_COLORS[method], [f"+{gained_ratio:.1%}" for gained_ratio in gained_ratios]))
+        lost_groups.append(([-lost_ratio for lost_ratio in lost_ratios], METHOD_COLORS[method], [f"-{lost_ratio:.1%}" for lost_ratio in lost_ratios]))
 
-    panel_widths = [get_panel_width(len(languages), len(groups))]
+    panel_widths = [get_panel_width(len(languages), len(results))]
     fig, ax = plt.subplots(figsize=get_figsize(panel_widths, 1), layout="constrained")
-    plot_bars(ax, languages, groups)
-    ax.set_ylabel("wrong among bf16 correct")
-    ax.margins(y=0.2)
-    ax.set_ylim(bottom=0)
+    plot_bars(ax, languages, gained_groups)
+    plot_bars(ax, languages, lost_groups)
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.set_ylabel(f"gained (up) and lost (down) vs bf16 seed={config.seed}")
+    ax.margins(y=0.25)
     ax.yaxis.set_major_formatter(PercentFormatter(1))
 
-    bf16_counts = ", ".join(f"{language} {sum(bf16_result[language]['corrects'])}" for language in languages)
-    fig.suptitle(f"{config.model_name} mgsm flip\n{file_name}\nbf16 correct {bf16_counts} out of {len(bf16_result[languages[0]]['corrects'])}")
+    fig.suptitle(f"{config.model_name} mgsm flip\n{file_name}\nratio of {len(bf16_result[languages[0]]['corrects'])} problems")
     handles = [Patch(color=METHOD_COLORS[method], label=label) for method, label in labels.items()]
     fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
     fit_bar_width(fig, [ax])
