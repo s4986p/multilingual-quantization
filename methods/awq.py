@@ -26,7 +26,7 @@ class Config:
     num_grid: int = 20
     max_shrink: float = 0.5
     # wikipedia calibration
-    languages: tuple[Literal["en", "zh", "sw"], ...] = ("en",)
+    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_samples: int = 128
     max_sequence_len: int = 2048
     seed: int = 0
