@@ -15,7 +15,7 @@ from utils.plot import METHOD_COLORS, fit_bar_width, get_figsize, get_panel_widt
 @dataclass
 class Config:
     model_name: str = "Qwen/Qwen3.5-2B"
-    languages: tuple[Literal["en", "zh", "sw"], ...] = ("en",)
+    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
