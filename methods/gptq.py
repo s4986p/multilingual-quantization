@@ -24,7 +24,7 @@ class Config:
     block_size: int = 128
     damp_ratio: float = 0.01
     # wikipedia calibration
-    languages: tuple[Literal["en", "zh", "sw"], ...] = ("en",)
+    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_samples: int = 128
     max_sequence_len: int = 2048
     seed: int = 0
