@@ -5,7 +5,7 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
 METHOD_COLORS = {"bf16": "tab:gray", "rtn": "tab:blue", "gptq": "tab:orange", "awq": "tab:green", "nf4": "tab:purple", "mxfp4": "tab:brown"}
-LANGUAGE_COLORS = {"en": "#66c2a5", "zh": "#fc8d62", "sw": "#8da0cb", "ja": "#e78ac3", "te": "#a6d854"}
+LANGUAGE_COLORS = {"en": "#3c5a9a", "zh": "#de2910", "sw": "#1eb53a", "ja": "#f4a6b7", "te": "#ff9933"}
 BAR_INCHES = 0.5
 BAR_GAP = 1
 PANEL_HEIGHT = 3.5
