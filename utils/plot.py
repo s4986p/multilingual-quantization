@@ -48,7 +48,7 @@ def format_loss(
 ) -> str:
     num_both_correct = sum(both_correct_mask)
     num_lost = round(ratio * num_both_correct)
-    return f"{ratio:.1%}\n{-num_lost / len(both_correct_mask):z.1%}p\n{num_lost}/{num_both_correct}"
+    return f"{-num_lost / len(both_correct_mask):z.1%}p\n{ratio:.1%}\n{num_lost}/{num_both_correct}"
 
 
 def plot_bars(
