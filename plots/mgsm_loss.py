@@ -9,7 +9,7 @@ from simple_parsing import parse
 from utils.hub import load_result, result_exists
 from utils.metrics import get_loss_ratios
 from utils.paths import make_target_path
-from utils.plot import fit_bar_width, get_figsize, get_panel_width, plot_stacked_bars, save_figure
+from utils.plot import LANGUAGE_COLORS, fit_bar_width, get_figsize, get_panel_width, plot_bars, save_figure
 
 
 @dataclass
@@ -41,22 +41,28 @@ def main() -> None:
             results[method] = load_result("mgsm", target, file_name)
     method_labels = [f"bf16 seed={config.seed + 1}" if method == "bf16" else method for method in results]
 
-    ratios = [get_loss_ratios(result[language], bf16_result[language]) for result in results.values() for language in languages]
-    truncated_ratios, finished_ratios = zip(*ratios)
-    colors = {"truncated": "tab:orange", "finished but wrong": "tab:blue"}
+    truncated_groups = []
+    finished_groups = []
+    for language in languages:
+        truncated_ratios, finished_ratios = zip(*[get_loss_ratios(result[language], bf16_result[language]) for result in results.values()])
+        truncated_groups.append((truncated_ratios, LANGUAGE_COLORS[language], [f"{truncated_ratio:.1%}" for truncated_ratio in truncated_ratios]))
+        finished_groups.append((finished_ratios, LANGUAGE_COLORS[language], [f"{finished_ratio:.1%}" for finished_ratio in finished_ratios]))
 
     panel_widths = [get_panel_width(len(results), len(languages))]
-    fig, ax = plt.subplots(figsize=get_figsize(panel_widths, 1), layout="constrained")
-    plot_stacked_bars(ax, method_labels, languages, [(truncated_ratios, colors["truncated"]), (finished_ratios, colors["finished but wrong"])])
-    # same scale for every model and benchmark, so figures can be compared
-    ax.set_ylim(0, 0.8)
-    ax.set_ylabel(f"lost among bf16 seed={config.seed} correct")
-    ax.yaxis.set_major_formatter(PercentFormatter(1))
+    fig, axes = plt.subplots(2, 1, figsize=get_figsize(panel_widths, 2), layout="constrained")
+    for ax, groups, title in zip(axes, [truncated_groups, finished_groups], ["truncated", "finished but wrong"]):
+        plot_bars(ax, method_labels, groups)
+        # same scale for every model and benchmark, so figures can be compared
+        ax.set_ylim(0, 0.8)
+        ax.set_ylabel(f"lost among bf16 seed={config.seed} correct")
+        ax.set_title(title)
+        ax.yaxis.set_major_formatter(PercentFormatter(1))
 
     fig.suptitle(f"{config.model_name} mgsm loss\n{file_name}")
-    handles = [Patch(color=color, label=label) for label, color in colors.items()]
+    handles = [Patch(color=LANGUAGE_COLORS[language], label=f"{language} (bf16 {bf16_result[language]['accuracy']:.1%})") for language in languages]
     fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
-    fit_bar_width(fig, [ax])
+    # panels share one column, so fit width by one panel
+    fit_bar_width(fig, [axes[0]])
     save_figure(fig, config.model_name, "mgsm_loss")
 
 
