@@ -4,9 +4,8 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-METHOD_COLORS = {"bf16": "tab:gray", "rtn": "tab:blue", "gptq": "tab:orange", "awq": "tab:green", "nf4": "tab:purple", "mxfp4": "tab:brown"}
 LANGUAGE_COLORS = {"en": "#3c5a9a", "zh": "#de2910", "sw": "#1eb53a", "ja": "#f4a6b7", "te": "#ff9933"}
-BAR_INCHES = 0.5
+BAR_INCHES = 0.6
 BAR_GAP = 1
 PANEL_HEIGHT = 3.5
 PANEL_MARGIN = 0.9
@@ -41,6 +40,15 @@ def get_figsize(
     num_rows: int,
 ) -> tuple[float, float]:
     return sum(panel_widths) + PANEL_MARGIN * len(panel_widths), PANEL_HEIGHT * num_rows + 1
+
+
+def format_loss(
+    ratio: float,
+    both_correct_mask: list[bool],
+) -> str:
+    num_both_correct = sum(both_correct_mask)
+    num_lost = round(ratio * num_both_correct)
+    return f"{ratio:.1%}\n{-num_lost / len(both_correct_mask):z.1%}p\n{num_lost}/{num_both_correct}"
 
 
 def plot_bars(
