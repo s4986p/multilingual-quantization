@@ -13,7 +13,10 @@ mkdir -p "$(dirname "$log_path")"
 # on exit, remove tarball and stop session
 trap 'rm -f "$tar_path"; colab stop -s "$session" || true' EXIT
 
-colab new -s "$session" --gpu A100
+# try making session until it succeeds
+until colab new -s "$session" --gpu A100; do
+    sleep 10
+done
 COPYFILE_DISABLE=1 tar -czf "$tar_path" --exclude .venv --exclude __pycache__ --exclude logs .
 colab upload -s "$session" "$tar_path" content/project.tar.gz
 
