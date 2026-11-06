@@ -1,4 +1,5 @@
 from pathlib import Path
+from statistics import mean, stdev
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -42,13 +43,17 @@ def get_figsize(
     return sum(panel_widths) + PANEL_MARGIN * len(panel_widths), PANEL_HEIGHT * num_rows + 1
 
 
-def format_loss(
+def format_ratio(
     ratio: float,
-    both_correct_mask: list[bool],
+    bf16_ratio: float,
 ) -> str:
-    num_both_correct = sum(both_correct_mask)
-    num_lost = round(ratio * num_both_correct)
-    return f"{-num_lost / len(both_correct_mask):z.1%}p\n{ratio:.1%}\n{num_lost}/{num_both_correct}"
+    return f"{ratio:.1%}\n{ratio - bf16_ratio:+.1%}p"
+
+
+def format_bf16_ratio(
+    bf16_ratios: list[float],
+) -> str:
+    return f"{mean(bf16_ratios):.1%}\n±{stdev(bf16_ratios):.1%}"
 
 
 def plot_bars(
