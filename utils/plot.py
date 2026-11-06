@@ -59,6 +59,29 @@ def plot_bars(
     ax.set_xlim(-slot_width / 2, (len(labels) - 0.5) * slot_width)
 
 
+def plot_stacked_bars(
+    ax: Axes,
+    labels: list[str],
+    bar_labels: list[str],
+    stacks: list[tuple[list[float], str]],
+) -> None:
+    slot_width = len(bar_labels) + BAR_GAP
+    xs = [slot * slot_width + index - (len(bar_labels) - 1) / 2 for slot in range(len(labels)) for index in range(len(bar_labels))]
+    bottoms = [0.0] * len(xs)
+    for values, color in stacks:
+        ax.bar(xs, values, width=1, bottom=bottoms, color=color, edgecolor="white", linewidth=0.5)
+        bottoms = [bottom + value for bottom, value in zip(bottoms, values)]
+    for x, bottom in zip(xs, bottoms):
+        ax.annotate(f"{bottom:.1%}", (x, bottom), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+    ax.set_xticks(xs, bar_labels * len(labels))
+    ax.set_xlim(-slot_width / 2, (len(labels) - 0.5) * slot_width)
+    # second axis puts group labels under bar labels
+    group_axis = ax.secondary_xaxis("bottom")
+    group_axis.set_xticks([slot * slot_width for slot in range(len(labels))], labels)
+    group_axis.tick_params(length=0, pad=16)
+    group_axis.spines["bottom"].set_visible(False)
+
+
 def fit_bar_width(
     fig: Figure,
     axes: list[Axes],

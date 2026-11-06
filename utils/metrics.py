@@ -23,3 +23,13 @@ def get_flip_ratios(
     lost_ratio = mean(bf16_correct and not correct for bf16_correct, correct in pairs)
     gained_ratio = mean(correct and not bf16_correct for bf16_correct, correct in pairs)
     return lost_ratio, gained_ratio
+
+
+def get_loss_ratios(
+    result: dict,
+    bf16_result: dict,
+) -> tuple[float, float]:
+    pairs = [(correct, truncated) for bf16_correct, correct, truncated in zip(bf16_result["corrects"], result["corrects"], result["truncateds"]) if bf16_correct]
+    truncated_ratio = mean(truncated and not correct for correct, truncated in pairs)
+    finished_ratio = mean(not truncated and not correct for correct, truncated in pairs)
+    return truncated_ratio, finished_ratio
