@@ -1,0 +1,68 @@
+from dataclasses import dataclass
+from statistics import mean
+from typing import Literal
+
+from matplotlib.patches import Patch
+import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
+from simple_parsing import parse
+
+from utils.hub import load_result
+from utils.metrics import get_both_correct_mask, get_loss_ratios
+from utils.paths import make_bf16_path, make_target_path
+from utils.plot import LANGUAGE_COLORS, fit_bar_width, format_loss, get_figsize, get_panel_width, plot_bars, save_figure
+
+CALIBRATIONS = {"en": ("en",), "sw": ("sw",), "te": ("te",), "all": ("en", "zh", "sw", "ja", "te")}
+
+
+@dataclass
+class Config:
+    model_name: str = "Qwen/Qwen3.5-2B"
+    benchmark: Literal["mgsm", "mmlu_prox_lite"] = "mgsm"
+    num_bits: int = 4
+    group_size: int = 128
+    num_samples: int = 128
+    max_generation_len: int = 32768
+    seed: int = 0
+
+
+def main() -> None:
+    config = parse(Config)
+    file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
+    bf16_target = make_bf16_path(config.model_name)
+    # problems both seeds solved, so one lucky run does not count as a loss
+    bf16_results = [load_result(config.benchmark, bf16_target, f"max_generation_len={config.max_generation_len},seed={seed}") for seed in [config.seed, config.seed + 1]]
+    languages = list(bf16_results[0])
+
+    results = {calibration: load_result(config.benchmark, make_target_path("awq", config.model_name, calibration_languages, config.num_bits, config.group_size, config.num_samples), file_name) for calibration, calibration_languages in CALIBRATIONS.items()}
+
+    truncated_groups = []
+    finished_groups = []
+    for language in languages:
+        both_correct_mask = get_both_correct_mask([bf16_result[language] for bf16_result in bf16_results])
+        truncated_ratios, finished_ratios = zip(*[get_loss_ratios(result[language], both_correct_mask) for result in results.values()])
+        truncated_groups.append((truncated_ratios, LANGUAGE_COLORS[language], [format_loss(truncated_ratio, both_correct_mask) for truncated_ratio in truncated_ratios]))
+        finished_groups.append((finished_ratios, LANGUAGE_COLORS[language], [format_loss(finished_ratio, both_correct_mask) for finished_ratio in finished_ratios]))
+
+    panel_widths = [get_panel_width(len(results), len(languages))]
+    fig, axes = plt.subplots(2, 1, figsize=get_figsize(panel_widths, 2), layout="constrained")
+    for ax, groups, title in zip(axes, [truncated_groups, finished_groups], ["truncated", "finished but wrong"]):
+        plot_bars(ax, list(results), groups)
+        # same scale for every model and benchmark, so figures can be compared
+        ax.set_ylim(0, 0.8)
+        ax.set_ylabel(f"lost among bf16 seed={config.seed},{config.seed + 1} correct")
+        ax.set_title(title)
+        ax.grid(axis="y", color="#e8e7e3", linewidth=0.8)
+        ax.set_axisbelow(True)
+        ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
+
+    fig.suptitle(f"{config.model_name} {config.benchmark} awq calibration loss\n{file_name}")
+    handles = [Patch(color=LANGUAGE_COLORS[language], label=f"{language} (bf16 {mean(bf16_result[language]['accuracy'] for bf16_result in bf16_results):.1%})") for language in languages]
+    fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
+    # panels share one column, so fit width by one panel
+    fit_bar_width(fig, [axes[0]])
+    save_figure(fig, config.model_name, f"{config.benchmark}_calibration")
+
+
+if __name__ == "__main__":
+    main()
