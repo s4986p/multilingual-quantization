@@ -8,7 +8,7 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
 from utils.hub import load_result, result_exists
-from utils.metrics import get_both_correct_mask, get_loss_ratios
+from utils.metrics import get_both_correct_mask, get_loop_ratio, get_loss_points, get_loss_ratios
 from utils.paths import make_target_path
 from utils.plot import LANGUAGE_COLORS, fit_bar_width, format_loss, get_figsize, get_panel_width, plot_bars, save_figure
 
@@ -41,23 +41,31 @@ def main() -> None:
 
     truncated_groups = []
     finished_groups = []
+    looped_groups = []
     for language in languages:
         both_correct_mask = get_both_correct_mask([bf16_result[language] for bf16_result in bf16_results])
         truncated_ratios, finished_ratios = zip(*[get_loss_ratios(result[language], both_correct_mask) for result in results.values()])
-        truncated_groups.append((truncated_ratios, LANGUAGE_COLORS[language], [format_loss(truncated_ratio, both_correct_mask) for truncated_ratio in truncated_ratios]))
-        finished_groups.append((finished_ratios, LANGUAGE_COLORS[language], [format_loss(finished_ratio, both_correct_mask) for finished_ratio in finished_ratios]))
+        truncated_groups.append(([get_loss_points(truncated_ratio, both_correct_mask) for truncated_ratio in truncated_ratios], LANGUAGE_COLORS[language], [format_loss(truncated_ratio, both_correct_mask) for truncated_ratio in truncated_ratios]))
+        finished_groups.append(([get_loss_points(finished_ratio, both_correct_mask) for finished_ratio in finished_ratios], LANGUAGE_COLORS[language], [format_loss(finished_ratio, both_correct_mask) for finished_ratio in finished_ratios]))
+        loop_ratios = [get_loop_ratio(result[language]) for result in results.values()]
+        looped_groups.append((loop_ratios, LANGUAGE_COLORS[language], [f"{loop_ratio:.1%}" for loop_ratio in loop_ratios]))
 
     panel_widths = [get_panel_width(len(results), len(languages))]
-    fig, axes = plt.subplots(2, 1, figsize=get_figsize(panel_widths, 2), layout="constrained")
-    for ax, groups, title in zip(axes, [truncated_groups, finished_groups], ["truncated", "finished but wrong"]):
+    fig, axes = plt.subplots(3, 1, figsize=get_figsize(panel_widths, 3), layout="constrained")
+    panels = [
+        (truncated_groups, "truncated", "accuracy drop, both bf16 seeds correct", 0.5, "%p"),
+        (finished_groups, "finished but wrong", "accuracy drop, both bf16 seeds correct", 0.5, "%p"),
+        (looped_groups, "looped", "looped reasoning ratio", 0.8, "%"),
+    ]
+    for ax, (groups, title, ylabel, ymax, symbol) in zip(axes, panels):
         plot_bars(ax, list(results), groups)
         # same scale for every model and benchmark, so figures can be compared
-        ax.set_ylim(0, 0.8)
-        ax.set_ylabel(f"lost among bf16 seed={config.seed},{config.seed + 1} correct")
+        ax.set_ylim(0, ymax)
+        ax.set_ylabel(ylabel)
         ax.set_title(title)
         ax.grid(axis="y", color="#e8e7e3", linewidth=0.8)
         ax.set_axisbelow(True)
-        ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
+        ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol=symbol))
 
     fig.suptitle(f"{config.model_name} {config.benchmark} loss\n{file_name}")
     handles = [Patch(color=LANGUAGE_COLORS[language], label=f"{language} (bf16 {mean(bf16_result[language]['accuracy'] for bf16_result in bf16_results):.1%})") for language in languages]

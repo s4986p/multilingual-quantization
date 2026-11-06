@@ -1,6 +1,12 @@
 from statistics import mean
 
 
+def get_loop_ratio(
+    result: dict,
+) -> float:
+    return mean(len(think) > 200 and think[:-200].count(think[-200:-150]) >= 5 for think in result["thinks"])
+
+
 def get_both_correct_mask(
     bf16_results: list[dict],
 ) -> list[bool]:
@@ -15,3 +21,10 @@ def get_loss_ratios(
     truncated_ratio = mean(truncated and not correct for correct, truncated in pairs)
     finished_ratio = mean(not truncated and not correct for correct, truncated in pairs)
     return truncated_ratio, finished_ratio
+
+
+def get_loss_points(
+    ratio: float,
+    both_correct_mask: list[bool],
+) -> float:
+    return ratio * sum(both_correct_mask) / len(both_correct_mask)
