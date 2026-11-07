@@ -4,12 +4,12 @@
 - on mgsm, some languages lose more than others, but not on mmlu-prox-lite
 - awq loses least, but rtn, mxfp4 lose most
 - qwen mostly loses through loops, but gemma loses through wrong answers
-- calibrating on a language does not clearly help
+- calibrating on a language does not clearly help, so gap may not come from calibrating only on en
 - kl partly matches loss on gemma, but not on qwen
 - gemma sw loses more through solving, but te loses through reading, solving with mxfp4
 - gemma loses through reasoning, not response with mxfp4
-- gemma sw, te lose mostly through fact, relation with mxfp4
-- gemma sw, te lose about equally through translation, solving with mxfp4
+- gemma sw, te lose mostly through fact, relation, so they mostly misread question with mxfp4
+- gemma sw, te lose about equally through translation, solving, so reading is not the only cause with mxfp4
 - we do not know yet why sw, te lose more even on en translation
 
 ## common setting
