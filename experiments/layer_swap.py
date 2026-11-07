@@ -26,14 +26,14 @@ class Config:
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-    # model to swap in for first num_swap_layers layers
+    # model to swap in for first num_front_layers layers
     front_method: Literal["bf16", "quantized"] = "bf16"
-    num_swap_layers: int = 3
+    num_front_layers: int = 3
 
 
 def main() -> None:
     config = parse(Config)
-    file_name = f"front_method={config.front_method},num_swap_layers={config.num_swap_layers},max_generation_len={config.max_generation_len},seed={config.seed}"
+    file_name = f"front_method={config.front_method},num_front_layers={config.num_front_layers},max_generation_len={config.max_generation_len},seed={config.seed}"
     entry_name = "layer_swap/mgsm"
     target = make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
     if result_exists(entry_name, target, file_name):
@@ -43,17 +43,19 @@ def main() -> None:
     problems = load_mgsm(languages)
 
     # 1) put question after en instruction
+    # drop instruction, blank line before question
+    # e.g. "Solve this math problem. ...\n\nJames decides to run ..." -> "James decides to run ..."
     prompts = [MGSM_PROMPTS["en"].format(question=prompt.split("\n\n", 1)[1]) for language in languages for prompt, _ in problems[language]]
 
-    # 2) swap first layers with front_method model, and load it with vllm
+    # 2) copy front weights from front_method model, and load it with vllm
     model_paths = {"bf16": config.model_name, "quantized": download_model(target)}
     back_method = "quantized" if config.front_method == "bf16" else "bf16"
-    model = load_model(model_paths[back_method])
+    back_model = load_model(model_paths[back_method])
     front_model = load_model(model_paths[config.front_method])
-    model.model.language_model.layers[: config.num_swap_layers].load_state_dict(front_model.model.language_model.layers[: config.num_swap_layers].state_dict())
+    back_model.model.language_model.layers[: config.num_front_layers].load_state_dict(front_model.model.language_model.layers[: config.num_front_layers].state_dict())
     with TemporaryDirectory() as directory:
-        model.save_pretrained(directory)
-        del model, front_model
+        back_model.save_pretrained(directory)
+        del back_model, front_model
         torch.cuda.empty_cache()
         vllm_model = load_vllm(directory, config.model_name, config.seed)
     tokenizer = vllm_model.get_tokenizer()

@@ -78,14 +78,14 @@ def quantize_weight(
         end = min(start + block_size, weight.shape[1])
         for column in range(start, end):
             group = column // group_size
-            # set grid when group starts, so it reflects compensation
+            # set grid when group starts, so it uses weights updated by earlier columns
             if column % group_size == 0:
                 scale[:, group], zero[:, group] = find_grid(weight[:, column : column + group_size], num_bits)
-            # 3-1) quantize column and compensate column's error to right columns in block
+            # 3-1) quantize column, and spread its error to later columns in block
             quantized[:, column] = round_to_grid(weight[:, column], scale[:, group], zero[:, group], num_bits)
             error[:, column - start] = (weight[:, column] - quantized[:, column]) / hessian_inv[column, column]
             weight[:, column:end] -= torch.outer(error[:, column - start], hessian_inv[column, column:end])
-        # 3-2) compensate block's error to remaining columns after block
+        # 3-2) spread block's error to columns after block
         weight[:, end:] -= error[:, : end - start] @ hessian_inv[start:end, end:]
     return quantized, scale, zero
 

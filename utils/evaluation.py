@@ -22,7 +22,7 @@ def split_outputs(
             think_len = token_ids.index(think_end_id)
             response = tokenizer.decode(token_ids[think_len + 1 :], skip_special_tokens=True)
         else:
-            # ran out of tokens while thinking, so no response
+            # ran out of tokens during reasoning, so no response
             think_len = len(token_ids)
             response = None
         thinks.append(tokenizer.decode(token_ids[:think_len], skip_special_tokens=True))
@@ -74,7 +74,7 @@ def parse_mmlu_prox_lite_prediction(
     #      "The answer is c" -> []
     #      "The answer is Cat" -> []
     letters = re.findall(rf"(?i:{re.escape(answer_prefix)})\s*[:：]?\s*\(?([A-J])\b\)?", response)
-    # if no letter is caught, take any standalone uppercase letter A-J in response
+    # if no letter is found, take any standalone uppercase letter A-J in response
     # e.g. "Jibu: A"      -> ["A"]
     #      "I chose (D)." -> ["I", "D"]
     letters = letters or re.findall(r"\b([A-J])\b", response)

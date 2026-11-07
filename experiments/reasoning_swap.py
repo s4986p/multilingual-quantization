@@ -14,7 +14,7 @@ from utils.hub import download_model, load_result, result_exists, save_result
 from utils.model import GENERATION_CONFIGS, continue_vllm, get_prompt_ids, get_think_ids, load_vllm
 from utils.paths import make_bf16_path, make_target_path
 
-THINK_METHODS = ["bf16", "quantized"]
+REASONING_METHODS = ["bf16", "quantized"]
 
 
 @dataclass
@@ -36,9 +36,9 @@ def main() -> None:
     config = parse(Config)
     target = make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
     entry_name = "reasoning_swap/mgsm"
-    file_names = {think_method: f"think_method={think_method},response_method={config.response_method},max_generation_len={config.max_generation_len},seed={config.seed}" for think_method in THINK_METHODS}
-    missing_think_methods = [think_method for think_method in THINK_METHODS if not result_exists(entry_name, target, file_names[think_method])]
-    if not missing_think_methods:
+    file_names = {reasoning_method: f"reasoning_method={reasoning_method},response_method={config.response_method},max_generation_len={config.max_generation_len},seed={config.seed}" for reasoning_method in REASONING_METHODS}
+    missing_reasoning_methods = [reasoning_method for reasoning_method in REASONING_METHODS if not result_exists(entry_name, target, file_names[reasoning_method])]
+    if not missing_reasoning_methods:
         print(f"{target} already evaluated")
         return
     languages = list(MGSM_PROMPTS)
@@ -52,13 +52,13 @@ def main() -> None:
     think_end = GENERATION_CONFIGS[config.model_name]["think_end"]
     think_end_id = tokenizer.convert_tokens_to_ids(think_end)
 
-    for think_method in missing_think_methods:
+    for reasoning_method in missing_reasoning_methods:
         # 1) take whole reasoning of problems that reached response
         problem_indices = {}
         input_ids = []
         for language in languages:
             problem_indices[language] = []
-            source_result = source_results[think_method][language]
+            source_result = source_results[reasoning_method][language]
             for problem_index, ((prompt, _), think, response) in enumerate(zip(problems[language], source_result["thinks"], source_result["responses"])):
                 if response is not None:
                     problem_indices[language].append(problem_index)
@@ -67,7 +67,7 @@ def main() -> None:
         # 2) write response and score it
         log_time = time.perf_counter()
         outputs = continue_vllm(model, config.model_name, input_ids, config.max_generation_len)
-        # think end is in input, but scoring looks for it in output
+        # think_end is in input, but split_outputs looks for it in output
         outputs = [SimpleNamespace(token_ids=[think_end_id, *output.token_ids], finish_reason=output.finish_reason) for output in outputs]
         result = {}
         start = 0
@@ -76,9 +76,9 @@ def main() -> None:
             answers = [problems[language][problem_index][1] for problem_index in problem_indices[language]]
             result[language] = {**evaluate_mgsm(outputs[start:end], answers, language, tokenizer, config.model_name), "problem_indices": problem_indices[language]}
             start = end
-            print(f"{target} {think_method} {language} accuracy {result[language]['accuracy']:.2%} used {len(answers)}/{len(problems[language])}")
-        print(f"{target} {think_method} time {format_duration(time.perf_counter() - log_time)}")
-        save_result(entry_name, target, file_names[think_method], result)
+            print(f"{target} {reasoning_method} {language} accuracy {result[language]['accuracy']:.2%} used {len(answers)}/{len(problems[language])}")
+        print(f"{target} {reasoning_method} time {format_duration(time.perf_counter() - log_time)}")
+        save_result(entry_name, target, file_names[reasoning_method], result)
 
 
 if __name__ == "__main__":

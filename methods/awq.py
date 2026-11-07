@@ -23,7 +23,7 @@ class Config:
     model_name: str = "Qwen/Qwen3.5-2B"
     num_bits: int = 4
     group_size: int = 128
-    num_grid: int = 20
+    num_search_steps: int = 20
     max_shrink: float = 0.5
     # wikipedia calibration
     languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
@@ -113,14 +113,14 @@ def find_smooth(
     abs_mean: Tensor,
     num_bits: int,
     group_size: int,
-    num_grid: int,
+    num_search_steps: int,
 ) -> Tensor:
     # compare whole layer output, not each sub-module, so code stays simple
     outputs = forward_layer(layer, inputs)
     weights = [linear.weight.clone() for linear in linears]
 
     best_error = math.inf
-    for ratio in np.linspace(0.0, 1.0, num_grid, endpoint=False):
+    for ratio in np.linspace(0.0, 1.0, num_search_steps, endpoint=False):
         smooth = abs_mean.pow(ratio).clamp(min=1e-4)
         smooth = smooth / (smooth.max() * smooth.min()).sqrt()
         for linear, weight in zip(linears, weights):
@@ -140,11 +140,11 @@ def find_clip(
     hessian: Tensor,
     num_bits: int,
     group_size: int,
-    num_grid: int,
+    num_search_steps: int,
     max_shrink: float,
 ) -> Tensor:
     # outliers widen grid range, step size
-    # so grid search clip for each quantization group
+    # so search clip for each quantization group
     # 1) apply smooth to weight (w * s), hessian (x / s)
     groups = (weight.float() * smooth).reshape(weight.shape[0], -1, group_size)
     num_groups = groups.shape[1]
@@ -152,19 +152,17 @@ def find_clip(
     # clip is picked per group, so keep only each group's diagonal block
     hessian_blocks = smoothed_hessian.reshape(num_groups, group_size, num_groups, group_size).diagonal(dim1=0, dim2=2).permute(2, 0, 1)
 
-    # 2) grid search clip
+    # 2) search clip
     weight_max = groups.abs().amax(dim=-1)
     best_clip_value = weight_max.clone()
     best_error = torch.full_like(weight_max, math.inf)
-    for shrink in np.linspace(1.0, 1.0 - max_shrink, int(max_shrink * num_grid), endpoint=False):
+    for shrink in np.linspace(1.0, 1.0 - max_shrink, int(max_shrink * num_search_steps), endpoint=False):
         clip_value = weight_max * shrink
         scale, zero = find_grid(groups.clamp(-clip_value[..., None], clip_value[..., None]), num_bits)
         quantized = round_to_grid(groups, scale[..., None], zero[..., None], num_bits)
         delta = quantized - groups
-        # error of other groups in same row also affects output
-        # but ignore it, so each group's clip can be searched alone
+        # error of other groups in same row also affects output, but ignore it, so each group's clip can be searched alone
         error = torch.einsum("ogi,gij,ogj->og", delta, hessian_blocks, delta)
-        # keep best clip for each quantization group
         is_better = error < best_error
         best_error = torch.where(is_better, error, best_error)
         best_clip_value = torch.where(is_better, clip_value, best_clip_value)
@@ -184,9 +182,9 @@ def main() -> None:
         inputs = capture_layer_inputs(model, layer, samples)
         for linears in find_linear_groups(layer, *inputs[0]):
             abs_mean, hessian = compute_statistics(layer, linears[0], inputs)
-            smooth = find_smooth(layer, linears, inputs, abs_mean, config.num_bits, config.group_size, config.num_grid)
+            smooth = find_smooth(layer, linears, inputs, abs_mean, config.num_bits, config.group_size, config.num_search_steps)
             for linear in linears:
-                clip_value = find_clip(linear.weight, smooth, hessian, config.num_bits, config.group_size, config.num_grid, config.max_shrink)
+                clip_value = find_clip(linear.weight, smooth, hessian, config.num_bits, config.group_size, config.num_search_steps, config.max_shrink)
                 linear.weight.copy_(quantize_weight(linear.weight, smooth, clip_value, config.num_bits, config.group_size))
 
         print(f"layer {layer_index + 1}/{len(layers)} time {format_duration(time.perf_counter() - log_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")

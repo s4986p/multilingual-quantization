@@ -36,7 +36,7 @@ def main() -> None:
     for method in ["rtn", "gptq", "awq", "nf4", "mxfp4"]:
         target = make_target_path(method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
         for seed in config.seeds:
-            file_names = [f"think_method={think_method},response_method={response_method},max_generation_len={config.max_generation_len},seed={seed}" for think_method, response_method in CELLS]
+            file_names = [f"reasoning_method={reasoning_method},response_method={response_method},max_generation_len={config.max_generation_len},seed={seed}" for reasoning_method, response_method in CELLS]
             if all(result_exists(entry_name, target, file_name) for file_name in file_names):
                 results.setdefault(method, []).append([load_result(entry_name, target, file_name) for file_name in file_names])
 

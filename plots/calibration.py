@@ -8,7 +8,7 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
 from utils.hub import load_result, result_exists
-from utils.metrics import get_wrong_ratio, get_loop_ratio, get_truncated_ratio
+from utils.metrics import get_loop_ratio, get_truncated_ratio, get_wrong_ratio
 from utils.paths import make_bf16_path, make_target_path
 from utils.plot import LANGUAGE_COLORS, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
 

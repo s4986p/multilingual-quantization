@@ -9,7 +9,7 @@ from simple_parsing import parse
 from transformers import AutoTokenizer
 
 from utils.hub import load_result, result_exists
-from utils.metrics import get_both_correct_mask
+from utils.metrics import get_all_correct_mask
 from utils.paths import make_bf16_path, make_target_path
 from utils.plot import LANGUAGE_COLORS, get_figsize, get_panel_width, save_figure
 
@@ -44,7 +44,7 @@ def main() -> None:
     ratios = {}
     used_counts = {}
     for language in LANGUAGES:
-        used_counts[language] = sum(get_both_correct_mask([bf16_result[language] for bf16_result in bf16_results]))
+        used_counts[language] = sum(get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results]))
         error_types = [error_type or "other" for result in results for error_type in result[language]["error_types"]]
         ratios[language] = {error_type: error_types.count(error_type) / (used_counts[language] * len(results)) for error_type in ERROR_TYPE_COLORS}
 

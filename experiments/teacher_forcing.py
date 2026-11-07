@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 from utils.dataset import MGSM_PROMPTS, load_mgsm, load_mmlu_prox_lite
 from utils.format import format_duration, format_memory
 from utils.hub import download_model, load_result, result_exists, save_tensors
-from utils.metrics import get_both_correct_mask
+from utils.metrics import get_all_correct_mask
 from utils.model import get_logits, get_prompt_ids, get_think_hiddens, get_think_ids, load_model
 from utils.paths import make_bf16_path, make_target_path
 
@@ -21,7 +21,7 @@ class Config:
     seed: int = 0
     max_generation_len: int = 32768
     benchmark: Literal["mgsm", "mmlu_prox_lite"] = "mgsm"
-    chunk_len: int = 2048
+    logit_chunk_len: int = 2048
     # model to compare with bf16
     model_name: str = "Qwen/Qwen3.5-2B"
     method: Literal["rtn", "gptq", "awq", "nf4", "mxfp4"] = "awq"
@@ -52,23 +52,23 @@ def main() -> None:
     tensors = defaultdict(list)
     for language in languages:
         # 1) use bf16 reasoning on problems solved by all bf16 seeds
-        both_correct_mask = get_both_correct_mask([bf16_result[language] for bf16_result in bf16_results])
+        all_correct_mask = get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results])
         samples = []
-        for problem_index, ((prompt, _), think, both_correct) in enumerate(zip(problems[language], bf16_results[0][language]["thinks"], both_correct_mask)):
-            if both_correct:
+        for problem_index, ((prompt, _), think, all_correct) in enumerate(zip(problems[language], bf16_results[0][language]["thinks"], all_correct_mask)):
+            if all_correct:
                 samples.append((problem_index, get_prompt_ids(tokenizer, prompt), get_think_ids(tokenizer, config.model_name, think)))
         print(f"{language} samples {len(samples)} positions {sum(len(think_ids) for _, _, think_ids in samples)}")
 
-        # 2) compare bf16, quantized at each reasoning position
+        # 2) compare bf16, quantized next token predictions at each reasoning position
         log_time = time.perf_counter()
         torch.cuda.reset_peak_memory_stats()
         for sample_index, (problem_index, prompt_ids, think_ids) in enumerate(samples):
             input_ids = torch.cat([prompt_ids, think_ids])
             bf16_hiddens = get_think_hiddens(bf16_model, input_ids, len(prompt_ids))
             quantized_hiddens = get_think_hiddens(quantized_model, input_ids, len(prompt_ids))
-            for start in range(0, len(think_ids), config.chunk_len):
-                bf16_logprobs = log_softmax(get_logits(bf16_model, bf16_hiddens[start : start + config.chunk_len]), dim=-1)
-                quantized_logprobs = log_softmax(get_logits(quantized_model, quantized_hiddens[start : start + config.chunk_len]), dim=-1)
+            for start in range(0, len(think_ids), config.logit_chunk_len):
+                bf16_logprobs = log_softmax(get_logits(bf16_model, bf16_hiddens[start : start + config.logit_chunk_len]), dim=-1)
+                quantized_logprobs = log_softmax(get_logits(quantized_model, quantized_hiddens[start : start + config.logit_chunk_len]), dim=-1)
                 bf16_probs = bf16_logprobs.exp()
                 tensors[f"{language}/bf16_entropy"].append(-(bf16_probs * bf16_logprobs).sum(dim=-1).cpu())
                 tensors[f"{language}/kl"].append((bf16_probs * (bf16_logprobs - quantized_logprobs)).sum(dim=-1).cpu())

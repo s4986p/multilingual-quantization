@@ -67,7 +67,7 @@ def main() -> None:
     model = load_vllm(model_path, config.model_name, config.seed)
 
     for read_method in missing_read_methods:
-        # 1) take text up to line of last question number as reading
+        # 1) take reasoning up to line with last question number as reading
         problem_indices = {}
         input_ids = []
         for language in languages:

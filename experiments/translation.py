@@ -28,7 +28,7 @@ class Config:
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-    # translate loads translate model, solve loads solve model
+    # each stage loads one model, translate loads translate_method, solve loads solve_method
     stage: Literal["translate", "solve"] = "translate"
     # model that translates
     translate_method: Literal["bf16", "quantized"] = "bf16"
@@ -51,7 +51,7 @@ def main() -> None:
             print(f"{target} already evaluated")
             return
 
-        # 1) translate question without instruction
+        # 1) translate question with en translation instruction
         # drop instruction, blank line before question
         # e.g. "Solve this math problem. ...\n\nJames decides to run ..." -> "James decides to run ..."
         prompts = [TRANSLATION_PROMPT.format(question=prompt.split("\n\n", 1)[1]) for language in languages for prompt, _ in problems[language]]
@@ -90,7 +90,7 @@ def main() -> None:
                         problem_indices[language].append(problem_index)
                         prompts.append(MGSM_PROMPTS["en"].format(question=response.strip()))
 
-            # 3) solve translations in en and score them
+            # 3) solve translations with en prompt and score them
             log_time = time.perf_counter()
             outputs = generate_vllm(model, config.model_name, prompts, config.max_generation_len)
             result = {}
