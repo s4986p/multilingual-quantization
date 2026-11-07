@@ -8,13 +8,20 @@
 - kl partly matches loss on gemma, but not on qwen
 - gemma sw loses more through solving, but te loses through reading, solving with mxfp4
 - gemma loses through reasoning, not response with mxfp4
-- gemma sw, te lose mostly through fact, relation, so they mostly misread question with mxfp4
-- gemma sw, te lose about equally through translation, solving, so reading is not the only cause with mxfp4
+- gemma sw, te lose mostly through fact, relation, so they mostly copy, read question wrong with mxfp4
+- gemma sw, te lose about equally through translation, solving, so translation is not the only cause with mxfp4
 - gemma sw, te get higher accuracy when translation, solving are split than at once with mxfp4
 - we do not know yet why sw, te lose more even on en translation
 
 ## common setting
 all experiments use these settings unless noted
+
+#### terms
+- prompt means instruction, question
+- instruction means text before question (e.g. "solve this math problem ...")
+- question means text of each problem
+- reasoning means text in thinking mode
+- response means text after reasoning
 
 #### model
 - qwen3.5-2b, gemma-4-e2b-it
@@ -180,14 +187,15 @@ check how reasoning goes wrong, because sw, te lose most through reasoning with 
 - qwen3.5-27b, claude opus 5.5 give different types in places, so use types, positions only as a rough guide
 
 ## translation
-check if quantization hurts reading sw, te text, because sw, te lose mostly through fact, relation, which are errors in reading question early in reasoning
+check if quantization hurts translating sw, te question, because sw, te lose mostly through fact, relation, which copy, read question wrong early in reasoning
 
 #### setting
 - gemma, mxfp4 only
 - translate each question into en with bf16 or quantized
-- give translation prompt in en, so only question is in each language
+- give translation instruction in en, so only question is in each language
 - use response as translation
 - solve translation with bf16 or quantized, with en prompt
+- solving means reasoning, response on translation
 - en is also translated, so it shows loss from copying en
 - bars show accuracy on problems translated by both bf16, quantized
 - at once means quantized reasoning, quantized response of reasoning swap
