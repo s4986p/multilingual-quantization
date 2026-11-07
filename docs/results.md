@@ -33,9 +33,8 @@ all experiments use these settings unless noted
 #### generation
 - use vllm 0.30.0
 - use temperature 1.0 and top-p 0.95
-- use seed 0, 1 and 2 for bf16 on mgsm
-- use seed 0 and 1 for bf16 on mmlu-prox-lite
-- use seed 0 for quantized models
+- use seed 0, 1 and 2 on mgsm
+- use seed 0 and 1 for bf16 and seed 0 for quantized models on mmlu-prox-lite
 - qwen3.5-2b uses top-k 20, presence penalty 1.5 and max generation len 32768
 - gemma-4-e2b-it uses top-k 64, presence penalty 0 and max generation len 16384
 
@@ -60,22 +59,27 @@ all experiments use these settings unless noted
 - wrong means reasoning finished but answer is wrong
 - all panels show ratio of all problems
 - bar labels show ratio and change from bf16 mean
+- on mgsm, quantized bars show mean of seed 0, 1 and 2
 
 #### gemma summary
 - gemma loses less than qwen
 - gemma almost never truncates
-- with awq on mgsm, sw and en differ by only 2.4p, which could be noise
+- on mgsm, sw and te lose most with every method
+- with awq on mgsm, sw loses much more than en (-6.1p vs -0.7p)
 
 #### qwen summary
 - method decides how much truncation happens
 - most rtn and mxfp4 truncation comes from loops
 - bf16 is weak on sw and te on mgsm (43.1%, 16.1%)
 - with awq on mgsm, en and zh drop less than sw and ja
-- with awq on mgsm, ja loses as much as sw (-10.9p, -10.3p), even though bf16 does much better on ja (77.7%, 43.1%)
+- with awq on mgsm, ja loses almost as much as sw (-8.9p, -10.3p), even though bf16 does much better on ja (77.7%, 43.1%)
+- with every other method on mgsm, zh loses most (-14.4p to -41.3p)
+- zh also truncates most on mgsm with every method
 
 #### common summary
-- awq loses least on average (-2.8p to -7.2p)
+- awq loses least on average (-3.2p to -6.5p on mgsm)
 - rtn and mxfp4 lose most
+- with awq on mgsm, sw drops most
 - on mmlu-prox-lite, non english does not clearly lose more than en
 
 ## does calibration language matter?
@@ -88,12 +92,13 @@ all experiments use these settings unless noted
 - calibrate on en, sw, te and all (en, zh, sw, ja, te)
 - all has 128 chunks in total, about 26 per language
 - panels and bar labels are same as above
+- use seed 0 only, so small differences could be noise
 
 #### gemma summary
 - all calibration does not help (-3.0p vs -2.8p with en)
 
 #### qwen summary
-- all calibration helps (-4.7p vs -7.2p with en)
+- all calibration may help (-4.7p vs -7.2p with en)
 - sw and te calibration add truncation and loops on en and zh
 
 #### common summary
