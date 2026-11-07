@@ -13,7 +13,9 @@
 - gemma sw, te lose about equally through translation, solving, so translation is not the only cause with mxfp4
 - gemma sw, te get higher accuracy when translation, solving are split than at once with mxfp4
 - **gemma sw, te get higher accuracy with en instruction, but less than split, so quantized model loses more with more non-en text with mxfp4**
-- we do not know yet if qat can close sw, te gap
+- gemma sw, te question have higher hidden error than en, but zh, ja do not, so quantized model may lose with sw, te text, not with all non-en text with mxfp4
+- **gemma sw, te question hidden error gap with en starts at layer 3, so they may already copy, read question wrong before reasoning with mxfp4**
+- we do not know yet if hidden error gap comes from each layer, or grows through layers
 
 ## common setting
 all experiments use these settings unless noted
@@ -220,3 +222,19 @@ check if en instruction alone raises sw, te accuracy, because sw, te get higher 
 ![](../figures/gemma-4-E2B-it/mgsm_instruction_language.png)
 - en instruction raises sw, te accuracy (62.9%, 66.5% vs 59.7%, 60.9%) with mxfp4
 - en instruction raises sw, te less than split (62.9%, 66.5% vs 67.4%, 69.3%) with mxfp4
+
+## hidden error
+check if quantization changes non-en tokens more, because quantized model loses more with more non-en text with mxfp4
+
+#### setting
+- gemma, mxfp4 only
+- use en instruction, as in instruction language
+- give same prompt to bf16, quantized, without generation
+- hidden error means distance between bf16, quantized hidden of each layer, divided by bf16 hidden size
+- use all problems, because there is no generation
+- question panel uses question tokens, and instruction panel uses instruction tokens
+
+#### gemma mgsm
+![](../figures/gemma-4-E2B-it/mgsm_hidden_error.png)
+- sw, te question have higher hidden error than en (0.233, 0.211 vs 0.195), but zh, ja do not with mxfp4
+- gap with en starts at layer 3, and stays to last layers with mxfp4
