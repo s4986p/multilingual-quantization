@@ -169,8 +169,10 @@ check how reasoning goes wrong, because sw, te lose most through reasoning with 
 - fact means a number, word or name is copied wrong
 - relation means words like more than, per, half of are read wrong
 - bars show ratio of these problems that mxfp4 gets wrong
+- progress panel uses first wrong line picked by qwen3.5-27b
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_error_types.png)
 - sw, te lose mostly through fact, relation, but rarely through arithmetic with mxfp4
-- qwen3.5-27b, claude opus 5.5 give different types in places, so use types only as a rough guide
+- te errors start most often in first 20% of reasoning, but sw errors spread over first 60% with mxfp4
+- qwen3.5-27b, claude opus 5.5 give different types in places, so use types, positions only as a rough guide
