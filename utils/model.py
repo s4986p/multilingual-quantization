@@ -4,7 +4,7 @@ from transformers import AutoModelForImageTextToText, PreTrainedModel, PreTraine
 from vllm import LLM, SamplingParams  # type: ignore
 from vllm.outputs import CompletionOutput  # type: ignore
 
-# recommended setting for thinking mode
+# recommended sampling settings for thinking mode, and reasoning start, end tokens
 GENERATION_CONFIGS = {
     "Qwen/Qwen3.5-2B": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "presence_penalty": 1.5, "think_start": "", "think_end": "</think>"},
     "Qwen/Qwen3.5-27B": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "presence_penalty": 1.5, "think_start": "", "think_end": "</think>"},

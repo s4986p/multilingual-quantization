@@ -8,8 +8,8 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
 from utils.hub import load_result, result_exists
-from utils.metrics import get_wrong_ratio, get_loop_ratio, get_truncated_ratio
-from utils.paths import make_target_path
+from utils.metrics import get_loop_ratio, get_truncated_ratio, get_wrong_ratio
+from utils.paths import make_bf16_path, make_target_path
 from utils.plot import LANGUAGE_COLORS, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
 
 
@@ -28,7 +28,7 @@ class Config:
 
 def main() -> None:
     config = parse(Config)
-    bf16_target = make_target_path("bf16", config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
+    bf16_target = make_bf16_path(config.model_name)
     bf16_file_names = [f"max_generation_len={config.max_generation_len},seed={seed}" for seed in config.bf16_seeds]
     bf16_results = [load_result(config.benchmark, bf16_target, bf16_file_name) for bf16_file_name in bf16_file_names if result_exists(config.benchmark, bf16_target, bf16_file_name)]
     languages = list(bf16_results[0])

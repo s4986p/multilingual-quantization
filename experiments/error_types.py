@@ -9,7 +9,7 @@ from utils.dataset import MGSM_PROMPTS, load_mgsm
 from utils.evaluation import split_outputs
 from utils.format import format_duration
 from utils.hub import load_result, result_exists, save_result
-from utils.metrics import get_both_correct_mask
+from utils.metrics import get_all_correct_mask
 from utils.model import generate_vllm, load_vllm
 from utils.paths import make_bf16_path, make_target_path
 
@@ -17,7 +17,7 @@ ERROR_TYPES = ["fact", "relation", "question", "doubt", "arithmetic", "other"]
 JUDGE_PROMPT = """A small model solved a math word problem and got it wrong. Find the first line where its reasoning goes wrong, and say what kind of error it is.
 
 Problem in English, which is the true meaning:
-{english_question}
+{en_question}
 
 Problem as the model saw it:
 {question}
@@ -80,15 +80,15 @@ def main() -> None:
     problem_indices = {}
     prompts = []
     for language in languages:
-        both_correct_mask = get_both_correct_mask([bf16_result[language] for bf16_result in bf16_results])
-        problem_indices[language] = [problem_index for problem_index, (both_correct, correct) in enumerate(zip(both_correct_mask, quantized_result[language]["corrects"])) if both_correct and not correct]
+        all_correct_mask = get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results])
+        problem_indices[language] = [problem_index for problem_index, (all_correct, correct) in enumerate(zip(all_correct_mask, quantized_result[language]["corrects"])) if all_correct and not correct]
         for problem_index in problem_indices[language]:
             prompt, answer = problems[language][problem_index]
             think = quantized_result[language]["thinks"][problem_index]
             prompts.append(JUDGE_PROMPT.format(
                 # drop instruction, blank line before question
                 # e.g. "Solve this math problem. ...\n\nJames decides to run ..." -> "James decides to run ..."
-                english_question=problems["en"][problem_index][0].split("\n\n", 1)[1],
+                en_question=problems["en"][problem_index][0].split("\n\n", 1)[1],
                 question=prompt.split("\n\n", 1)[1],
                 answer=answer,
                 bf16_think=bf16_results[config.seed][language]["thinks"][problem_index],

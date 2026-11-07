@@ -61,24 +61,24 @@ def main() -> None:
             #      chat template  "<turn|>\n<|turn>model\n"
             is_instruction = (starts >= instruction_start) & (ends <= question_start)
             is_question = (starts >= question_start) & (ends <= question_start + len(question))
-            used = is_instruction | is_question
+            is_used = is_instruction | is_question
 
-            # 2) compare bf16, quantized hiddens of each layer at each token
+            # 2) compare bf16, quantized hidden of each layer at each token
             input_ids = encoding["input_ids"].to(bf16_model.device)
             # hidden_states[0] is embedding, which is not quantized
             bf16_hiddens = torch.stack(bf16_model.model(input_ids=input_ids, output_hidden_states=True, use_cache=False).hidden_states[1:])[:, 0].float()
             quantized_hiddens = torch.stack(quantized_model.model(input_ids=input_ids, output_hidden_states=True, use_cache=False).hidden_states[1:])[:, 0].float()
             errors = ((quantized_hiddens - bf16_hiddens).norm(dim=-1) / bf16_hiddens.norm(dim=-1)).T.cpu()
-            tensors[f"{language}/errors"].append(errors[used])
-            tensors[f"{language}/is_question"].append(is_question[used])
-            tensors[f"{language}/problem_index"].append(torch.full((int(used.sum()),), problem_index, dtype=torch.int32))
+            tensors[f"{language}/error"].append(errors[is_used])
+            tensors[f"{language}/is_question"].append(is_question[is_used])
+            tensors[f"{language}/problem_index"].append(torch.full((int(is_used.sum()),), problem_index, dtype=torch.int32))
 
             if (problem_index + 1) % 50 == 0:
                 print(f"{language} problem {problem_index + 1}/{len(problems[language])} time {format_duration(time.perf_counter() - log_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")
                 log_time = time.perf_counter()
                 torch.cuda.reset_peak_memory_stats()
 
-        errors = torch.cat(tensors[f"{language}/errors"])
+        errors = torch.cat(tensors[f"{language}/error"])
         is_question = torch.cat(tensors[f"{language}/is_question"])
         print(f"{target} {language} question error {errors[is_question].mean():.4f} instruction error {errors[~is_question].mean():.4f}")
 

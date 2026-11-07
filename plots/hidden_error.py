@@ -36,7 +36,7 @@ def main() -> None:
     for ax, (panel, question) in zip(axes, PANELS.items()):
         for language in LANGUAGES:
             problem_errors = []
-            for errors, is_question in zip(split_problems(result[f"{language}/errors"], result[f"{language}/problem_index"]), split_problems(result[f"{language}/is_question"], result[f"{language}/problem_index"])):
+            for errors, is_question in zip(split_problems(result[f"{language}/error"], result[f"{language}/problem_index"]), split_problems(result[f"{language}/is_question"], result[f"{language}/problem_index"])):
                 problem_errors.append(errors[is_question == question].mean(dim=0))
             ax.plot(range(1, len(problem_errors[0]) + 1), torch.stack(problem_errors).mean(dim=0), color=LANGUAGE_COLORS[language], linewidth=2)
         ax.set_xlabel("layer")
