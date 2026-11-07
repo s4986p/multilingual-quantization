@@ -52,15 +52,16 @@ def main() -> None:
     plot_bars(axes["kl"], list(results), kl_groups)
     axes["kl"].set_ylim(0, max(max(values) for values, _, _ in kl_groups) * 1.15)
     axes["kl"].set_ylabel("mean kl per problem")
-    axes["kl"].set_title("kl")
-
     result = results[config.method]
+    used_counts = {language: len(result[f"{language}/problem_index"].unique()) for language in LANGUAGES}
+    axes["kl"].set_title(f"kl (problems used {', '.join(f'{language} {used_counts[language]}' for language in LANGUAGES)})")
+
     for language in LANGUAGES:
         progress_kls = torch.stack([torch.stack([bin_kl.mean() for bin_kl in kl.tensor_split(NUM_PROGRESS_BINS)]) for kl in split_problems(result[f"{language}/kl"], result[f"{language}/problem_index"])])
         axes["progress"].plot(range(1, NUM_PROGRESS_BINS + 1), progress_kls.mean(dim=0), color=LANGUAGE_COLORS[language], marker="o", linewidth=2)
     axes["progress"].set_xticks(range(1, NUM_PROGRESS_BINS + 1), [f"{(index - 1) * 20}-{index * 20}%" for index in range(1, NUM_PROGRESS_BINS + 1)])
     axes["progress"].set_xlabel("reasoning progress")
-    axes["progress"].set_ylabel("mean kl")
+    axes["progress"].set_ylabel("mean kl per problem")
     axes["progress"].set_title(f"{config.method} kl by reasoning progress")
 
     for ax in axes.values():
@@ -68,8 +69,7 @@ def main() -> None:
         ax.set_axisbelow(True)
 
     fig.suptitle(f"{config.model_name} {config.benchmark} teacher forcing\n{file_name}")
-    handles = [Line2D([], [], color=LANGUAGE_COLORS[language], marker="o", linewidth=2, label=f"{language} ({len(result[f'{language}/problem_index'].unique())} problems)") for language in LANGUAGES]
-    fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
+    fig.legend(handles=[Line2D([], [], color=LANGUAGE_COLORS[language], marker="o", linewidth=2, label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
     fit_bar_width(fig, [axes["kl"]])
     save_figure(fig, config.model_name, f"{config.benchmark}_teacher_forcing")
 

@@ -47,12 +47,12 @@ def main() -> None:
             ratios = [get_ratio(result[language]) for result in results.values()]
             groups.append(([mean(bf16_ratios), *ratios], LANGUAGE_COLORS[language], [format_bf16_ratio(bf16_ratios), *[format_ratio(ratio, mean(bf16_ratios)) for ratio in ratios]]))
 
-    labels = ["bf16", *results]
+    labels = ["bf16", *[f"awq {calibration}" for calibration in results]]
     panel_widths = [get_panel_width(len(labels), len(languages))]
     fig, axes = plt.subplots(3, 1, figsize=get_figsize(panel_widths, 3), layout="constrained")
     for ax, (_, groups, title, ymax) in zip(axes, panels):
         plot_bars(ax, labels, groups)
-        # same scale for every model and benchmark, so figures can be compared
+        # same scale for every model, benchmark, so figures can be compared
         ax.set_ylim(0, ymax)
         ax.set_ylabel("ratio of all problems")
         ax.set_title(title)
@@ -60,7 +60,7 @@ def main() -> None:
         ax.set_axisbelow(True)
         ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
-    fig.suptitle(f"{config.model_name} {config.benchmark} awq calibration loss\n{file_name}")
+    fig.suptitle(f"{config.model_name} {config.benchmark} calibration\n{file_name}")
     handles = [Patch(color=LANGUAGE_COLORS[language], label=f"{language} (bf16 {mean(bf16_result[language]['accuracy'] for bf16_result in bf16_results):.1%})") for language in languages]
     fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
     # panels share one column, so fit width by one panel

@@ -9,11 +9,11 @@ from simple_parsing import parse
 
 from utils.hub import load_result, result_exists
 from utils.paths import make_target_path
-from utils.plot import LANGUAGE_COLORS, fit_bar_width, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
+from utils.plot import LANGUAGE_COLORS, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
 
 LANGUAGES = list(LANGUAGE_COLORS)
 CELLS = [("bf16", "bf16"), ("quantized", "bf16"), ("bf16", "quantized"), ("quantized", "quantized")]
-LABELS = ["bf16 think, bf16 response", "quantized think, bf16 response", "bf16 think, quantized response", "quantized think, quantized response"]
+LABELS = ["bf16 reasoning, bf16 response", "quantized reasoning, bf16 response", "bf16 reasoning, quantized response", "quantized reasoning, quantized response"]
 
 
 @dataclass
@@ -55,18 +55,18 @@ def main() -> None:
                 seed_accuracies.append([mean(correct for problem_index, correct in zip(cell_result[language]["problem_indices"], cell_result[language]["corrects"]) if problem_index in used) for cell_result in cell_results])
             accuracies = [mean(cell_accuracies) for cell_accuracies in zip(*seed_accuracies)]
             used_counts[language] = mean(seed_used_counts)
-            texts = [f"{accuracies[0]:.1%}", *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
+            texts = [format_bf16_ratio([cell_accuracies[0] for cell_accuracies in seed_accuracies]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
             groups.append((accuracies, LANGUAGE_COLORS[language], texts))
 
         plot_bars(ax, LABELS, groups)
         ax.set_ylim(0, 1.15)
         ax.set_ylabel("accuracy")
-        ax.set_title(f"{method} ({len(seed_results)} seeds, problems used {', '.join(f'{language} {used_counts[language]:.0f}' for language in LANGUAGES)})")
+        ax.set_title(f"{method} (problems used {', '.join(f'{language} {used_counts[language]:.0f}' for language in LANGUAGES)})")
         ax.grid(axis="y", color="#e8e7e3", linewidth=0.8)
         ax.set_axisbelow(True)
         ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
-    fig.suptitle(f"{config.model_name} mgsm reasoning swap\nmax_generation_len={config.max_generation_len}")
+    fig.suptitle(f"{config.model_name} mgsm reasoning swap\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     fig.legend(handles=[Patch(color=LANGUAGE_COLORS[language], label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
     # panels share one column, so fit width by one panel
     fit_bar_width(fig, [axes[0, 0]])

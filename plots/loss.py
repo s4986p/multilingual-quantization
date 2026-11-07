@@ -57,7 +57,7 @@ def main() -> None:
     fig, axes = plt.subplots(3, 1, figsize=get_figsize(panel_widths, 3), layout="constrained")
     for ax, (_, groups, title, ymax) in zip(axes, panels):
         plot_bars(ax, labels, groups)
-        # same scale for every model and benchmark, so figures can be compared
+        # same scale for every model, benchmark, so figures can be compared
         ax.set_ylim(0, ymax)
         ax.set_ylabel("ratio of all problems")
         ax.set_title(title)

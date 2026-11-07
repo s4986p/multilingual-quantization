@@ -53,7 +53,7 @@ def format_ratio(
 def format_bf16_ratio(
     bf16_ratios: list[float],
 ) -> str:
-    return f"{mean(bf16_ratios):.1%}\n±{stdev(bf16_ratios):.1%}"
+    return f"{mean(bf16_ratios):.1%}\n±{stdev(bf16_ratios):.1%}p"
 
 
 def plot_bars(
