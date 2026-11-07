@@ -1,13 +1,12 @@
 # results
 
 ## summary
-- on mgsm, some languages lose more than others
-- on mmlu-prox-lite, no language clearly loses more than en
-- qwen mostly loses through loops with rtn, mxfp4
-- gemma loses through wrong answers
-- calibrating on a language does not clearly help that language
-- kl partly follows loss on gemma, but not on qwen
-- gemma sw loses more through solving, but te loses through both reading, solving with mxfp4
+- on mgsm, some languages lose more than others, but not on mmlu-prox-lite
+- awq loses least, but rtn, mxfp4 lose most
+- qwen mostly loses through loops, but gemma loses through wrong answers
+- calibrating on a language does not clearly help
+- kl partly matches loss on gemma
+- gemma sw loses more through solving, but te loses through reading, solving with mxfp4
 - we do not know yet why some languages lose more
 
 ## common setting
@@ -52,7 +51,8 @@ all experiments use these settings unless noted
 - if there is no prefix, take last one in response
 - loop means a 50 character piece near end of reasoning or response appears 5 or more times earlier
 
-## does quantization hurt non english more than english?
+## loss
+check if non english loses more than en, as paper says
 
 #### setting
 - compare rtn, gptq, awq, nf4, mxfp4 with bf16
@@ -60,16 +60,14 @@ all experiments use these settings unless noted
 - panels are truncated, wrong, looped
 - truncated means it hit max generation len and got wrong answer
 - wrong means it finished and got wrong answer
-- ratio is out of all problems
 - first bar is bf16, and ± shows seed noise
-- mgsm quantized bars are mean of seed 0, 1, 2
-- mmlu-prox-lite quantized bars are seed 0
+- quantized bars are mean of seeds
 
 #### qwen mgsm
 ![](../figures/Qwen3.5-2B/mgsm_loss.png)
 - most truncation comes from loops
-- zh loses most with nf4, mxfp4 (-14.4%p, -35.7%p vs en -4.7%p, -18.4%p)
-- sw, ja lose more than en, zh with awq (-10.3%p, -8.9%p vs -4.3%p, -4.0%p)
+- zh loses most (-14.4%p, -35.7%p vs en -4.7%p, -18.4%p) with nf4, mxfp4
+- sw, ja lose more than en, zh (-10.3%p, -8.9%p vs -4.3%p, -4.0%p) with awq
 - te has little left to lose, because bf16 is weak on te (16.1%)
 
 #### gemma mgsm
@@ -87,10 +85,12 @@ all experiments use these settings unless noted
 - awq loses least (-3.2%p to -6.5%p on mgsm)
 - rtn, mxfp4 lose most (-8.1%p to -27.8%p on mgsm)
 
-## does calibration language matter?
+## calibration
+check if calibration language matters
 
 #### setting
-- awq, mgsm only
+- awq only, gptq not tested
+- mgsm only, because only mgsm shows language loss
 - calibrate on en, sw, te, all
 - all means en, zh, sw, ja, te with about 26 chunks each
 - panels are same as above
@@ -98,53 +98,48 @@ all experiments use these settings unless noted
 
 #### qwen mgsm
 ![](../figures/Qwen3.5-2B/mgsm_calibration.png)
-- calibrating on all languages may help (-4.7%p vs en -7.2%p)
-- calibrating on te hurts (-10.8%p vs en -7.2%p)
+- calibrating on sw, te does not clearly help sw, te (-11.9%p, -4.1%p vs en -10.3%p, -4.9%p)
+- calibrating on all may help mean loss (-4.7%p vs en -7.2%p)
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_calibration.png)
-- calibrating on all languages does not help (-3.0%p vs en -2.8%p)
+- calibrating on sw, te does not clearly help sw, te (-6.8%p, -3.2%p vs en -3.6%p, -4.4%p)
+- calibrating on all does not help mean loss (-3.0%p vs en -2.8%p)
 
-#### common summary
-- calibrating on a language does not clearly help that language
-
-## where does quantization change predictions?
+## teacher forcing
+check if prediction changes differ by language
 
 #### setting
-- check if prediction changes differ by language
 - give bf16 reasoning to bf16, quantized models
 - compare their next token predictions with kl at each position
-- use bf16 seed 0 reasoning
-- use mgsm problems solved by bf16 seed 0, 1
-- skip response
+- use bf16 seed 0 reasoning on problems solved by bf16 seed 0, 1
+- compare reasoning only, not response
 - progress panel is awq only
 
 #### qwen mgsm
 ![](../figures/Qwen3.5-2B/mgsm_teacher_forcing.png)
-- kl does not match loss
-- zh loses most with nf4, mxfp4 (-14.4%p, -35.7%p vs en -4.7%p, -18.4%p), but zh kl stays close to en (0.049, 0.084 vs en 0.048, 0.083)
+- kl does not match loss (zh 0.084 vs en 0.083, -35.7%p vs -18.4%p with mxfp4)
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_teacher_forcing.png)
 - kl matches which languages lose more, but not size of loss (te 0.143 vs 0.142, -5.2%p vs -14.7%p with gptq, mxfp4)
-- sw, te have highest kl with awq (0.094, 0.090 vs en 0.065)
+- sw, te have highest kl (0.094, 0.090 vs en 0.065) with awq
+- sw, te kl gap is largest in first 20% of reasoning (0.144, 0.132 vs en 0.077) with awq
 
-## does quantization hurt reading or solving?
+## prefix swap
+check if quantization hurts reading or solving, because kl gap is largest at start of reasoning
 
 #### setting
-- check if quantization hurts reading or solving
 - gemma only, because its loss is not from loops
-- awq, mxfp4 only
-- seed 0, 1, 2
-- cut saved reasoning at end of line where all question numbers have appeared
+- awq, mxfp4 only, because awq loses least, but mxfp4 has largest gap with en
+- cut saved reasoning after line with last question number
 - reading means text before cut
-- solving means rest of reasoning and response
+- solving means rest of reasoning, response
 - continue from cut with bf16 or quantized
-- skip problems that can not be cut in all four cases
-- bars show accuracy on remaining problems
+- bars show accuracy on problems cut in all four cases
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_prefix_swap.png)
 - sw loses more through solving (-8.4%p vs reading -3.1%p) with mxfp4
-- te loses through both reading, solving (-4.9%p, -5.7%p) with mxfp4
-- reading, solving do not clearly differ with awq (sw -1.8%p vs -3.8%p, te -0.3%p vs -2.2%p)
+- te loses through reading, solving (-4.9%p, -5.7%p) with mxfp4
+- reading, solving do not clearly differ (sw -1.8%p vs -3.8%p, te -0.3%p vs -2.2%p) with awq
