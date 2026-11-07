@@ -7,6 +7,7 @@
 - calibrating on a language does not clearly help
 - kl partly matches loss on gemma
 - gemma sw loses more through solving, but te loses through reading, solving with mxfp4
+- gemma loses through reasoning, not response with mxfp4
 - we do not know yet why some languages lose more
 
 ## common setting
@@ -143,3 +144,16 @@ check if quantization hurts reading or solving, because kl gap is largest at sta
 - sw loses more through solving (-8.4%p vs reading -3.1%p) with mxfp4
 - te loses through reading, solving (-4.9%p, -5.7%p) with mxfp4
 - reading, solving do not clearly differ (sw -1.8%p vs -3.8%p, te -0.3%p vs -2.2%p) with awq
+
+## reasoning swap
+check if quantization hurts reasoning or response, because reading, solving clearly differ only on sw with mxfp4
+
+#### setting
+- gemma, mxfp4 only, because mxfp4 has largest gap with en
+- use saved reasoning of bf16 or quantized
+- write response with bf16 or quantized
+
+#### gemma mgsm
+![](../figures/gemma-4-E2B-it/mgsm_reasoning_swap.png)
+- sw, te lose most through reasoning (-13.1%p, -13.6%p vs en -4.0%p) with mxfp4
+- response does not clearly lose (-0.7%p to +0.4%p) with mxfp4
