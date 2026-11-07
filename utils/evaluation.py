@@ -68,7 +68,7 @@ def parse_mmlu_prox_lite_prediction(
     # drop markdown bold
     # e.g. "Jibu ni **E**" -> "Jibu ni E"
     response = response.replace("*", "")
-    # single uppercase letter A-J after prefix
+    # take single uppercase letter A-J after prefix
     # e.g. "The answer is C" -> ["C"]
     #      "The answer is K" -> []
     #      "The answer is c" -> []
