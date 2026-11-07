@@ -22,22 +22,24 @@ class Config:
     group_size: int = 128
     num_samples: int = 128
     max_generation_len: int = 32768
-    seed: int = 0
+    seeds: tuple[int, ...] = (0, 1, 2)
+    bf16_seeds: tuple[int, ...] = (0, 1, 2)
 
 
 def main() -> None:
     config = parse(Config)
-    file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
     bf16_target = make_target_path("bf16", config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
-    bf16_file_names = [f"max_generation_len={config.max_generation_len},seed={seed}" for seed in range(config.seed, config.seed + 3)]
+    bf16_file_names = [f"max_generation_len={config.max_generation_len},seed={seed}" for seed in config.bf16_seeds]
     bf16_results = [load_result(config.benchmark, bf16_target, bf16_file_name) for bf16_file_name in bf16_file_names if result_exists(config.benchmark, bf16_target, bf16_file_name)]
     languages = list(bf16_results[0])
 
+    file_names = [f"max_generation_len={config.max_generation_len},seed={seed}" for seed in config.seeds]
     results = {}
     for method in ["rtn", "gptq", "awq", "nf4", "mxfp4"]:
         target = make_target_path(method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
-        if result_exists(config.benchmark, target, file_name):
-            results[method] = load_result(config.benchmark, target, file_name)
+        method_results = [load_result(config.benchmark, target, file_name) for file_name in file_names if result_exists(config.benchmark, target, file_name)]
+        if method_results:
+            results[method] = method_results
 
     panels = [
         (get_truncated_ratio, [], "truncated", 0.7),
@@ -47,7 +49,7 @@ def main() -> None:
     for get_ratio, groups, _, _ in panels:
         for language in languages:
             bf16_ratios = [get_ratio(bf16_result[language]) for bf16_result in bf16_results]
-            ratios = [get_ratio(result[language]) for result in results.values()]
+            ratios = [mean(get_ratio(result[language]) for result in method_results) for method_results in results.values()]
             groups.append(([mean(bf16_ratios), *ratios], LANGUAGE_COLORS[language], [format_bf16_ratio(bf16_ratios), *[format_ratio(ratio, mean(bf16_ratios)) for ratio in ratios]]))
 
     labels = ["bf16", *results]
@@ -63,7 +65,7 @@ def main() -> None:
         ax.set_axisbelow(True)
         ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
-    fig.suptitle(f"{config.model_name} {config.benchmark} loss\n{file_name}")
+    fig.suptitle(f"{config.model_name} {config.benchmark} loss\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     handles = [Patch(color=LANGUAGE_COLORS[language], label=f"{language} (bf16 {mean(bf16_result[language]['accuracy'] for bf16_result in bf16_results):.1%})") for language in languages]
     fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
     # panels share one column, so fit width by one panel
