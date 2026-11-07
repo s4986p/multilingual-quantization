@@ -9,7 +9,8 @@
 - gemma sw loses more through solving, but te loses through reading, solving with mxfp4
 - gemma loses through reasoning, not response with mxfp4
 - gemma sw, te lose mostly through fact, relation with mxfp4
-- we do not know yet why sw, te lose more through fact, relation
+- gemma sw, te lose about equally through translation, solving with mxfp4
+- we do not know yet why sw, te lose more even on en translation
 
 ## common setting
 all experiments use these settings unless noted
@@ -176,3 +177,19 @@ check how reasoning goes wrong, because sw, te lose most through reasoning with 
 - sw, te lose mostly through fact, relation, but rarely through arithmetic with mxfp4
 - te errors start most often in first 20% of reasoning, but sw errors spread over first 60% with mxfp4
 - qwen3.5-27b, claude opus 5.5 give different types in places, so use types, positions only as a rough guide
+
+## translation
+check if quantization hurts reading sw, te text, because sw, te lose mostly through fact, relation, which are errors in reading question early in reasoning
+
+#### setting
+- gemma, mxfp4 only
+- translate each question into en with bf16 or quantized
+- give translation prompt in en, so only question is in each language
+- use response as translation
+- solve translation with bf16 or quantized, with en prompt
+- en is also translated, so it shows loss from copying en
+- bars show accuracy on problems translated by both bf16, quantized
+
+#### gemma mgsm
+![](../figures/gemma-4-E2B-it/mgsm_translation.png)
+- sw, te lose about equally through translation, solving (sw -5.4%p, -5.5%p, te -4.2%p, -4.7%p vs en -1.4%p, -2.8%p) with mxfp4
