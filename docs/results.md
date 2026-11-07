@@ -15,7 +15,8 @@
 - **gemma sw, te get higher accuracy with en instruction, but less than split, so quantized model loses more with more non-en text with mxfp4**
 - gemma sw, te question have higher hidden error than en, but zh, ja do not, so quantized model may lose with sw, te text, not with all non-en text with mxfp4
 - **gemma sw, te question hidden error gap with en starts at layer 3, so they may already copy, read question wrong before reasoning with mxfp4**
-- we do not know yet if hidden error gap comes from each layer, or grows through layers
+- **gemma sw, te recover with bf16 front 15, but not with bf16 front 3, so hidden of layers 4-15 matters most for sw, te with mxfp4**
+- we do not know yet why hidden of layers 4-15 matters most
 
 ## common setting
 all experiments use these settings unless noted
@@ -238,3 +239,19 @@ check if quantization changes non-en tokens more, because quantized model loses 
 ![](../figures/gemma-4-E2B-it/mgsm_hidden_error.png)
 - sw, te question have higher hidden error than en (0.233, 0.211 vs 0.195), but zh, ja do not with mxfp4
 - gap with en starts at layer 3, and stays to last layers with mxfp4
+
+## layer swap
+check if front layers cause sw, te loss, because sw, te question hidden error gap with en starts at layer 3 with mxfp4
+
+#### setting
+- gemma, mxfp4 only
+- use en instruction, as in instruction language
+- front n means first n layers, and back means the rest
+- layer swap means front from bf16 or quantized, and back from the other
+- swap is done by copying front weights
+- use front 15, because layers 16-35 reuse key, value of layers 1-15
+- bf16, quantized bars come from instruction language
+
+#### gemma mgsm
+![](../figures/gemma-4-E2B-it/mgsm_layer_swap.png)
+- bf16 front 3 does not clearly help sw, te, but bf16 front 15 mostly does (-1.3%p, +0.8%p vs quantized -12.5%p, -10.5%p) with mxfp4
