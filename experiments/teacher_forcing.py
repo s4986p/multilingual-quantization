@@ -51,7 +51,7 @@ def main() -> None:
 
     tensors = defaultdict(list)
     for language in languages:
-        # 1) use bf16 reasoning on problems both seeds solved
+        # 1) use bf16 reasoning on problems solved by all bf16 seeds
         both_correct_mask = get_both_correct_mask([bf16_result[language] for bf16_result in bf16_results])
         samples = []
         for problem_index, ((prompt, _), think, both_correct) in enumerate(zip(problems[language], bf16_results[0][language]["thinks"], both_correct_mask)):
@@ -59,7 +59,7 @@ def main() -> None:
                 samples.append((problem_index, get_prompt_ids(tokenizer, prompt), get_think_ids(tokenizer, config.model_name, think)))
         print(f"{language} samples {len(samples)} positions {sum(len(think_ids) for _, _, think_ids in samples)}")
 
-        # 2) compare bf16 and quantized at each reasoning position
+        # 2) compare bf16, quantized at each reasoning position
         log_time = time.perf_counter()
         torch.cuda.reset_peak_memory_stats()
         for sample_index, (problem_index, prompt_ids, think_ids) in enumerate(samples):
