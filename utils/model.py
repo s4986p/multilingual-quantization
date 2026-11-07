@@ -27,16 +27,33 @@ def load_vllm(
     return LLM(model_path, tokenizer=model_name, dtype="bfloat16", max_model_len=40960, seed=seed, language_model_only=True)
 
 
+def get_sampling_params(
+    model_name: str,
+    max_generation_len: int,
+) -> SamplingParams:
+    generation_config = GENERATION_CONFIGS[model_name]
+    return SamplingParams(temperature=generation_config["temperature"], top_p=generation_config["top_p"], top_k=generation_config["top_k"], presence_penalty=generation_config["presence_penalty"], max_tokens=max_generation_len)
+
+
 def generate_vllm(
     model: LLM,
     model_name: str,
     prompts: list[str],
     max_generation_len: int,
 ) -> list[CompletionOutput]:
-    generation_config = GENERATION_CONFIGS[model_name]
     messages = [[{"role": "user", "content": prompt}] for prompt in prompts]
-    sampling_params = SamplingParams(temperature=generation_config["temperature"], top_p=generation_config["top_p"], top_k=generation_config["top_k"], presence_penalty=generation_config["presence_penalty"], max_tokens=max_generation_len)
-    outputs = model.chat(messages, sampling_params, use_tqdm=True, chat_template_kwargs={"enable_thinking": True})
+    outputs = model.chat(messages, get_sampling_params(model_name, max_generation_len), use_tqdm=True, chat_template_kwargs={"enable_thinking": True})
+    return [output.outputs[0] for output in outputs]
+
+
+def continue_vllm(
+    model: LLM,
+    model_name: str,
+    input_ids: list[Tensor],
+    max_generation_len: int,
+) -> list[CompletionOutput]:
+    prompts = [{"prompt_token_ids": ids.tolist()} for ids in input_ids]
+    outputs = model.generate(prompts, get_sampling_params(model_name, max_generation_len), use_tqdm=True)
     return [output.outputs[0] for output in outputs]
 
 

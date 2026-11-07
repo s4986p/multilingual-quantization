@@ -6,6 +6,8 @@
 - qwen mostly loses through loops with rtn, mxfp4
 - gemma loses through wrong answers
 - calibrating on a language does not clearly help that language
+- kl partly follows loss on gemma, but not on qwen
+- gemma sw loses more through solving, but te loses through both reading, solving with mxfp4
 - we do not know yet why some languages lose more
 
 ## common setting
@@ -109,6 +111,7 @@ all experiments use these settings unless noted
 ## where does quantization change predictions?
 
 #### setting
+- check if prediction changes differ by language
 - give bf16 reasoning to bf16, quantized models
 - compare their next token predictions with kl at each position
 - use bf16 seed 0 reasoning
@@ -123,5 +126,25 @@ all experiments use these settings unless noted
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_teacher_forcing.png)
-- kl matches loss
+- kl matches which languages lose more, but not size of loss (te 0.143 vs 0.142, -5.2%p vs -14.7%p with gptq, mxfp4)
 - sw, te have highest kl with awq (0.094, 0.090 vs en 0.065)
+
+## does quantization hurt reading or solving?
+
+#### setting
+- check if quantization hurts reading or solving
+- gemma only, because its loss is not from loops
+- awq, mxfp4 only
+- seed 0, 1, 2
+- cut saved reasoning at end of line where all question numbers have appeared
+- reading means text before cut
+- solving means rest of reasoning and response
+- continue from cut with bf16 or quantized
+- skip problems that can not be cut in all four cases
+- bars show accuracy on remaining problems
+
+#### gemma mgsm
+![](../figures/gemma-4-E2B-it/mgsm_prefix_swap.png)
+- sw loses more through solving (-8.4%p vs reading -3.1%p) with mxfp4
+- te loses through both reading, solving (-4.9%p, -5.7%p) with mxfp4
+- reading, solving do not clearly differ with awq (sw -1.8%p vs -3.8%p, te -0.3%p vs -2.2%p)
