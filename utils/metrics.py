@@ -1,10 +1,16 @@
 from statistics import mean
 
 
+def is_loop(
+    text: str | None,
+) -> bool:
+    return text is not None and len(text) > 200 and text[:-200].count(text[-200:-150]) >= 5
+
+
 def get_loop_ratio(
     result: dict,
 ) -> float:
-    return mean(len(think) > 200 and think[:-200].count(think[-200:-150]) >= 5 for think in result["thinks"])
+    return mean(is_loop(think) or is_loop(response) for think, response in zip(result["thinks"], result["responses"]))
 
 
 def get_truncated_ratio(
