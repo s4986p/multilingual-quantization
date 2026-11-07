@@ -10,6 +10,7 @@
 - gemma loses through reasoning, not response with mxfp4
 - gemma sw, te lose mostly through fact, relation, so they mostly misread question with mxfp4
 - gemma sw, te lose about equally through translation, solving, so reading is not the only cause with mxfp4
+- gemma sw, te get higher accuracy when translation, solving are split than at once with mxfp4
 - we do not know yet why sw, te lose more even on en translation
 
 ## common setting
@@ -189,7 +190,9 @@ check if quantization hurts reading sw, te text, because sw, te lose mostly thro
 - solve translation with bf16 or quantized, with en prompt
 - en is also translated, so it shows loss from copying en
 - bars show accuracy on problems translated by both bf16, quantized
+- at once means quantized reasoning, quantized response of reasoning swap
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_translation.png)
 - sw, te lose about equally through translation, solving (sw -5.4%p, -5.5%p, te -4.2%p, -4.7%p vs en -1.4%p, -2.8%p) with mxfp4
+- sw, te get higher accuracy when translation, solving are split than at once (67.4%, 69.3% vs 59.9%, 61.2%) with mxfp4
