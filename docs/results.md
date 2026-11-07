@@ -4,19 +4,19 @@
 - **on mgsm, some languages lose more than others, but not on mmlu-prox-lite**
 - awq loses least, but rtn, mxfp4 lose most
 - qwen mostly loses through loops, but gemma loses through wrong answers, so later experiments use mostly gemma
-- calibrating on a language does not clearly help, so gap may not come from calibrating only on en
+- calibrating on a language does not clearly help, so gap with en may not come from calibrating only on en
 - kl partly matches loss on gemma, but not on qwen
-- gemma sw, te kl gap is largest at start of reasoning with awq
+- gemma sw, te kl gap with en is largest at start of reasoning with awq
 - gemma sw loses more through solving, but te loses through reading, solving with mxfp4
 - gemma sw, te lose most through reasoning, not response with mxfp4
 - **gemma sw, te lose mostly through fact, relation, so they mostly copy, read question wrong with mxfp4**
 - gemma sw, te lose about equally through translation, solving, so translation is not the only cause with mxfp4
 - gemma sw, te get higher accuracy when translation, solving are split than at once with mxfp4
 - **gemma sw, te get higher accuracy with en instruction, but less than split, so quantized model loses more with more non-en text with mxfp4**
-- gemma sw, te do not clearly get higher accuracy when writing question in en first, so quantized model may still lose while sw, te question stays in context with mxfp4
-- gemma sw, te question have higher hidden error than en, but zh, ja do not, so quantized model may lose with sw, te text, not with all non-en text with mxfp4
+- gemma sw, te do not clearly get higher accuracy with translate first, so quantized model may still lose while sw, te question stays in context with mxfp4
+- gemma sw, te questions have higher hidden error than en, but zh, ja do not, so quantized model may lose with sw, te text, not with all non-en text with mxfp4
 - **gemma sw, te question hidden error gap with en starts at layer 3, so they may already copy, read question wrong before reasoning with mxfp4**
-- **gemma sw, te recover with bf16 front 15, but not with bf16 front 3, so hidden of layers 4-15 matters most for sw, te with mxfp4**
+- **gemma sw, te mostly recover with bf16 front 15, but not with bf16 front 3, so hidden of layers 4-15 matters most for sw, te with mxfp4**
 - we do not know yet why hidden of layers 4-15 matters most
 
 ## common setting
@@ -38,7 +38,7 @@ all experiments use these settings unless noted
 - 4 bit, weights of linear layers only
 - rtn (group size 128)
 - gptq (group size 128, block size 128, damp ratio 0.01)
-- awq (group size 128, 20 grid steps, max shrink 0.5)
+- awq (group size 128, 20 search steps, max shrink 0.5)
 - nf4 (group size 64)
 - mxfp4 (group size 32)
 
@@ -84,7 +84,7 @@ check if other languages lose more than en, as paper says
 ![](../figures/Qwen3.5-2B/mgsm_loss.png)
 - most truncation comes from loops
 - zh loses most (-14.4%p, -35.7%p vs en -4.7%p, -18.4%p) with nf4, mxfp4
-- sw, ja lose more than en, zh (-10.3%p, -8.9%p vs -4.3%p, -4.0%p) with awq
+- sw, ja lose more than en, zh (-10.3%p, -8.9%p vs en, zh -4.3%p, -4.0%p) with awq
 - te has little left to lose, because bf16 is weak on te (16.1%)
 
 #### gemma mgsm
@@ -115,13 +115,13 @@ check if calibration language matters, because calibration uses only en
 
 #### qwen mgsm
 ![](../figures/Qwen3.5-2B/mgsm_calibration.png)
-- calibrating on sw, te does not clearly help sw, te (-11.9%p, -4.1%p vs en -10.3%p, -4.9%p)
-- calibrating on all may help mean loss (-4.7%p vs en -7.2%p)
+- calibrating on sw, te does not clearly help sw, te (-11.9%p, -4.1%p vs calibrating on en -10.3%p, -4.9%p)
+- calibrating on all may help mean loss (-4.7%p vs calibrating on en -7.2%p)
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_calibration.png)
-- calibrating on sw, te does not clearly help sw, te (-6.8%p, -3.2%p vs en -3.6%p, -4.4%p)
-- calibrating on all does not help mean loss (-3.0%p vs en -2.8%p)
+- calibrating on sw, te does not clearly help sw, te (-6.8%p, -3.2%p vs calibrating on en -3.6%p, -4.4%p)
+- calibrating on all does not help mean loss (-3.0%p vs calibrating on en -2.8%p)
 
 ## teacher forcing
 check if prediction changes differ by language
@@ -139,12 +139,12 @@ check if prediction changes differ by language
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_teacher_forcing.png)
-- kl matches which languages lose more, but not size of loss (te 0.143 vs 0.142, -5.2%p vs -14.7%p with gptq, mxfp4)
+- kl matches which languages lose more, but not size of loss (te gptq 0.143 vs mxfp4 0.142, -5.2%p vs -14.7%p)
 - sw, te have highest kl (0.094, 0.090 vs en 0.065) with awq
-- sw, te kl gap is largest in first 20% of reasoning (0.144, 0.132 vs en 0.077) with awq
+- sw, te kl gap with en is largest in first 20% of reasoning (0.144, 0.132 vs en 0.077) with awq
 
 ## prefix swap
-check if quantization hurts reading or solving, because kl gap is largest at start of reasoning
+check if quantization hurts reading or solving, because kl gap with en is largest at start of reasoning
 
 #### setting
 - gemma only, because its loss is not from loops
@@ -180,8 +180,9 @@ check how reasoning goes wrong, because sw, te lose most through reasoning with 
 #### setting
 - gemma, mxfp4 only
 - use wrong reasoning on problems solved by bf16 seed 0, 1, 2
+- wrong reasoning means quantized reasoning on problems it got wrong
 - give bf16 reasoning, wrong reasoning to qwen3.5-27b, and get one error type
-- fact means a number, word or name is copied wrong
+- fact means a number, word, name is copied wrong
 - relation means words like more than, per, half of are read wrong
 - bars show ratio of these problems that mxfp4 gets wrong
 - progress panel uses first wrong line picked by qwen3.5-27b
@@ -193,7 +194,7 @@ check how reasoning goes wrong, because sw, te lose most through reasoning with 
 - qwen3.5-27b, claude opus 5.5 give different types in places, so use types, positions only as a rough guide
 
 ## translation
-check if quantization hurts translating sw, te question, because sw, te lose mostly through fact, relation, which copy, read question wrong early in reasoning
+check if quantization hurts translating sw, te question, because sw, te mostly copy, read question wrong with mxfp4
 
 #### setting
 - gemma, mxfp4 only
@@ -209,35 +210,35 @@ check if quantization hurts translating sw, te question, because sw, te lose mos
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_translation.png)
 - sw, te lose about equally through translation, solving (sw -5.4%p, -5.5%p, te -4.2%p, -4.7%p vs en -1.4%p, -2.8%p) with mxfp4
-- sw, te get higher accuracy when translation, solving are split than at once (67.4%, 69.3% vs 59.9%, 61.2%) with mxfp4
+- sw, te get higher accuracy when translation, solving are split than at once (67.4%, 69.3% vs at once 59.9%, 61.2%) with mxfp4
 
 ## instruction language
 check if en instruction alone raises sw, te accuracy, because sw, te get higher accuracy when split, which also uses en instruction
 
 #### setting
-- gemma, bf16, mxfp4 only
+- gemma, mxfp4 only
 - keep question in each language, but give instruction in en
 - native instruction means instruction in each language, as in mgsm
 - score with en answer prefix
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_instruction_language.png)
-- en instruction raises sw, te accuracy (62.9%, 66.5% vs 59.7%, 60.9%) with mxfp4
-- en instruction raises sw, te less than split (62.9%, 66.5% vs 67.4%, 69.3%) with mxfp4
+- en instruction raises sw, te accuracy (62.9%, 66.5% vs native instruction 59.7%, 60.9%) with mxfp4
+- en instruction raises sw, te less than split (62.9%, 66.5% vs split 67.4%, 69.3%) with mxfp4
 
 ## translate first
 check if writing question in en first raises sw, te accuracy, because sw, te get higher accuracy when split than with en instruction
 
 #### setting
-- gemma, bf16, mxfp4 only
-- give en instruction that asks to write problem in en first, then solve
+- gemma, mxfp4 only
+- give en instruction that asks to write question in en first, then solve
 - translate first means this instruction
 - score with en answer prefix
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_translate_first.png)
-- translate first does not clearly raise sw, te (63.5%, 67.1% vs 62.9%, 66.5%) with mxfp4
-- translate first raises sw, te less than split (63.5%, 67.1% vs 67.4%, 69.3%) with mxfp4
+- translate first does not clearly raise sw, te (63.5%, 67.1% vs en instruction 62.9%, 66.5%) with mxfp4
+- translate first raises sw, te less than split (63.5%, 67.1% vs split 67.4%, 69.3%) with mxfp4
 
 ## hidden error
 check if quantization changes non-en tokens more, because quantized model loses more with more non-en text with mxfp4
@@ -246,13 +247,13 @@ check if quantization changes non-en tokens more, because quantized model loses 
 - gemma, mxfp4 only
 - use en instruction, as in instruction language
 - give same prompt to bf16, quantized, without generation
-- hidden error means distance between bf16, quantized hidden of each layer, divided by bf16 hidden size
+- hidden error means distance between bf16, quantized hidden of each layer, divided by norm of bf16 hidden
 - use all problems, because there is no generation
 - question panel uses question tokens, and instruction panel uses instruction tokens
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_hidden_error.png)
-- sw, te question have higher hidden error than en (0.233, 0.211 vs 0.195), but zh, ja do not with mxfp4
+- sw, te questions have higher hidden error than en (0.233, 0.211 vs en 0.195), but zh, ja do not with mxfp4
 - gap with en starts at layer 3, and stays to last layers with mxfp4
 
 ## layer swap
@@ -264,9 +265,9 @@ check if front layers cause sw, te loss, because sw, te question hidden error ga
 - front n means first n layers, and back means the rest
 - layer swap means front from bf16 or quantized, and back from the other
 - swap is done by copying front weights
-- use front 15, because layers 16-35 reuse key, value of layers 1-15
+- use front 3, 15, because gap with en starts at layer 3, and layers 16-35 reuse key, value of layers 1-15
 - bf16, quantized bars come from instruction language
 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_layer_swap.png)
-- bf16 front 3 does not clearly help sw, te, but bf16 front 15 mostly does (-1.3%p, +0.8%p vs quantized -12.5%p, -10.5%p) with mxfp4
+- sw, te do not clearly recover with bf16 front 3, but mostly recover with bf16 front 15 (-1.3%p, +0.8%p vs quantized -12.5%p, -10.5%p) with mxfp4
