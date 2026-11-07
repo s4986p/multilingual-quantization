@@ -74,3 +74,19 @@ def load_result(
 ) -> dict:
     return json.loads(Path(download_file(f"{entry_name}/{target}/{file_name}.json")).read_text())
 
+
+def save_tensors(
+    entry_name: str,
+    target: str,
+    file_name: str,
+    tensors: dict[str, Tensor],
+) -> None:
+    upload_file(f"{entry_name}/{target}/{file_name}.safetensors", save(tensors))
+
+
+def load_tensors(
+    entry_name: str,
+    target: str,
+    file_name: str,
+) -> dict[str, Tensor]:
+    return load_file(download_file(f"{entry_name}/{target}/{file_name}.safetensors"))
