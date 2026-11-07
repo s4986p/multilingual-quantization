@@ -1,4 +1,5 @@
 # todo
 
 - write `docs/related_work.md`
-- start qat
+- evaluate qat
+- write qat results
