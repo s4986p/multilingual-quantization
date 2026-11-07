@@ -66,7 +66,7 @@ def plot_bars(
         xs = [slot * slot_width + index - (len(groups) - 1) / 2 for slot in range(len(labels))]
         ax.bar(xs, values, width=1, color=color)
         for x, value, text in zip(xs, values, texts):
-            # put text past the bar end, so negative bars get text below
+            # put text past bar end, so negative bars get text below
             ax.annotate(text, (x, value), xytext=(0, 3 if value >= 0 else -3), textcoords="offset points", ha="center", va="bottom" if value >= 0 else "top", fontsize=8)
     ax.set_xticks([slot * slot_width for slot in range(len(labels))], labels)
     ax.set_xlim(-slot_width / 2, (len(labels) - 0.5) * slot_width)
