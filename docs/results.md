@@ -12,7 +12,8 @@
 - gemma sw, te lose mostly through fact, relation, so they mostly copy, read question wrong with mxfp4
 - gemma sw, te lose about equally through translation, solving, so translation is not the only cause with mxfp4
 - gemma sw, te get higher accuracy when translation, solving are split than at once with mxfp4
-- we do not know yet why split raises sw, te accuracy
+- gemma sw, te get higher accuracy with en instruction, but less than split, so quantized model loses more with more non-en text with mxfp4
+- we do not know yet if qat can close sw, te gap
 
 ## common setting
 all experiments use these settings unless noted
@@ -205,3 +206,17 @@ check if quantization hurts translating sw, te question, because sw, te lose mos
 ![](../figures/gemma-4-E2B-it/mgsm_translation.png)
 - sw, te lose about equally through translation, solving (sw -5.4%p, -5.5%p, te -4.2%p, -4.7%p vs en -1.4%p, -2.8%p) with mxfp4
 - sw, te get higher accuracy when translation, solving are split than at once (67.4%, 69.3% vs 59.9%, 61.2%) with mxfp4
+
+## instruction language
+check if en instruction alone raises sw, te accuracy, because sw, te get higher accuracy when split, which also uses en instruction
+
+#### setting
+- gemma, bf16, mxfp4 only
+- keep question in each language, but give instruction in en
+- native instruction means instruction in each language, as in mgsm
+- score with en answer prefix
+
+#### gemma mgsm
+![](../figures/gemma-4-E2B-it/mgsm_instruction_language.png)
+- en instruction raises sw, te accuracy (62.9%, 66.5% vs 59.7%, 60.9%) with mxfp4
+- en instruction raises sw, te less than split (62.9%, 66.5% vs 67.4%, 69.3%) with mxfp4
