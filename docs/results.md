@@ -8,6 +8,7 @@
 - kl partly matches loss on gemma
 - gemma sw loses more through solving, but te loses through reading, solving with mxfp4
 - gemma loses through reasoning, not response with mxfp4
+- gemma sw, te lose mostly through fact, relation with mxfp4
 - we do not know yet why some languages lose more
 
 ## common setting
@@ -157,3 +158,19 @@ check if quantization hurts reasoning or response, because reading, solving clea
 ![](../figures/gemma-4-E2B-it/mgsm_reasoning_swap.png)
 - sw, te lose most through reasoning (-13.1%p, -13.6%p vs en -4.0%p) with mxfp4
 - response does not clearly lose (-0.7%p to +0.4%p) with mxfp4
+
+## error types
+check how reasoning goes wrong, because sw, te lose most through reasoning with mxfp4
+
+#### setting
+- gemma, mxfp4 only
+- use wrong reasoning on problems solved by bf16 seed 0, 1, 2
+- give bf16 reasoning, wrong reasoning to qwen3.5-27b, and get one error type
+- fact means a number, word or name is copied wrong
+- relation means words like more than, per, half of are read wrong
+- bars show ratio of these problems that mxfp4 gets wrong
+
+#### gemma mgsm
+![](../figures/gemma-4-E2B-it/mgsm_error_types.png)
+- sw, te lose mostly through fact, relation, but rarely through arithmetic with mxfp4
+- qwen3.5-27b types differ from claude opus 5.5 types in places, so use them only as a rough guide

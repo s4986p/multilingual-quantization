@@ -14,7 +14,7 @@ mkdir -p "$(dirname "$log_path")"
 trap 'rm -f "$tar_path"; colab stop -s "$session" || true' EXIT
 
 # try making session until it succeeds
-until colab new -s "$session" --gpu A100; do
+until colab new -s "$session" --gpu "${GPU:-A100}"; do
     sleep 10
 done
 COPYFILE_DISABLE=1 tar -czf "$tar_path" --exclude .venv --exclude __pycache__ --exclude logs .

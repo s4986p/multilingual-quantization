@@ -7,6 +7,7 @@ from vllm.outputs import CompletionOutput  # type: ignore
 # recommended setting for thinking mode
 GENERATION_CONFIGS = {
     "Qwen/Qwen3.5-2B": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "presence_penalty": 1.5, "think_start": "", "think_end": "</think>"},
+    "Qwen/Qwen3.5-27B": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "presence_penalty": 1.5, "think_start": "", "think_end": "</think>"},
     "google/gemma-4-E2B-it": {"temperature": 1.0, "top_p": 0.95, "top_k": 64, "presence_penalty": 0.0, "think_start": "<|channel>", "think_end": "<channel|>"},
 }
 
@@ -23,8 +24,9 @@ def load_vllm(
     model_path: str,
     model_name: str,
     seed: int,
+    max_num_seqs: int | None = None,
 ) -> LLM:
-    return LLM(model_path, tokenizer=model_name, dtype="bfloat16", max_model_len=40960, seed=seed, language_model_only=True)
+    return LLM(model_path, tokenizer=model_name, dtype="bfloat16", max_model_len=40960, seed=seed, language_model_only=True, max_num_seqs=max_num_seqs)
 
 
 def get_sampling_params(
