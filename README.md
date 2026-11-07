@@ -6,5 +6,5 @@
 
 ## docs
 
-- [results](docs/results.md) records settings, results of all experiments
+- [results](docs/results.md) records settings, results of every experiment
 - [todo](docs/todo.md) lists remaining work

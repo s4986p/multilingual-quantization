@@ -143,9 +143,9 @@ def find_clip(
     num_grid: int,
     max_shrink: float,
 ) -> Tensor:
-    # outliers widen grid range and step size
+    # outliers widen grid range, step size
     # so grid search clip for each quantization group
-    # 1) apply smooth to weight (w * s) and hessian (x / s)
+    # 1) apply smooth to weight (w * s), hessian (x / s)
     groups = (weight.float() * smooth).reshape(weight.shape[0], -1, group_size)
     num_groups = groups.shape[1]
     smoothed_hessian = hessian / smooth[:, None] / smooth[None, :]

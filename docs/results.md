@@ -5,11 +5,11 @@
 - awq loses least, but rtn, mxfp4 lose most
 - qwen mostly loses through loops, but gemma loses through wrong answers
 - calibrating on a language does not clearly help
-- kl partly matches loss on gemma
+- kl partly matches loss on gemma, but not on qwen
 - gemma sw loses more through solving, but te loses through reading, solving with mxfp4
 - gemma loses through reasoning, not response with mxfp4
 - gemma sw, te lose mostly through fact, relation with mxfp4
-- we do not know yet why some languages lose more
+- we do not know yet why sw, te lose more through fact, relation
 
 ## common setting
 all experiments use these settings unless noted
@@ -29,7 +29,7 @@ all experiments use these settings unless noted
 
 #### calibration
 - gptq, awq only
-- 128 english wikipedia chunks, 2048 tokens each
+- 128 en wikipedia chunks, 2048 tokens each
 
 #### benchmark
 - 5 languages (en, zh, sw, ja, te)
@@ -54,7 +54,7 @@ all experiments use these settings unless noted
 - loop means a 50 character piece near end of reasoning or response appears 5 or more times earlier
 
 ## loss
-check if non english loses more than en, as paper says
+check if other languages lose more than en, as paper says
 
 #### setting
 - compare rtn, gptq, awq, nf4, mxfp4 with bf16
@@ -88,15 +88,15 @@ check if non english loses more than en, as paper says
 - rtn, mxfp4 lose most (-8.1%p to -27.8%p on mgsm)
 
 ## calibration
-check if calibration language matters
+check if calibration language matters, because calibration uses only en
 
 #### setting
 - awq only, gptq not tested
-- mgsm only, because only mgsm shows language loss
+- mgsm only, because only mgsm shows a gap with en
 - calibrate on en, sw, te, all
 - all means en, zh, sw, ja, te with about 26 chunks each
-- panels are same as above
-- seed 0 only, so small differences could be noise
+- panels are same as loss
+- seed 0 only, so small differences may be noise
 
 #### qwen mgsm
 ![](../figures/Qwen3.5-2B/mgsm_calibration.png)
@@ -147,7 +147,7 @@ check if quantization hurts reading or solving, because kl gap is largest at sta
 - reading, solving do not clearly differ (sw -1.8%p vs -3.8%p, te -0.3%p vs -2.2%p) with awq
 
 ## reasoning swap
-check if quantization hurts reasoning or response, because reading, solving clearly differ only on sw with mxfp4
+check if quantization hurts reasoning or response, because solving mixes reasoning, response
 
 #### setting
 - gemma, mxfp4 only, because mxfp4 has largest gap with en
@@ -173,4 +173,4 @@ check how reasoning goes wrong, because sw, te lose most through reasoning with 
 #### gemma mgsm
 ![](../figures/gemma-4-E2B-it/mgsm_error_types.png)
 - sw, te lose mostly through fact, relation, but rarely through arithmetic with mxfp4
-- qwen3.5-27b types differ from claude opus 5.5 types in places, so use them only as a rough guide
+- qwen3.5-27b, claude opus 5.5 give different types in places, so use types only as a rough guide
