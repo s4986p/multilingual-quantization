@@ -1,7 +1,7 @@
 # results
 
 ## summary
-- on mgsm, some languages lose more than others, but not on mmlu-prox-lite
+- **on mgsm, some languages lose more than others, but not on mmlu-prox-lite**
 - awq loses least, but rtn, mxfp4 lose most
 - qwen mostly loses through loops, but gemma loses through wrong answers, so later experiments use mostly gemma
 - calibrating on a language does not clearly help, so gap may not come from calibrating only on en
@@ -9,10 +9,10 @@
 - gemma sw, te kl gap is largest at start of reasoning with awq
 - gemma sw loses more through solving, but te loses through reading, solving with mxfp4
 - gemma sw, te lose most through reasoning, not response with mxfp4
-- gemma sw, te lose mostly through fact, relation, so they mostly copy, read question wrong with mxfp4
+- **gemma sw, te lose mostly through fact, relation, so they mostly copy, read question wrong with mxfp4**
 - gemma sw, te lose about equally through translation, solving, so translation is not the only cause with mxfp4
 - gemma sw, te get higher accuracy when translation, solving are split than at once with mxfp4
-- gemma sw, te get higher accuracy with en instruction, but less than split, so quantized model loses more with more non-en text with mxfp4
+- **gemma sw, te get higher accuracy with en instruction, but less than split, so quantized model loses more with more non-en text with mxfp4**
 - we do not know yet if qat can close sw, te gap
 
 ## common setting
