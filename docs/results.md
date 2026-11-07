@@ -13,6 +13,7 @@
 - gemma sw, te lose about equally through translation, solving, so translation is not the only cause with mxfp4
 - gemma sw, te get higher accuracy when translation, solving are split than at once with mxfp4
 - **gemma sw, te get higher accuracy with en instruction, but less than split, so quantized model loses more with more non-en text with mxfp4**
+- gemma sw, te do not clearly get higher accuracy when writing question in en first, so quantized model may still lose while sw, te question stays in context with mxfp4
 - gemma sw, te question have higher hidden error than en, but zh, ja do not, so quantized model may lose with sw, te text, not with all non-en text with mxfp4
 - **gemma sw, te question hidden error gap with en starts at layer 3, so they may already copy, read question wrong before reasoning with mxfp4**
 - **gemma sw, te recover with bf16 front 15, but not with bf16 front 3, so hidden of layers 4-15 matters most for sw, te with mxfp4**
@@ -223,6 +224,20 @@ check if en instruction alone raises sw, te accuracy, because sw, te get higher 
 ![](../figures/gemma-4-E2B-it/mgsm_instruction_language.png)
 - en instruction raises sw, te accuracy (62.9%, 66.5% vs 59.7%, 60.9%) with mxfp4
 - en instruction raises sw, te less than split (62.9%, 66.5% vs 67.4%, 69.3%) with mxfp4
+
+## translate first
+check if writing question in en first raises sw, te accuracy, because sw, te get higher accuracy when split than with en instruction
+
+#### setting
+- gemma, bf16, mxfp4 only
+- give en instruction that asks to write problem in en first, then solve
+- translate first means this instruction
+- score with en answer prefix
+
+#### gemma mgsm
+![](../figures/gemma-4-E2B-it/mgsm_translate_first.png)
+- translate first does not clearly raise sw, te (63.5%, 67.1% vs 62.9%, 66.5%) with mxfp4
+- translate first raises sw, te less than split (63.5%, 67.1% vs 67.4%, 69.3%) with mxfp4
 
 ## hidden error
 check if quantization changes non-en tokens more, because quantized model loses more with more non-en text with mxfp4
