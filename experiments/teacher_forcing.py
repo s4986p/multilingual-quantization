@@ -51,7 +51,7 @@ def main() -> None:
 
     tensors = defaultdict(list)
     for language in languages:
-        # 1) use bf16 reasoning on problems solved by all bf16 seeds
+        # 1) use bf16 reasoning on problems solved by both bf16 seeds
         all_correct_mask = get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results])
         samples = []
         for problem_index, ((prompt, _), think, all_correct) in enumerate(zip(problems[language], bf16_results[0][language]["thinks"], all_correct_mask)):
