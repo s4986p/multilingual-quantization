@@ -18,7 +18,7 @@ NF4_VALUES = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.394917488098144
 
 @dataclass
 class Config:
-    model_name: str = "Qwen/Qwen3.5-2B"
+    model_name: str = "google/gemma-4-E2B-it"
 
 
 def quantize_weight(

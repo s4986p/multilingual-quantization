@@ -19,11 +19,11 @@ from utils.paths import make_bf16_path, make_target_path
 @dataclass
 class Config:
     seed: int = 0
-    max_generation_len: int = 32768
+    max_generation_len: int = 16384
     benchmark: Literal["mgsm", "mmlu_prox_lite"] = "mgsm"
     logit_chunk_len: int = 2048
     # model to compare with bf16
-    model_name: str = "Qwen/Qwen3.5-2B"
+    model_name: str = "google/gemma-4-E2B-it"
     method: Literal["rtn", "gptq", "awq", "nf4", "mxfp4"] = "awq"
     languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4

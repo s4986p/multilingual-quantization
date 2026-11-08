@@ -18,7 +18,7 @@ from utils.quantization import find_grid, round_to_grid
 
 @dataclass
 class Config:
-    model_name: str = "Qwen/Qwen3.5-2B"
+    model_name: str = "google/gemma-4-E2B-it"
     num_bits: int = 4
     group_size: int = 128
     block_size: int = 128

@@ -15,13 +15,13 @@ from utils.plot import LANGUAGE_COLORS, fit_bar_width, format_bf16_ratio, format
 
 @dataclass
 class Config:
-    model_name: str = "Qwen/Qwen3.5-2B"
+    model_name: str = "google/gemma-4-E2B-it"
     benchmark: Literal["mgsm", "mmlu_prox_lite"] = "mgsm"
     languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-    max_generation_len: int = 32768
+    max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
     bf16_seeds: tuple[int, ...] = (0, 1, 2)
 
