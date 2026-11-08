@@ -48,11 +48,11 @@ def main() -> None:
         for problem_index, (prompt, _) in enumerate(problems[language]):
             # 1) put question after en instruction, and find instruction, question tokens
             question = prompt.split("\n\n", 1)[1]
-            en_prompt = MGSM_PROMPTS["en"].format(question=question)
-            text = tokenizer.apply_chat_template([{"role": "user", "content": en_prompt}], add_generation_prompt=True, enable_thinking=True, tokenize=False)
+            en_instruction_prompt = MGSM_PROMPTS["en"].format(question=question)
+            text = tokenizer.apply_chat_template([{"role": "user", "content": en_instruction_prompt}], add_generation_prompt=True, enable_thinking=True, tokenize=False)
             encoding = tokenizer(text, add_special_tokens=False, return_offsets_mapping=True, return_tensors="pt")
-            instruction_start = text.index(en_prompt)
-            question_start = instruction_start + len(en_prompt) - len(question)
+            instruction_start = text.index(en_instruction_prompt)
+            question_start = instruction_start + len(en_instruction_prompt) - len(question)
             starts, ends = encoding["offset_mapping"][0].T
             # tokens are chat template, instruction, question, chat template
             # e.g. chat template  "<bos><|turn>system\n<|think|>\n<turn|>\n<|turn>user\n"

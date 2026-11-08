@@ -71,12 +71,12 @@ def load_mmlu_prox_lite(
 ) -> dict[str, list[tuple[str, str]]]:
     problems = {}
     for language in languages:
-        question_label, options_label, description, answer_format = MMLU_PROX_LITE_TEMPLATES[language]
+        question_label, options_label, instruction, answer_format = MMLU_PROX_LITE_TEMPLATES[language]
         dataset = load_dataset("li-lab/MMLU-ProX-Lite", language, split="test")
         problems[language] = []
         for row in dataset:
             options = [row[f"option_{index}"] for index in range(10) if row[f"option_{index}"] is not None]
-            prompt = description.format(subject=MMLU_PROX_LITE_SUBJECTS[language][row["category"]], answer_format=answer_format.format("X"))
+            prompt = instruction.format(subject=MMLU_PROX_LITE_SUBJECTS[language][row["category"]], answer_format=answer_format.format("X"))
             prompt += f"\n\n{question_label}\n{row['question']}\n{options_label}\n"
             prompt += "".join(f"{chr(ord('A') + index)}. {option}\n" for index, option in enumerate(options))
             problems[language].append((prompt, row["answer"]))

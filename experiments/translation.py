@@ -90,7 +90,7 @@ def main() -> None:
                         problem_indices[language].append(problem_index)
                         prompts.append(MGSM_PROMPTS["en"].format(question=response.strip()))
 
-            # 3) solve translations with en prompt and score them
+            # 3) solve translations with en instruction and score them
             log_time = time.perf_counter()
             outputs = generate_vllm(model, config.model_name, prompts, config.max_generation_len)
             result = {}
