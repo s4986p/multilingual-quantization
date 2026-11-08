@@ -67,7 +67,7 @@ def main() -> None:
     model = load_vllm(model_path, config.model_name, config.seed)
 
     for read_method in missing_read_methods:
-        # 1) take reasoning up to line with last question number as reading
+        # 1) take prefix up to line where all question numbers have appeared
         problem_indices = {}
         input_ids = []
         for language in languages:
@@ -78,7 +78,7 @@ def main() -> None:
                     problem_indices[language].append(problem_index)
                     input_ids.append(torch.cat([get_prompt_ids(tokenizer, prompt), get_think_ids(tokenizer, config.model_name, think[:read_end])]))
 
-        # 2) continue from reading as solving and score it
+        # 2) continue after prefix and score it
         log_time = time.perf_counter()
         outputs = continue_vllm(model, config.model_name, input_ids, config.max_generation_len)
         result = {}

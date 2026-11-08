@@ -41,7 +41,7 @@ def main() -> None:
     languages = list(MGSM_PROMPTS)
     problems = load_mgsm(languages)
 
-    # 1) put question after en instruction that asks to write problem in en first
+    # 1) put question after en instruction that asks to write question in en first
     # drop instruction, blank line before question
     # e.g. "Solve this math problem. ...\n\nJames decides to run ..." -> "James decides to run ..."
     prompts = [TRANSLATE_FIRST_PROMPT.format(question=prompt.split("\n\n", 1)[1]) for language in languages for prompt, _ in problems[language]]
