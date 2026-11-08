@@ -69,7 +69,7 @@ check if prediction changes differ by language
 
 #### setup
 - take bf16 seed 0 reasoning on problems solved by bf16 seed 0, 1
-- give that reasoning to bf16, quantized models
+- give that reasoning to bf16, quantized
 - compare their next token predictions with kl at each reasoning position
 - kl by reasoning progress is awq only
 
@@ -191,6 +191,10 @@ check which layers are sensitive, because on sw, te, hidden error is higher than
 - damage means bf16 model with one layer range from quantized
 - layer ranges are 1~3, 4~6, 7~9, 10~12, 13~15, 16~35
 - 16~35 is one range, because these layers reuse key, value of layers 14, 15
+
+#### summary
+![](../figures/gemma-4-E2B-it/mgsm_layer_swap.png)
+- **on sw, te, no single layer range clearly matters**
 
 ## read like en qat
 check if qat does better by following bf16 reasoning on en prompt, because sw, te may mostly copy, read question wrong

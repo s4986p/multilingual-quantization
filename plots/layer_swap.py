@@ -12,9 +12,8 @@ from utils.paths import make_bf16_path, make_target_path
 from utils.plot import LANGUAGE_COLORS, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
 
 LANGUAGES = list(LANGUAGE_COLORS)
-# (model_method, entry_name, front_method), and bf16, quantized bars come from instruction language
-CELLS = [("bf16", "instruction_language/mgsm", None), ("quantized", "layer_swap/mgsm", "bf16"), ("quantized", "layer_swap/mgsm", "quantized"), ("quantized", "instruction_language/mgsm", None)]
-LABELS = ["bf16", "bf16 front, quantized back", "quantized front, bf16 back", "quantized"]
+LAYER_RANGES = [(1, 3), (4, 6), (7, 9), (10, 12), (13, 15), (16, 35)]
+PANELS = {"recovery": "bf16", "damage": "quantized"}
 
 
 @dataclass
@@ -25,47 +24,45 @@ class Config:
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-    num_front_layers: tuple[int, ...] = (3, 15)
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
 
 
 def main() -> None:
     config = parse(Config)
+    entry_name = "layer_swap/mgsm"
     targets = {"bf16": make_bf16_path(config.model_name), "quantized": make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)}
+    file_names = [f"max_generation_len={config.max_generation_len},seed={seed}" for seed in config.seeds]
 
-    # 1) keep num_front_layers that have all cells of all seeds
-    results = {}
-    for num_front_layers in config.num_front_layers:
-        seed_file_names = []
-        for seed in config.seeds:
-            file_name = f"max_generation_len={config.max_generation_len},seed={seed}"
-            seed_file_names.append([file_name if front_method is None else f"front_method={front_method},num_front_layers={num_front_layers},{file_name}" for _, _, front_method in CELLS])
-        if all(result_exists(entry_name, targets[model_method], file_name) for file_names in seed_file_names for (model_method, entry_name, _), file_name in zip(CELLS, file_names)):
-            results[num_front_layers] = [[load_result(entry_name, targets[model_method], file_name) for (model_method, entry_name, _), file_name in zip(CELLS, file_names)] for file_names in seed_file_names]
+    # 1) keep layer ranges that have both panels of all seeds
+    layer_ranges = [(start_layer, end_layer) for start_layer, end_layer in LAYER_RANGES if all(result_exists(entry_name, targets["quantized"], f"swap_method={swap_method},start_layer={start_layer},end_layer={end_layer},{file_name}") for swap_method in PANELS.values() for file_name in file_names)]
 
-    panel_widths = [get_panel_width(len(CELLS), len(LANGUAGES))]
-    fig, axes = plt.subplots(len(results), 1, figsize=get_figsize(panel_widths, len(results)), layout="constrained", squeeze=False)
-    for ax, (num_front_layers, seed_results) in zip(axes[:, 0], results.items()):
+    panel_widths = [get_panel_width(len(layer_ranges) + 1, len(LANGUAGES))]
+    fig, axes = plt.subplots(len(PANELS), 1, figsize=get_figsize(panel_widths, len(PANELS)), layout="constrained")
+    for ax, (panel, swap_method) in zip(axes, PANELS.items()):
+        # 2) first bar is model without swap, from instruction language
+        base_method = "quantized" if swap_method == "bf16" else "bf16"
+        base_results = [load_result("instruction_language/mgsm", targets[base_method], file_name) for file_name in file_names]
+        swap_results = [[load_result(entry_name, targets["quantized"], f"swap_method={swap_method},start_layer={start_layer},end_layer={end_layer},{file_name}") for file_name in file_names] for start_layer, end_layer in layer_ranges]
         groups = []
         for language in LANGUAGES:
-            seed_accuracies = [[cell_result[language]["accuracy"] for cell_result in cell_results] for cell_results in seed_results]
-            accuracies = [mean(cell_accuracies) for cell_accuracies in zip(*seed_accuracies)]
-            texts = [format_bf16_ratio([cell_accuracies[0] for cell_accuracies in seed_accuracies]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
-            groups.append((accuracies, LANGUAGE_COLORS[language], texts))
+            base_accuracies = [base_result[language]["accuracy"] for base_result in base_results]
+            accuracies = [mean(seed_result[language]["accuracy"] for seed_result in seed_results) for seed_results in swap_results]
+            texts = [format_bf16_ratio(base_accuracies), *[format_ratio(accuracy, mean(base_accuracies)) for accuracy in accuracies]]
+            groups.append(([mean(base_accuracies), *accuracies], LANGUAGE_COLORS[language], texts))
 
-        plot_bars(ax, LABELS, groups)
+        plot_bars(ax, [base_method, *[f"{start_layer}~{end_layer}" for start_layer, end_layer in layer_ranges]], groups)
         ax.set_ylim(0, 1.15)
         ax.set_ylabel("accuracy")
-        ax.set_title(f"{config.method} (front {num_front_layers})")
+        ax.set_title(f"{config.method} {panel}")
         ax.grid(axis="y", color="#e8e7e3", linewidth=0.8)
         ax.set_axisbelow(True)
         ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
-    fig.suptitle(f"{config.model_name} mgsm layer swap\nnum_front_layers={','.join(map(str, results))},max_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
+    fig.suptitle(f"{config.model_name} mgsm layer swap\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     fig.legend(handles=[Patch(color=LANGUAGE_COLORS[language], label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
     # panels share one column, so fit width by one panel
-    fit_bar_width(fig, [axes[0, 0]])
+    fit_bar_width(fig, [axes[0]])
     save_figure(fig, config.model_name, "mgsm_layer_swap")
 
 
