@@ -27,8 +27,8 @@ def main() -> None:
     targets = {
         "bf16": make_bf16_path(config.model_name),
         "mxfp4": make_mxfp4_path(config.model_name),
-        "qat same": make_qat_path(config.model_name, config.languages, "same"),
-        "qat en": make_qat_path(config.model_name, config.languages, "en"),
+        "qat bf16 same prompt": make_qat_path(config.model_name, config.languages, "same"),
+        "qat bf16 en prompt": make_qat_path(config.model_name, config.languages, "en"),
     }
     file_names = [f"max_generation_len={config.max_generation_len},seed={seed}" for seed in config.seeds]
     results = {label: [load_result("mgsm", target, file_name) for file_name in file_names] for label, target in targets.items()}
