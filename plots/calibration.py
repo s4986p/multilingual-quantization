@@ -17,12 +17,12 @@ CALIBRATIONS = {"en": ("en",), "sw": ("sw",), "te": ("te",), "all": ("en", "zh",
 
 @dataclass
 class Config:
-    model_name: str = "Qwen/Qwen3.5-2B"
+    model_name: str = "google/gemma-4-E2B-it"
     benchmark: Literal["mgsm", "mmlu_prox_lite"] = "mgsm"
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-    max_generation_len: int = 32768
+    max_generation_len: int = 16384
     seed: int = 0
 
 

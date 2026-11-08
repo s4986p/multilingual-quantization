@@ -16,7 +16,7 @@ GROUP_SIZE = 32
 
 @dataclass
 class Config:
-    model_name: str = "Qwen/Qwen3.5-2B"
+    model_name: str = "google/gemma-4-E2B-it"
 
 
 def find_scale(

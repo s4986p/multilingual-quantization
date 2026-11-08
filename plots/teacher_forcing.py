@@ -17,14 +17,14 @@ NUM_PROGRESS_BINS = 5
 
 @dataclass
 class Config:
-    model_name: str = "Qwen/Qwen3.5-2B"
+    model_name: str = "google/gemma-4-E2B-it"
     benchmark: Literal["mgsm", "mmlu_prox_lite"] = "mgsm"
     method: Literal["rtn", "gptq", "awq", "nf4", "mxfp4"] = "awq"
     languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-    max_generation_len: int = 32768
+    max_generation_len: int = 16384
     seed: int = 0
 
 
