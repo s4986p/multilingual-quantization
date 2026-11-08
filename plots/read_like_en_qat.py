@@ -43,6 +43,7 @@ def main() -> None:
     plot_bars(ax, list(targets), groups)
     ax.set_ylim(0, 1.15)
     ax.set_ylabel("accuracy")
+    ax.set_title("qat")
     ax.grid(axis="y", color="#e8e7e3", linewidth=0.8)
     ax.set_axisbelow(True)
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
