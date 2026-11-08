@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from datasets import load_dataset
 import torch
 from torch import Tensor
@@ -63,6 +65,42 @@ def load_mgsm(
     for language in languages:
         dataset = load_dataset("juletxara/mgsm", language, split="test")
         problems[language] = [(MGSM_PROMPTS[language].format(question=row["question"]), row["answer_number"]) for row in dataset]
+    return problems
+
+
+def load_gsm8k() -> dict[str, list[tuple[str, int]]]:
+    # build multilingual problems from mcot questions that match gsm8k
+    gsm8k = load_dataset("openai/gsm8k", "main", split="train")
+    gsm8k_index_by_question = {" ".join(question.split()): gsm8k_index for gsm8k_index, question in enumerate(gsm8k["question"])}
+    mcot = load_dataset("laihuiyuan/mCoT-MATH", data_files="train_part_*.jsonl", split="train").select_columns(["question", "lang-id"])
+
+    # 1) find gsm8k train questions among mcot en questions
+    # e.g. en-54530 "Donny went to the gas station ..." -> gsm8k_index of that question
+    gsm8k_index_by_mcot_id = {}
+    for batch in mcot.iter(batch_size=100000):
+        for question, language_id in zip(batch["question"], batch["lang-id"]):
+            language, mcot_id = language_id.split("-")
+            if language == "en" and " ".join(question.split()) in gsm8k_index_by_question:
+                gsm8k_index_by_mcot_id[mcot_id] = gsm8k_index_by_question[" ".join(question.split())]
+
+    # 2) take question of each language with same id
+    questions = defaultdict(dict)
+    for batch in mcot.iter(batch_size=100000):
+        for question, language_id in zip(batch["question"], batch["lang-id"]):
+            language, mcot_id = language_id.split("-")
+            if language in MGSM_PROMPTS and mcot_id in gsm8k_index_by_mcot_id:
+                questions[mcot_id][language] = question.strip()
+
+    # 3) keep smallest id with all languages for each gsm8k question, so problem_index matches across languages
+    mcot_id_by_gsm8k_index = {}
+    for mcot_id in sorted(questions, key=int):
+        if len(questions[mcot_id]) == len(MGSM_PROMPTS):
+            mcot_id_by_gsm8k_index.setdefault(gsm8k_index_by_mcot_id[mcot_id], mcot_id)
+    problems = {language: [] for language in MGSM_PROMPTS}
+    for gsm8k_index in sorted(mcot_id_by_gsm8k_index):
+        answer = int(gsm8k[gsm8k_index]["answer"].split("####")[-1].replace(",", ""))
+        for language in MGSM_PROMPTS:
+            problems[language].append((MGSM_PROMPTS[language].format(question=questions[mcot_id_by_gsm8k_index[gsm8k_index]][language]), answer))
     return problems
 
 

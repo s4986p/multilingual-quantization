@@ -191,3 +191,24 @@ check which layers are sensitive, because on sw, te, hidden error is higher than
 - damage means bf16 model with one layer range from quantized
 - layer ranges are 1~3, 4~6, 7~9, 10~12, 13~15, 16~35
 - 16~35 is one range, because these layers reuse key, value of layers 14, 15
+
+## read like en qat
+check if qat does better by following bf16 reasoning on en prompt, because sw, te may mostly copy, read question wrong
+
+#### setup
+- use gsm8k train questions from [mcot](https://huggingface.co/datasets/laihuiyuan/mCoT-MATH) in 5 languages, because gsm8k problems are similar to mgsm problems, so training may carry over to mgsm
+- same means bf16 gets same prompt as quantized model
+- en means bf16 gets en prompt
+- take bf16 seed 0 reasoning on prompt that bf16 gets
+- give that reasoning to bf16, quantized
+- match quantized next token predictions to bf16 with kl at each reasoning position
+- train from bf16 weights with mxfp4 rounding
+- adamw lr 1e-5, no weight decay, cosine schedule, 5% warmup, batch size 8, 1 epoch, max sequence len 2048
+- compare same with en
+- use problems solved by bf16 seed 0 in en
+
+#### summary
+![](../figures/gemma-4-E2B-it/mgsm_read_like_en_qat.png)
+- **on sw, te, qat recovers most of loss with same, en**
+- on sw, qat en may be higher than qat same, but on zh, ja it may be lower, so following bf16 reasoning on en prompt may not help more
+- we do not know yet if this holds across training seeds, because qat is trained with seed 0 only

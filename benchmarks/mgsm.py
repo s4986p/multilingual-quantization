@@ -19,17 +19,18 @@ class Config:
     max_generation_len: int = 16384
     # model to evaluate
     model_name: str = "google/gemma-4-E2B-it"
-    method: Literal["bf16", "rtn", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
+    method: Literal["bf16", "rtn", "gptq", "awq", "nf4", "mxfp4", "qat"] = "bf16"
     languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
+    bf16_question: Literal["same", "en"] = "same"
 
 
 def main() -> None:
     config = parse(Config)
     file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
-    target = make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
+    target = make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples, config.bf16_question)
     result = load_result("mgsm", target, file_name) if result_exists("mgsm", target, file_name) else {}
     missing_languages = [language for language in MGSM_PROMPTS if language not in result]
     if not missing_languages:
