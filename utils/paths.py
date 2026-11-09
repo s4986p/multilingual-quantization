@@ -32,6 +32,13 @@ def make_qat_path(
     return f"qat/{model_name}/languages={'_'.join(languages)},bf16_question={bf16_question}"
 
 
+def make_translate_first_finetune_path(
+    model_name: str,
+    languages: tuple[str, ...],
+) -> str:
+    return f"translate_first_finetune/{model_name}/languages={'_'.join(languages)}"
+
+
 def make_quantized_path(
     method: str,
     model_name: str,
@@ -63,4 +70,6 @@ def make_target_path(
 ) -> str:
     if method == "bf16":
         return make_bf16_path(model_name)
+    if method == "translate_first_finetune":
+        return make_translate_first_finetune_path(model_name, languages)
     return make_quantized_path(method, model_name, languages, num_bits, group_size, num_samples, bf16_question)
