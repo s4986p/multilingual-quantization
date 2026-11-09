@@ -217,3 +217,21 @@ check if qat does better by following bf16 reasoning on en prompt, because sw, t
 ![](../figures/gemma-4-E2B-it/mgsm_read_like_en_qat.png)
 - **on sw, te, qat with kl recovers most of loss, so bf16 en prompt is hard to tell apart from bf16 same prompt**
 - we do not know yet if training can go above bf16
+
+## translate first finetune
+check if cross entropy on en question goes above bf16, because kl to bf16 same prompt has bf16 as best, and on bf16 zh, ja, te, translate first instruction raises accuracy
+
+#### setup
+- translate first finetune means bf16 trained to write en question at start of reasoning
+- use gsm8k train questions from mcot in zh, sw, ja, te
+- use native instruction
+- put en question of same problem before bf16 seed 0 reasoning on en prompt
+- match next token predictions to en question, reasoning with cross entropy
+- train from bf16 weights without rounding
+- adamw lr 1e-5, no weight decay, cosine schedule, 5% warmup, batch size 8, 1 epoch, max sequence len 2048
+- compare translate first finetune with bf16 native instruction, bf16 translate first instruction
+- use problems solved by bf16 seed 0 in en
+
+#### summary
+![](../figures/gemma-4-E2B-it/mgsm_translate_first_finetune.png)
+- **translate first finetune writes en question at start of reasoning, but does not clearly raise accuracy**
