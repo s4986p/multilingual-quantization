@@ -215,6 +215,5 @@ check if qat does better by following bf16 reasoning on en prompt, because sw, t
 
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_read_like_en_qat.png)
-- **on sw, te, qat recovers most of loss**
-- on sw, bf16 en prompt may be higher than bf16 same prompt, but on zh, ja it may be lower, so following bf16 reasoning on en prompt may not help more
-- we do not know yet if this holds across training seeds, because qat is trained with seed 0 only
+- **on sw, te, qat with kl recovers most of loss, so bf16 en prompt is hard to tell apart from bf16 same prompt**
+- we do not know yet if training can go above bf16
