@@ -78,7 +78,7 @@ check if prediction changes differ by language
 ![](../figures/gemma-4-E2B-it/mgsm_teacher_forcing.png)
 - on qwen, kl does not match loss
 - on gemma, kl matches loss between languages, but not clearly between methods
-- **on gemma sw, te, kl gap with en is largest at start of reasoning with awq**
+- **on gemma sw, te, kl gap with en is largest at start of reasoning**
 
 ## prefix swap
 check if quantization hurts reading or solving, because kl gap with en is largest at start of reasoning
@@ -155,7 +155,8 @@ check if en instruction is why solving separately gives higher accuracy, because
 
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_instruction_language.png)
-- **on sw, te, en instruction raises accuracy, but less than solving separately, so quantized model may lose more with more non-en text**
+- **on quantized sw, te, en instruction raises accuracy, but less than solving separately, so quantized model may lose more with more non-en text**
+- on bf16 sw, te, en instruction raises accuracy less than on quantized
 
 ## translate first
 check if adding translation step to instruction helps, because translating first, then solving separately gives higher accuracy
@@ -166,7 +167,8 @@ check if adding translation step to instruction helps, because translating first
 
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_translate_first.png)
-- **on sw, te, translate first instruction does not clearly help**
+- **on quantized sw, te, translate first instruction does not clearly help**
+- on bf16 zh, ja, te, translate first instruction raises accuracy, but not clearly on sw
 
 ## hidden error
 check if sw, te go wrong before reasoning, not only by errors building up in reasoning, because quantized model may lose more with more non-en text
@@ -213,6 +215,6 @@ check if qat does better by following bf16 reasoning on en prompt, because sw, t
 
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_read_like_en_qat.png)
-- **on sw, te, qat recovers most of loss with bf16 same prompt, bf16 en prompt**
-- on sw, qat bf16 en prompt may be higher than qat bf16 same prompt, but on zh, ja it may be lower, so following bf16 reasoning on en prompt may not help more
+- **on sw, te, qat recovers most of loss**
+- on sw, bf16 en prompt may be higher than bf16 same prompt, but on zh, ja it may be lower, so following bf16 reasoning on en prompt may not help more
 - we do not know yet if this holds across training seeds, because qat is trained with seed 0 only
