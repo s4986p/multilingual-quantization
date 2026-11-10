@@ -235,3 +235,18 @@ check if training to write en question first goes above bf16, because on bf16 zh
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_translate_first_finetune.png)
 - **translate first finetune writes en question at start of reasoning, but does not clearly raise accuracy**
+
+## en question swap
+check if gap with en comes from en question or from solving after it, because translate first finetune writes en question at start of reasoning, but does not clearly raise accuracy
+
+#### setup
+- en question swap means mgsm en question put at start of reasoning, after prompt in each language
+- use native instruction
+- continue reasoning, response after en question with bf16 or quantized
+- compare en question swap with native instruction
+
+#### summary
+![](../figures/gemma-4-E2B-it/mgsm_en_question_swap.png)
+- **on bf16 zh, sw, ja, te, en question swap closes most of gap with en, so gap with en mostly comes from en question, not from solving**
+- on quantized zh, ja, te, en question swap leaves loss close to en, but on quantized sw, part of loss beyond en remains
+- we do not know yet if model can write en question close to mgsm en question

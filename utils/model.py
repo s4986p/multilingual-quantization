@@ -11,6 +11,10 @@ GENERATION_CONFIGS = {
     "google/gemma-4-E2B-it": {"temperature": 1.0, "top_p": 0.95, "top_k": 64, "presence_penalty": 0.0, "think_start": "<|channel>", "think_end": "<channel|>"},
 }
 
+# saved gemma reasoning starts with this after think start token
+# e.g. "<|channel>thought\nHere's a thinking process ...<channel|>"
+THINK_HEADER = "thought\n"
+
 
 def load_model(
     model_path: str,
