@@ -20,7 +20,7 @@ class Config:
     # model to evaluate
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
-    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
@@ -29,7 +29,7 @@ class Config:
 def main() -> None:
     config = parse(Config)
     file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
-    target = make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
+    target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
     result = load_result("mmlu_prox_lite", target, file_name) if result_exists("mmlu_prox_lite", target, file_name) else {}
     missing_languages = [language for language in MMLU_PROX_LITE_TEMPLATES if language not in result]
     if not missing_languages:

@@ -7,11 +7,10 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
-from utils.hub import load_result, result_exists
+from utils.hub import load_result
 from utils.paths import make_target_path
-from utils.plot import ACCURACY_YMAX, LANGUAGE_COLORS, METHODS, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
+from utils.plot import ACCURACY_YMAX, LANGUAGE_COLORS, LANGUAGES, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
 
-LANGUAGES = list(LANGUAGE_COLORS)
 CELLS = [("bf16", "bf16"), ("quantized", "bf16"), ("bf16", "quantized"), ("quantized", "quantized")]
 LABELS = ["bf16 reasoning, bf16 response", "quantized reasoning, bf16 response", "bf16 reasoning, quantized response", "quantized reasoning, quantized response"]
 
@@ -19,7 +18,8 @@ LABELS = ["bf16 reasoning, bf16 response", "quantized reasoning, bf16 response",
 @dataclass
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
-    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
@@ -30,44 +30,34 @@ class Config:
 def main() -> None:
     config = parse(Config)
     entry_name = "reasoning_swap/mgsm"
+    target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
+    seed_results = [[load_result(entry_name, target, f"reasoning_method={reasoning_method},response_method={response_method},max_generation_len={config.max_generation_len},seed={seed}") for reasoning_method, response_method in CELLS] for seed in config.seeds]
 
-    # 1) keep seeds that have all four cells
-    results = {}
-    for method in METHODS:
-        target = make_target_path(method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
-        for seed in config.seeds:
-            file_names = [f"reasoning_method={reasoning_method},response_method={response_method},max_generation_len={config.max_generation_len},seed={seed}" for reasoning_method, response_method in CELLS]
-            if all(result_exists(entry_name, target, file_name) for file_name in file_names):
-                results.setdefault(method, []).append([load_result(entry_name, target, file_name) for file_name in file_names])
+    groups = []
+    used_counts = {}
+    for language in LANGUAGES:
+        # compare cells on problems all four used
+        seed_accuracies = []
+        seed_used_counts = []
+        for cell_results in seed_results:
+            used = set.intersection(*[set(cell_result[language]["problem_indices"]) for cell_result in cell_results])
+            seed_used_counts.append(len(used))
+            seed_accuracies.append([mean(correct for problem_index, correct in zip(cell_result[language]["problem_indices"], cell_result[language]["corrects"]) if problem_index in used) for cell_result in cell_results])
+        accuracies = [mean(cell_accuracies) for cell_accuracies in zip(*seed_accuracies)]
+        used_counts[language] = mean(seed_used_counts)
+        texts = [format_bf16_ratio([cell_accuracies[0] for cell_accuracies in seed_accuracies]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
+        groups.append((accuracies, LANGUAGE_COLORS[language], texts))
 
-    panel_widths = [get_panel_width(len(CELLS), len(LANGUAGES))]
-    fig, axes = plt.subplots(len(results), 1, figsize=get_figsize(panel_widths, len(results)), layout="constrained", squeeze=False)
-    for ax, (method, seed_results) in zip(axes[:, 0], results.items()):
-        groups = []
-        used_counts = {}
-        for language in LANGUAGES:
-            # 2) compare cells on problems all four used
-            seed_accuracies = []
-            seed_used_counts = []
-            for cell_results in seed_results:
-                used = set.intersection(*[set(cell_result[language]["problem_indices"]) for cell_result in cell_results])
-                seed_used_counts.append(len(used))
-                seed_accuracies.append([mean(correct for problem_index, correct in zip(cell_result[language]["problem_indices"], cell_result[language]["corrects"]) if problem_index in used) for cell_result in cell_results])
-            accuracies = [mean(cell_accuracies) for cell_accuracies in zip(*seed_accuracies)]
-            used_counts[language] = mean(seed_used_counts)
-            texts = [format_bf16_ratio([cell_accuracies[0] for cell_accuracies in seed_accuracies]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
-            groups.append((accuracies, LANGUAGE_COLORS[language], texts))
-
-        plot_bars(ax, LABELS, groups)
-        ax.set_ylim(0, ACCURACY_YMAX)
-        ax.set_ylabel("accuracy")
-        ax.set_title(f"{method} (problems used {', '.join(f'{language} {used_counts[language]:.0f}' for language in LANGUAGES)})")
-        ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
+    fig, ax = plt.subplots(figsize=get_figsize([get_panel_width(len(CELLS), len(LANGUAGES))], 1), layout="constrained")
+    plot_bars(ax, LABELS, groups)
+    ax.set_ylim(0, ACCURACY_YMAX)
+    ax.set_ylabel("accuracy")
+    ax.set_title(f"{config.method} (problems used {', '.join(f'{language} {used_counts[language]:.0f}' for language in LANGUAGES)})")
+    ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
     fig.suptitle(f"{config.model_name} mgsm reasoning swap\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     fig.legend(handles=[Patch(color=LANGUAGE_COLORS[language], label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
-    # panels share one column, so fit width by one panel
-    fit_bar_width(fig, [axes[0, 0]])
+    fit_bar_width(fig, [ax])
     save_figure(fig, config.model_name, "mgsm_reasoning_swap")
 
 

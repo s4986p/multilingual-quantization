@@ -24,7 +24,7 @@ class Config:
     # model to compare with bf16
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
-    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
@@ -34,7 +34,7 @@ class Config:
 
 def main() -> None:
     config = parse(Config)
-    target = make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
+    target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
     entry_name = "reasoning_swap/mgsm"
     file_names = {reasoning_method: f"reasoning_method={reasoning_method},response_method={config.response_method},max_generation_len={config.max_generation_len},seed={config.seed}" for reasoning_method in REASONING_METHODS}
     missing_reasoning_methods = [reasoning_method for reasoning_method in REASONING_METHODS if not result_exists(entry_name, target, file_names[reasoning_method])]

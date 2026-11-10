@@ -6,7 +6,7 @@ session="$(openssl rand -hex 3)"
 tar_path="/tmp/$session.tar.gz"
 argv="$(python3 -c "import sys; print(sys.argv[1:])" "$@")"
 # vllm can't install on mac, so pin it here
-packages="$(grep -E "^(accelerate|datasets|huggingface_hub|math-verify|safetensors|simple-parsing|transformers)==" requirements.txt | python3 -c "import sys; print([line.strip() for line in sys.stdin] + ['vllm==0.30.0'])")"
+packages="$(grep -E "^(accelerate|datasets|huggingface_hub|safetensors|simple-parsing|transformers)==" requirements.txt | python3 -c "import sys; print([line.strip() for line in sys.stdin] + ['vllm==0.30.0'])")"
 log_path="logs/$(basename "$1" .py)/$(date +%y%m%d-%H%M%S).log"
 mkdir -p "$(dirname "$log_path")"
 

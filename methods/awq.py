@@ -26,7 +26,7 @@ class Config:
     num_search_steps: int = 20
     max_shrink: float = 0.5
     # wikipedia calibration
-    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_samples: int = 128
     max_sequence_len: int = 2048
     seed: int = 0
@@ -173,7 +173,7 @@ def find_clip(
 def main() -> None:
     config = parse(Config)
     model = load_model(config.model_name)
-    samples = load_wikipedia(config.model_name, config.languages, config.num_samples, config.max_sequence_len, config.seed)
+    samples = load_wikipedia(config.model_name, config.calibration_languages, config.num_samples, config.max_sequence_len, config.seed)
     layers = model.model.language_model.layers
 
     log_time = time.perf_counter()
@@ -191,7 +191,7 @@ def main() -> None:
         log_time = time.perf_counter()
         torch.cuda.reset_peak_memory_stats()
 
-    save_model(make_quantized_path("awq", config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples), model)
+    save_model(make_quantized_path("awq", config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples), model)
 
 
 if __name__ == "__main__":
