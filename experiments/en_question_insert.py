@@ -31,7 +31,7 @@ class Config:
 def main() -> None:
     config = parse(Config)
     file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
-    entry_name = "en_question_swap/mgsm"
+    entry_name = "en_question_insert/mgsm"
     target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
     if result_exists(entry_name, target, file_name):
         print(f"{target} already evaluated")

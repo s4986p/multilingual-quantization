@@ -113,18 +113,18 @@ check if prediction changes differ by language
 - fact errors mostly come in first 20% of reasoning
 - on claude opus 5.5, types differ in places, but overall pattern looks similar
 
-## en question swap
-[error types](#error-types) shows sw, te may mostly read question wrong, so check if gap with en comes from understanding or from solving
+## en question insert
+[error types](#error-types) shows sw, te may mostly read question wrong, so check if en question closes gap with en
 
 #### setup
-![](diagrams/en_question_swap.png)
+![](diagrams/en_question_insert.png)
 - native instruction means instruction in each language
 - en question means mgsm question of same problem in en
-- en question swap means en question put at start of reasoning, after prompt with native instruction
-- continue understanding, solving, response after en question with bf16 or quantized
-- compare en question swap with native instruction
+- en question insert means en question put at start of reasoning, after prompt with native instruction
+- continue solving, response after en question with bf16 or quantized
+- compare en question insert with native instruction
 
 #### summary
-![](../figures/gemma-4-E2B-it/mgsm_en_question_swap.png)
-- **on zh, sw, ja, te, en question swap closes most of gap with en, so gap with en mostly comes from understanding, not from solving**
-- i do not know yet if model can understand question in each language as well as in en
+![](../figures/gemma-4-E2B-it/mgsm_en_question_insert.png)
+- **on zh, sw, ja, te, en question insert closes most of gap with en, so gap with en mostly comes from reading question in each language**
+- after en question, model mostly skips its own understanding
