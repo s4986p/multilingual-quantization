@@ -10,29 +10,12 @@ from utils.format import format_duration, format_memory
 from utils.hub import save_model
 from utils.model import load_model
 from utils.paths import make_mxfp4_path
-
-MXFP4_GROUP_SIZE = 32
+from utils.quantization import MXFP4_GROUP_SIZE, find_fp4_scale, round_to_fp4
 
 
 @dataclass
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
-
-
-def find_fp4_scale(
-    weight: Tensor,
-) -> Tensor:
-    weight_max = weight.abs().amax(dim=-1).clamp(min=2**-125)
-    return 2 ** (torch.floor(torch.log2(weight_max)) - 2)
-
-
-def round_to_fp4(
-    weight: Tensor,
-    scale: Tensor,
-) -> Tensor:
-    magnitude = (weight.abs() / scale).clamp(max=6)
-    step = torch.where(magnitude < 2, 0.5, torch.where(magnitude < 4, 1.0, 2.0))
-    return torch.sign(weight) * torch.round(magnitude / step) * step * scale
 
 
 def quantize_weight(

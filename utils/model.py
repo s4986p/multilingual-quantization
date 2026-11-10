@@ -77,3 +77,25 @@ def get_think_ids(
 ) -> Tensor:
     # saved reasoning has no special tokens, so put back reasoning start token
     return tokenizer(GENERATION_CONFIGS[model_name]["think_start"] + think, add_special_tokens=False, return_tensors="pt")["input_ids"][0]
+
+
+def get_think_hiddens(
+    model: PreTrainedModel,
+    input_ids: Tensor,
+    prompt_len: int,
+) -> Tensor:
+    # hidden at t predicts token t+1
+    # so keep from last prompt token to second last reasoning token
+    # e.g. input [p0, p1, p2, r0, r1, r2]
+    #      keep  [        p2, r0, r1    ] (each predicts r0, r1, r2)
+    return model.model(input_ids=input_ids[None, :].to(model.device), use_cache=False).last_hidden_state[0, prompt_len - 1 : -1]
+
+
+def get_logits(
+    model: PreTrainedModel,
+    hiddens: Tensor,
+) -> Tensor:
+    logits = model.lm_head(hiddens).float()
+    # gemma forward caps logits, so do same when calling lm_head directly
+    softcapping = getattr(model.config.get_text_config(), "final_logit_softcapping", None)
+    return logits if softcapping is None else torch.tanh(logits / softcapping) * softcapping

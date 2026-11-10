@@ -5,15 +5,14 @@ from typing import Literal
 
 from simple_parsing import parse
 import torch
-from torch import Tensor
 from torch.nn.functional import log_softmax
-from transformers import AutoTokenizer, PreTrainedModel
+from transformers import AutoTokenizer
 
 from utils.dataset import MGSM_PROMPTS, load_mgsm
 from utils.format import format_duration, format_memory
 from utils.hub import download_model, load_result, result_exists, save_tensors
 from utils.metrics import get_all_correct_mask
-from utils.model import get_prompt_ids, get_think_ids, load_model
+from utils.model import get_logits, get_prompt_ids, get_think_hiddens, get_think_ids, load_model
 from utils.paths import make_bf16_path, make_target_path
 
 
@@ -30,28 +29,6 @@ class Config:
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-
-
-def get_think_hiddens(
-    model: PreTrainedModel,
-    input_ids: Tensor,
-    prompt_len: int,
-) -> Tensor:
-    # hidden at t predicts token t+1
-    # so keep from last prompt token to second last reasoning token
-    # e.g. input [p0, p1, p2, r0, r1, r2]
-    #      keep  [        p2, r0, r1    ] (each predicts r0, r1, r2)
-    return model.model(input_ids=input_ids[None, :].to(model.device), use_cache=False).last_hidden_state[0, prompt_len - 1 : -1]
-
-
-def get_logits(
-    model: PreTrainedModel,
-    hiddens: Tensor,
-) -> Tensor:
-    logits = model.lm_head(hiddens).float()
-    # gemma forward caps logits, so do same when calling lm_head directly
-    softcapping = getattr(model.config.get_text_config(), "final_logit_softcapping", None)
-    return logits if softcapping is None else torch.tanh(logits / softcapping) * softcapping
 
 
 @torch.no_grad()

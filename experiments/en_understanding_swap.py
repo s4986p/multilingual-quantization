@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from statistics import mean
-import re
 import time
 from typing import Literal
 
@@ -14,9 +13,7 @@ from utils.format import format_duration
 from utils.hub import download_model, load_result, result_exists, save_result
 from utils.model import continue_vllm, get_prompt_ids, get_think_ids, load_vllm
 from utils.paths import make_bf16_path, make_target_path
-
-SOLVING_WORDS = ["calculat", "determin", "comput", "solv", "perform", "set up", "formulat"]
-STEP_TITLE = re.compile(r"^[ \t]*\d+\.\s+\*\*(.+?)\*\*", re.M)
+from utils.understanding import get_understanding
 
 
 @dataclass
@@ -25,22 +22,11 @@ class Config:
     max_generation_len: int = 16384
     # model to evaluate
     model_name: str = "google/gemma-4-E2B-it"
-    method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
+    method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4", "understanding_qat"] = "bf16"
     calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-
-
-def get_understanding(
-    think: str,
-) -> str | None:
-    # cut before first step whose title has a solving word, or none if no such step
-    # e.g. "... 2.  **Deconstruct the Recipe:** ...\n\n3.  **Calculate Blue Fiber:** ..." -> "... 2.  **Deconstruct the Recipe:** ...\n\n"
-    for match in STEP_TITLE.finditer(think):
-        if any(word in match.group(1).lower() for word in SOLVING_WORDS):
-            return think[: match.start()]
-    return None
 
 
 def main() -> None:
