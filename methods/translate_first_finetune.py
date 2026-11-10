@@ -15,12 +15,8 @@ from transformers import AutoTokenizer, get_cosine_schedule_with_warmup, set_see
 from utils.dataset import load_gsm8k
 from utils.format import format_duration, format_memory
 from utils.hub import load_tensors, save_model
-from utils.model import GENERATION_CONFIGS, get_logits, get_prompt_ids, get_think_hiddens, get_think_ids, load_model
+from utils.model import GENERATION_CONFIGS, THINK_HEADER, get_logits, get_prompt_ids, get_think_hiddens, get_think_ids, load_model
 from utils.paths import make_bf16_path, make_translate_first_finetune_path
-
-# saved gemma reasoning starts with this after think start token
-# e.g. "<|channel>thought\nHere's a thinking process ...<channel|>"
-THINK_HEADER = "thought\n"
 
 
 @dataclass
