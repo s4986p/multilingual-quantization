@@ -128,3 +128,18 @@ check if prediction changes differ by language
 ![](../figures/gemma-4-E2B-it/mgsm_en_question_insert.png)
 - **on zh, sw, ja, te, en question insert closes most of gap with en, so gap with en mostly comes from reading question in each language**
 - after en question, model mostly skips its own understanding
+
+## en understanding swap
+[en question insert](#en-question-insert) shows gap with en mostly comes from reading question in each language, so check if it comes from understanding or from solving
+
+#### setup
+![](diagrams/en_understanding_swap.png)
+- en understanding means understanding of bf16 reasoning on en prompt, up to first step whose title says calculate, determine, compute, solve, perform, set up, formulate
+- en understanding swap means en understanding put at start of reasoning, after prompt with native instruction
+- continue solving, response after en understanding with bf16 or quantized
+- compare en understanding swap with native instruction
+- use problems that have en understanding
+
+#### summary
+![](../figures/gemma-4-E2B-it/mgsm_en_understanding_swap.png)
+- **on zh, sw, ja, te, en understanding swap also closes most of gap with en, so gap with en mostly comes from understanding, not from solving**
