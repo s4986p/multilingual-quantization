@@ -143,3 +143,23 @@ check if prediction changes differ by language
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_en_understanding_swap.png)
 - **en understanding swap also closes most of gap with en**, so gap with en mostly comes from understanding, not from solving
+
+## qat
+[en understanding swap](#en-understanding-swap) shows gap with en mostly comes from understanding, not from solving, so check if qat on en understanding closes gap with en
+
+#### setup
+- native understanding means understanding of bf16 reasoning on prompt in each language
+- qat en means qat on en understanding
+- qat native means qat on native understanding
+- use gsm8k train questions from [mcot](https://huggingface.co/datasets/laihuiyuan/mCoT-MATH)
+- put en or native understanding at start of reasoning, after prompt with native instruction in zh, sw, ja and te
+- train next token predictions on that understanding only, with cross entropy
+- train from bf16 weights with mxfp4 rounding
+- adamw lr 1e-5, no weight decay, cosine schedule, 5% warmup, batch size 8, 1 epoch
+- compare qat en and qat native with bf16 and mxfp4 on native instruction
+- use gsm8k problems solved by bf16 seed 0 in en and in that language, with both understandings
+
+#### summary
+![](../figures/gemma-4-E2B-it/mgsm_qat.png)
+- qat en and qat native both recover most of mxfp4 loss
+- **qat en does not beat qat native**, so training on en understanding may not close gap with en

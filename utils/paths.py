@@ -16,10 +16,11 @@ def make_mxfp4_path(
     return f"mxfp4/{model_name}"
 
 
-def make_understanding_qat_path(
+def make_qat_path(
     model_name: str,
+    think_language: str,
 ) -> str:
-    return f"understanding_qat/{model_name}"
+    return f"qat/{model_name}/think_language={think_language}"
 
 
 def make_quantized_path(
@@ -34,8 +35,8 @@ def make_quantized_path(
         return make_nf4_path(model_name)
     if method == "mxfp4":
         return make_mxfp4_path(model_name)
-    if method == "understanding_qat":
-        return make_understanding_qat_path(model_name)
+    if method in ("qat_en", "qat_native"):
+        return make_qat_path(model_name, method.removeprefix("qat_"))
     return f"{method}/{model_name}/calibration_languages={'_'.join(calibration_languages)},num_bits={num_bits},group_size={group_size},num_samples={num_samples}"
 
 

@@ -1,5 +1,6 @@
 import re
 
+# drop last e, because titles use different parts of speech (e.g. calculate, calculation)
 SOLVING_WORDS = ["calculat", "determin", "comput", "solv", "perform", "set up", "formulat"]
 STEP_TITLE = re.compile(r"^[ \t]*\d+\.\s+\*\*(.+?)\*\*", re.M)
 
