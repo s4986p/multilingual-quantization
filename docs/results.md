@@ -23,8 +23,8 @@ all experiments use this setup unless noted
 - instruction means text before question
 - question means text of problem
 - reasoning means text in thinking mode
-- translation means part at start of reasoning that writes question in en
-- solving means reasoning after translation
+- understanding means part at start of reasoning that writes goal, given information in en
+- solving means reasoning after understanding
 - response means text after reasoning
 - score only response
 
@@ -113,18 +113,18 @@ check if prediction changes differ by language
 - fact errors mostly come in first 20% of reasoning
 - on claude opus 5.5, types differ in places, but overall pattern looks similar
 
-## gold translation swap
-[error types](#error-types) shows sw, te may mostly read question wrong, so check if gap with en comes from translation or from solving
+## en question swap
+[error types](#error-types) shows sw, te may mostly read question wrong, so check if gap with en comes from understanding or from solving
 
 #### setup
-![](diagrams/gold_translation_swap.png)
+![](diagrams/en_question_swap.png)
 - native instruction means instruction in each language
-- gold translation means mgsm en question
-- gold translation swap means gold translation put at start of reasoning, after prompt with native instruction
-- continue solving, response after gold translation with bf16 or quantized
-- compare gold translation swap with native instruction
+- en question means mgsm question of same problem in en
+- en question swap means en question put at start of reasoning, after prompt with native instruction
+- continue understanding, solving, response after en question with bf16 or quantized
+- compare en question swap with native instruction
 
 #### summary
-![](../figures/gemma-4-E2B-it/mgsm_gold_translation_swap.png)
-- **on zh, sw, ja, te, gold translation swap closes most of gap with en, so gap with en mostly comes from translation, not from solving**
-- i do not know yet if model can write translation close to gold translation
+![](../figures/gemma-4-E2B-it/mgsm_en_question_swap.png)
+- **on zh, sw, ja, te, en question swap closes most of gap with en, so gap with en mostly comes from understanding, not from solving**
+- i do not know yet if model can understand question in each language as well as in en
