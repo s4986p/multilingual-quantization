@@ -11,8 +11,8 @@ from utils.hub import load_result
 from utils.paths import make_bf16_path, make_target_path
 from utils.plot import ACCURACY_YMAX, LANGUAGE_COLORS, LANGUAGES, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
 
-CELLS = [("bf16", "mgsm"), ("bf16", "gold_translation_swap/mgsm"), ("quantized", "mgsm"), ("quantized", "gold_translation_swap/mgsm")]
-LABELS = ["bf16, native instruction", "bf16, gold translation swap", "quantized, native instruction", "quantized, gold translation swap"]
+CELLS = [("bf16", "mgsm"), ("bf16", "en_question_swap/mgsm"), ("quantized", "mgsm"), ("quantized", "en_question_swap/mgsm")]
+LABELS = ["bf16, native instruction", "bf16, en question swap", "quantized, native instruction", "quantized, en question swap"]
 
 
 @dataclass
@@ -46,10 +46,10 @@ def main() -> None:
     ax.set_title(config.method)
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
-    fig.suptitle(f"{config.model_name} mgsm gold translation swap\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
+    fig.suptitle(f"{config.model_name} mgsm en question swap\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     fig.legend(handles=[Patch(color=LANGUAGE_COLORS[language], label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
     fit_bar_width(fig, [ax])
-    save_figure(fig, config.model_name, "mgsm_gold_translation_swap")
+    save_figure(fig, config.model_name, "mgsm_en_question_swap")
 
 
 if __name__ == "__main__":
