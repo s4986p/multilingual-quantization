@@ -56,7 +56,7 @@ def main() -> None:
         end = start + len(problems[language])
         result[language] = evaluate_mgsm(outputs[start:end], [answer for _, answer in problems[language]], language, tokenizer, config.model_name)
         start = end
-        print(f"{target} {language} accuracy {result[language]['accuracy']:.2%} think len {mean(result[language]['think_lens']):.0f} truncated {mean(result[language]['truncateds']):.2%}")
+        print(f"{target} {language} accuracy {result[language]['accuracy']:.2%} reasoning len {mean(result[language]['think_lens']):.0f} truncated {mean(result[language]['truncateds']):.2%}")
     print(f"{target} time {format_duration(time.perf_counter() - log_time)}")
     save_result(entry_name, target, file_name, result)
 

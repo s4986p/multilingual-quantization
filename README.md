@@ -6,4 +6,4 @@
 
 ## docs
 
-- [results](docs/results.md) records setup, results of every experiment
+- [results](docs/results.md) records setup and results of every experiment

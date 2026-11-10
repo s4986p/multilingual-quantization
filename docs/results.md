@@ -56,8 +56,8 @@ check if calibration language matters
 #### setup
 - awq only, because intuitively awq relies more on calibration
 - seed 0 only
-- calibrating on en, sw, te, all
 - all means en, zh, sw, ja, te with about 26 chunks each
+- calibrating on en, sw, te, all
 
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_calibration.png)
@@ -70,7 +70,7 @@ check if prediction changes differ by language
 #### setup
 ![](diagrams/teacher_forcing.png)
 - kl by reasoning progress is awq only
-- take bf16 seed 0 reasoning on problems solved by bf16 seed 0, 1
+- take bf16 seed 0 reasoning on problems solved by bf16 seed 0 and 1
 - give that reasoning to bf16 and quantized
 - compare their next token predictions with kl at each reasoning position
 
