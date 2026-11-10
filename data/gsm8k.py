@@ -61,27 +61,31 @@ def main() -> None:
     model = load_vllm(config.model_name, config.model_name, config.seed)
     tokenizer = model.get_tokenizer()
 
-    # 1) generate in en and score it
-    log_time = time.perf_counter()
-    outputs = generate_vllm(model, config.model_name, [prompt for prompt, _ in problems["en"]], config.max_generation_len)
-    result = evaluate_mgsm(outputs, [answer for _, answer in problems["en"]], "en", tokenizer, config.model_name)
-    print(f"{target} en accuracy {result['accuracy']:.2%} reasoning len {mean(result['think_lens']):.0f} truncated {mean(result['truncateds']):.2%}")
-    print(f"{target} time {format_duration(time.perf_counter() - log_time)}")
+    # 1) generate in each language and score it
+    outputs = {}
+    results = {}
+    for language in MGSM_PROMPTS:
+        log_time = time.perf_counter()
+        outputs[language] = generate_vllm(model, config.model_name, [prompt for prompt, _ in problems[language]], config.max_generation_len)
+        results[language] = evaluate_mgsm(outputs[language], [answer for _, answer in problems[language]], language, tokenizer, config.model_name)
+        print(f"{target} {language} accuracy {results[language]['accuracy']:.2%} reasoning len {mean(results[language]['think_lens']):.0f} truncated {mean(results[language]['truncateds']):.2%}")
+        print(f"{target} {language} time {format_duration(time.perf_counter() - log_time)}")
 
-    # 2) keep prompt ids in each language and en reasoning ids on problems solved by bf16 in en
+    # 2) keep prompt ids, reasoning ids and corrects in each language on problems solved by bf16 in en
     # e.g. "<|channel>thought\n...<channel|>Answer: 72" -> "<|channel>thought\n..."
     tensors = defaultdict(list)
-    for problem_index, (output, correct, think_len) in enumerate(zip(outputs, result["corrects"], result["think_lens"])):
-        if not correct:
+    for problem_index, en_correct in enumerate(results["en"]["corrects"]):
+        if not en_correct:
             continue
         for language in MGSM_PROMPTS:
             prompt_ids = get_prompt_ids(tokenizer, problems[language][problem_index][0])
+            think_ids = torch.tensor(outputs[language][problem_index].token_ids[: results[language]["think_lens"][problem_index]], dtype=torch.long)
             tensors[f"{language}/prompt_ids"].append(prompt_ids)
             tensors[f"{language}/prompt_lens"].append(torch.tensor([len(prompt_ids)]))
-        think_ids = torch.tensor(output.token_ids[:think_len])
-        tensors["en/think_ids"].append(think_ids)
-        tensors["en/think_lens"].append(torch.tensor([len(think_ids)]))
-    print(f"{target} problems {len(tensors['en/prompt_lens'])} of {len(outputs)}")
+            tensors[f"{language}/think_ids"].append(think_ids)
+            tensors[f"{language}/think_lens"].append(torch.tensor([len(think_ids)]))
+            tensors[f"{language}/corrects"].append(torch.tensor([results[language]["corrects"][problem_index]]))
+    print(f"{target} problems {len(tensors['en/prompt_lens'])} of {len(outputs['en'])}")
     save_tensors("gsm8k", target, file_name, {name: torch.cat(values) for name, values in tensors.items()})
 
 

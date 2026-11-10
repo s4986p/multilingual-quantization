@@ -3,6 +3,7 @@ import math
 import random
 from statistics import mean
 import time
+from typing import Literal
 
 from simple_parsing import parse
 import torch
@@ -15,7 +16,7 @@ from transformers import AutoTokenizer, PreTrainedModel, get_cosine_schedule_wit
 from utils.format import format_duration, format_memory
 from utils.hub import load_tensors, save_model
 from utils.model import get_logits, get_think_hiddens, get_think_ids, load_model
-from utils.paths import make_bf16_path, make_understanding_qat_path
+from utils.paths import make_bf16_path, make_qat_path
 from utils.quantization import MXFP4_GROUP_SIZE, find_fp4_scale, round_to_fp4
 from utils.understanding import get_understanding
 
@@ -30,6 +31,7 @@ class Config:
     warmup_ratio: float = 0.05
     batch_size: int = 8
     # data to train on
+    think_language: Literal["en", "native"] = "en"
     seed: int = 0
     max_generation_len: int = 16384
 
@@ -85,21 +87,26 @@ def main() -> None:
     model = load_model(config.model_name)
     model.float()
 
-    # 1) put en understanding at start of reasoning, after prompt with native instruction
-    # e.g. sw prompt + "<|channel>thought\n" + en understanding
+    # 1) put en or native understanding at start of reasoning, after prompt with native instruction
+    # e.g. sw prompt + "<|channel>thought\n" + understanding
     tensors = load_tensors("gsm8k", make_bf16_path(config.model_name), f"max_generation_len={config.max_generation_len},seed={config.seed}")
     language_prompt_ids = {language: tensors[f"{language}/prompt_ids"].split(tensors[f"{language}/prompt_lens"].tolist()) for language in TRAIN_LANGUAGES}
-    en_thinks = tokenizer.batch_decode(tensors["en/think_ids"].split(tensors["en/think_lens"].tolist()), skip_special_tokens=True)
+    language_thinks = {language: tokenizer.batch_decode(tensors[f"{language}/think_ids"].split(tensors[f"{language}/think_lens"].tolist()), skip_special_tokens=True) for language in ["en", *TRAIN_LANGUAGES]}
     samples = []
-    for problem_index, en_think in enumerate(en_thinks):
+    # data has only problems solved by bf16 in en
+    for problem_index, en_think in enumerate(language_thinks["en"]):
         en_understanding = get_understanding(en_think)
         if en_understanding is None:
             continue
-        en_understanding_ids = get_think_ids(tokenizer, config.model_name, en_understanding)
         for language in TRAIN_LANGUAGES:
+            native_understanding = get_understanding(language_thinks[language][problem_index])
+            # skip if bf16 got it wrong in native language
+            if native_understanding is None or not tensors[f"{language}/corrects"][problem_index]:
+                continue
+            understanding = en_understanding if config.think_language == "en" else native_understanding
             prompt_ids = language_prompt_ids[language][problem_index]
-            samples.append((torch.cat([prompt_ids, en_understanding_ids]), len(prompt_ids)))
-    print(f"samples {len(samples)} problems {len(samples) // len(TRAIN_LANGUAGES)} of {len(en_thinks)}")
+            samples.append((torch.cat([prompt_ids, get_think_ids(tokenizer, config.model_name, understanding)]), len(prompt_ids)))
+    print(f"samples {len(samples)} of {len(language_thinks['en']) * len(TRAIN_LANGUAGES)}")
 
     # 2) use ste linears, because gradient must go through mxfp4 rounding
     replaced = replace_linears(model)
@@ -111,7 +118,7 @@ def main() -> None:
     num_steps = config.num_epochs * num_batches
     scheduler = get_cosine_schedule_with_warmup(optimizer, round(config.warmup_ratio * num_steps), num_steps)
 
-    # 3) train next token predictions on en understanding only, with cross entropy
+    # 3) train next token predictions on understanding only, with cross entropy
     losses = []
     log_time = time.perf_counter()
     torch.cuda.reset_peak_memory_stats()
@@ -148,7 +155,7 @@ def main() -> None:
             parent_name, child_name = name.rsplit(".", 1)
             setattr(layers.get_submodule(parent_name), child_name, linear)
     model.to(torch.bfloat16)
-    save_model(make_understanding_qat_path(config.model_name), model)
+    save_model(make_qat_path(config.model_name, config.think_language), model)
 
 
 if __name__ == "__main__":
