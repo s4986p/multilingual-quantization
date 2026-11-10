@@ -19,7 +19,7 @@ class Config:
     max_generation_len: int = 16384
     # model to evaluate
     model_name: str = "google/gemma-4-E2B-it"
-    method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
+    method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4", "understanding_qat"] = "bf16"
     calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
