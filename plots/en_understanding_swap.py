@@ -31,7 +31,6 @@ def get_used_accuracy(
     result: dict,
     used: set[int],
 ) -> float:
-    # en understanding swap keeps only problems it used, others keep all problems
     problem_indices = result.get("problem_indices", range(len(result["corrects"])))
     return mean(correct for problem_index, correct in zip(problem_indices, result["corrects"]) if problem_index in used)
 
@@ -44,7 +43,6 @@ def main() -> None:
     groups = []
     used_counts = {}
     for language in LANGUAGES:
-        # compare cells on problems en understanding swap used
         seed_accuracies = []
         seed_used_counts = []
         for cell_results in seed_results:

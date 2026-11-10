@@ -23,7 +23,7 @@ class Config:
     group_size: int = 128
     block_size: int = 128
     damp_ratio: float = 0.01
-    # wikipedia calibration
+    # data to calibrate on
     calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_samples: int = 128
     max_sequence_len: int = 2048
@@ -60,12 +60,12 @@ def quantize_weight(
     damp_ratio: float,
 ) -> Tensor:
     weight = weight.float().clone()
-    # 1) zero dead columns, so hessian stays invertible
+    # 1) zero dead columns, because hessian must stay invertible
     is_dead = hessian.diagonal() == 0
     weight[:, is_dead] = 0
     hessian.diagonal()[is_dead] = 1
 
-    # 2) damp diagonal, so inverse stays stable
+    # 2) damp diagonal, because inverse must stay stable
     hessian.diagonal().add_(damp_ratio * hessian.diagonal().mean())
     hessian_inv = torch.linalg.cholesky(torch.cholesky_inverse(torch.linalg.cholesky(hessian)), upper=True)
 
@@ -78,10 +78,10 @@ def quantize_weight(
         end = min(start + block_size, weight.shape[1])
         for column in range(start, end):
             group = column // group_size
-            # set grid when group starts, so it uses weights updated by earlier columns
+            # set grid when group starts, because it must use weights updated by earlier columns
             if column % group_size == 0:
                 scale[:, group], zero[:, group] = find_grid(weight[:, column : column + group_size], num_bits)
-            # 3-1) quantize column, and spread its error to later columns in block
+            # 3-1) quantize column and spread its error to later columns in block
             quantized[:, column] = round_to_grid(weight[:, column], scale[:, group], zero[:, group], num_bits)
             error[:, column - start] = (weight[:, column] - quantized[:, column]) / hessian_inv[column, column]
             weight[:, column:end] -= torch.outer(error[:, column - start], hessian_inv[column, column:end])

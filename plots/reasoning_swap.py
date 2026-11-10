@@ -36,7 +36,6 @@ def main() -> None:
     groups = []
     used_counts = {}
     for language in LANGUAGES:
-        # compare cells on problems all four used
         seed_accuracies = []
         seed_used_counts = []
         for cell_results in seed_results:

@@ -60,7 +60,7 @@ def main() -> None:
                 samples.append((problem_index, get_prompt_ids(tokenizer, prompt), get_think_ids(tokenizer, config.model_name, think)))
         print(f"{target} {language} samples {len(samples)} positions {sum(len(think_ids) for _, _, think_ids in samples)}")
 
-        # 2) compare bf16, quantized next token predictions at each reasoning position
+        # 2) compare bf16 and quantized next token predictions with kl at each reasoning position
         log_time = time.perf_counter()
         torch.cuda.reset_peak_memory_stats()
         for sample_index, (problem_index, prompt_ids, think_ids) in enumerate(samples):

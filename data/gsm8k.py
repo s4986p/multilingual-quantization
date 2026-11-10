@@ -26,7 +26,7 @@ def load_gsm8k() -> dict[str, list[tuple[str, int]]]:
     gsm8k = load_dataset("openai/gsm8k", "main", split="train")
     mcot = load_dataset("laihuiyuan/mCoT-MATH", data_files="train_part_*.jsonl", split="train").select_columns(["question", "lang-id"])
 
-    # 1) group mcot questions by id, because same problem has same id in every language
+    # 1) group mcot questions by id, because same problem has same id in each language
     # e.g. "en-54530", "sw-54530" -> questions["54530"] = {"en": ..., "sw": ...}
     questions = defaultdict(dict)
     for batch in mcot.iter(batch_size=100000):
@@ -35,14 +35,14 @@ def load_gsm8k() -> dict[str, list[tuple[str, int]]]:
             if language in MGSM_PROMPTS:
                 questions[mcot_id][language] = question.strip()
 
-    # 2) map en question to questions in all languages
+    # 2) map mcot en question to question in each language
     questions_by_en = {" ".join(language_questions["en"].split()): language_questions for language_questions in questions.values()}
 
-    # 3) take questions in all languages for each gsm8k train problem, in gsm8k order
+    # 3) match each gsm8k train question with mcot en question
     problems = {language: [] for language in MGSM_PROMPTS}
     for row in gsm8k:
         language_questions = questions_by_en[" ".join(row["question"].split())]
-        # e.g. "Natalia sold 48/2 = <<48/2=24>>24 clips in May. ...\n#### 72" -> 72
+        # e.g. "...\n#### 72" -> 72
         answer = int(row["answer"].split("####")[-1].replace(",", ""))
         for language in MGSM_PROMPTS:
             problems[language].append((MGSM_PROMPTS[language].format(question=language_questions[language]), answer))
@@ -67,7 +67,7 @@ def main() -> None:
     print(f"{target} en accuracy {result['accuracy']:.2%} think len {mean(result['think_lens']):.0f} truncated {mean(result['truncateds']):.2%}")
     print(f"{target} time {format_duration(time.perf_counter() - log_time)}")
 
-    # 2) keep prompt ids of each language, en reasoning ids, on problems solved by bf16 in en
+    # 2) keep prompt ids in each language and en reasoning ids on problems solved by bf16 in en
     # e.g. "<|channel>thought\n...<channel|>Answer: 72" -> "<|channel>thought\n..."
     tensors = defaultdict(list)
     for problem_index, (output, correct, think_len) in enumerate(zip(outputs, result["corrects"], result["think_lens"])):

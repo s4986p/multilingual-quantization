@@ -41,18 +41,18 @@ def main() -> None:
         target = make_target_path(method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
         results[method] = load_tensors(entry_name, target, file_name)
 
-    kl_groups = []
+    groups = []
     for language in LANGUAGES:
         kl_means = []
         for result in results.values():
             problem_kls = torch.stack([kl.mean() for kl in split_problems(result[f"{language}/kl"], result[f"{language}/problem_index"])])
             kl_means.append(problem_kls.mean().item())
-        kl_groups.append((kl_means, LANGUAGE_COLORS[language], [f"{kl_mean:.3f}" for kl_mean in kl_means]))
+        groups.append((kl_means, LANGUAGE_COLORS[language], [f"{kl_mean:.3f}" for kl_mean in kl_means]))
 
     panel_widths = [get_panel_width(len(results), len(LANGUAGES))]
     fig, axes = plt.subplot_mosaic([["kl"], ["progress"]], figsize=get_figsize(panel_widths, 2), layout="constrained")
-    plot_bars(axes["kl"], list(results), kl_groups)
-    axes["kl"].set_ylim(0, max(max(values) for values, _, _ in kl_groups) * 1.15)
+    plot_bars(axes["kl"], list(results), groups)
+    axes["kl"].set_ylim(0, max(max(values) for values, _, _ in groups) * 1.15)
     axes["kl"].set_ylabel("mean kl per problem")
     result = results[config.method]
     used_counts = {language: len(result[f"{language}/problem_index"].unique()) for language in LANGUAGES}
@@ -68,7 +68,6 @@ def main() -> None:
 
     fig.suptitle(f"{config.model_name} mgsm teacher forcing\n{file_name}")
     fig.legend(handles=[Line2D([], [], color=LANGUAGE_COLORS[language], marker="o", linewidth=2, label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
-    # panels share one column, so fit width by one panel
     fit_bar_width(fig, [axes["kl"]])
     save_figure(fig, config.model_name, "mgsm_teacher_forcing")
 

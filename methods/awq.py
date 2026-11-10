@@ -25,7 +25,7 @@ class Config:
     group_size: int = 128
     num_search_steps: int = 20
     max_shrink: float = 0.5
-    # wikipedia calibration
+    # data to calibrate on
     calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_samples: int = 128
     max_sequence_len: int = 2048
@@ -115,7 +115,7 @@ def find_smooth(
     group_size: int,
     num_search_steps: int,
 ) -> Tensor:
-    # compare whole layer output, not each sub-module, so code stays simple
+    # compare whole layer output, not each sub-module, because it keeps code simple
     outputs = forward_layer(layer, inputs)
     weights = [linear.weight.clone() for linear in linears]
 
@@ -143,13 +143,12 @@ def find_clip(
     num_search_steps: int,
     max_shrink: float,
 ) -> Tensor:
-    # outliers widen grid range, step size
-    # so search clip for each quantization group
-    # 1) apply smooth to weight (w * s), hessian (x / s)
+    # search clip for each group, because outliers widen grid range and step size
+    # 1) apply smooth to weight (w * s) and hessian (x / s)
     groups = (weight.float() * smooth).reshape(weight.shape[0], -1, group_size)
     num_groups = groups.shape[1]
     smoothed_hessian = hessian / smooth[:, None] / smooth[None, :]
-    # clip is picked per group, so keep only each group's diagonal block
+    # keep only each group's diagonal block, because clip is picked per group
     hessian_blocks = smoothed_hessian.reshape(num_groups, group_size, num_groups, group_size).diagonal(dim1=0, dim2=2).permute(2, 0, 1)
 
     # 2) search clip
@@ -161,7 +160,7 @@ def find_clip(
         scale, zero = find_grid(groups.clamp(-clip_value[..., None], clip_value[..., None]), num_bits)
         quantized = round_to_grid(groups, scale[..., None], zero[..., None], num_bits)
         delta = quantized - groups
-        # error of other groups in same row also affects output, but ignore it, so each group's clip can be searched alone
+        # ignore error of other groups in same row, because then each group's clip can be searched alone
         error = torch.einsum("ogi,gij,ogj->og", delta, hessian_blocks, delta)
         is_better = error < best_error
         best_error = torch.where(is_better, error, best_error)

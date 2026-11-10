@@ -69,8 +69,8 @@ def load_mgsm(
 def get_mgsm_question(
     prompt: str,
 ) -> str:
-    # drop instruction, blank line before question
-    # e.g. "Solve this math problem. ...\n\nJames decides to run ..." -> "James decides to run ..."
+    # drop instruction and blank line before question
+    # e.g. instruction + "\n\n" + question -> question
     return prompt.split("\n\n", 1)[1]
 
 
