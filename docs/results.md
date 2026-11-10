@@ -219,14 +219,14 @@ check if qat does better by following bf16 reasoning on en prompt, because sw, t
 - we do not know yet if training can go above bf16
 
 ## translate first finetune
-check if cross entropy on en question goes above bf16, because kl to bf16 same prompt has bf16 as best, and on bf16 zh, ja, te, translate first instruction raises accuracy
+check if training to write en question first goes above bf16, because on bf16 zh, ja, te, translate first instruction raises accuracy
 
 #### setup
 - translate first finetune means bf16 trained to write en question at start of reasoning
 - use gsm8k train questions from mcot in zh, sw, ja, te
 - use native instruction
 - put en question of same problem before bf16 seed 0 reasoning on en prompt
-- match next token predictions to en question, reasoning with cross entropy
+- match next token predictions to en question, reasoning with cross entropy, not kl, because en question comes from gsm8k, not from bf16
 - train from bf16 weights without rounding
 - adamw lr 1e-5, no weight decay, cosine schedule, 5% warmup, batch size 8, 1 epoch, max sequence len 2048
 - compare translate first finetune with bf16 native instruction, bf16 translate first instruction
