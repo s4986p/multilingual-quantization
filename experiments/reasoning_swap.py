@@ -53,7 +53,7 @@ def main() -> None:
     think_end_id = tokenizer.convert_tokens_to_ids(think_end)
 
     for reasoning_method in missing_reasoning_methods:
-        # 1) take whole reasoning of problems that reached response
+        # 1) take saved reasoning on problems that reached response
         problem_indices = {}
         input_ids = []
         for language in languages:
@@ -67,7 +67,8 @@ def main() -> None:
         # 2) write response and score it
         log_time = time.perf_counter()
         outputs = continue_vllm(model, config.model_name, input_ids, config.max_generation_len)
-        # think_end is in input, but split_outputs looks for it in output
+        # add reasoning end token to output, because split_outputs looks for it there
+        # e.g. response -> "<channel|>" + response
         outputs = [SimpleNamespace(token_ids=[think_end_id, *output.token_ids], finish_reason=output.finish_reason) for output in outputs]
         result = {}
         start = 0

@@ -22,7 +22,7 @@ def split_outputs(
             think_len = token_ids.index(think_end_id)
             response = tokenizer.decode(token_ids[think_len + 1 :], skip_special_tokens=True)
         else:
-            # ran out of tokens during reasoning, so no response
+            # hit max generation len during reasoning, so no response
             think_len = len(token_ids)
             response = None
         thinks.append(tokenizer.decode(token_ids[:think_len], skip_special_tokens=True))

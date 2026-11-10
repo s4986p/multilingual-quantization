@@ -76,7 +76,6 @@ def main() -> None:
             groups.append((values, LANGUAGE_COLORS[language], [format_ratio(value, bf16_values[-1]) for value in values]))
 
         plot_bars(ax, list(results), groups, bf16_values)
-        # same scale for every model, benchmark, so figures can be compared
         ax.set_ylim(0, ymax)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
@@ -85,7 +84,6 @@ def main() -> None:
     fig.suptitle(f"{config.model_name} {config.benchmark} loss\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     handles = [Patch(color=LANGUAGE_COLORS[language], label=f"{language} ({format_bf16_accuracy([bf16_result[language]['accuracy'] for bf16_result in bf16_results])})") for language in LANGUAGES]
     fig.legend(handles=[*handles, Patch(color=BF16_COLOR, label="bf16")], loc="outside lower center", ncol=len(handles) + 1)
-    # panels share one column, so fit width by one panel
     fit_bar_width(fig, [axes[0]])
     save_figure(fig, config.model_name, f"{config.benchmark}_loss")
 

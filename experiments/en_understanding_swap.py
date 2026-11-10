@@ -41,15 +41,17 @@ def main() -> None:
     problems = load_mgsm(languages)
     bf16_result = load_result("mgsm", make_bf16_path(config.model_name), file_name)
 
-    # 1) put bf16 en understanding at start of reasoning, after prompt in each language, on problems that have it
+    # 1) use problems that have en understanding
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     understandings = [get_understanding(think) for think in bf16_result["en"]["thinks"]]
     problem_indices = [problem_index for problem_index, understanding in enumerate(understandings) if understanding is not None]
+
+    # 2) put en understanding at start of reasoning, after prompt with native instruction
     input_ids = [torch.cat([get_prompt_ids(tokenizer, problems[language][problem_index][0]), get_think_ids(tokenizer, config.model_name, understandings[problem_index])]) for language in languages for problem_index in problem_indices]
     model_path = config.model_name if config.method == "bf16" else download_model(target)
     model = load_vllm(model_path, config.model_name, config.seed)
 
-    # 2) continue after understanding and score it
+    # 3) continue after en understanding and score it
     log_time = time.perf_counter()
     outputs = continue_vllm(model, config.model_name, input_ids, config.max_generation_len)
     result = {}

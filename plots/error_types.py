@@ -56,7 +56,6 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     bf16_results = [load_result("mgsm", make_bf16_path(config.model_name), f"max_generation_len={config.max_generation_len},seed={seed}") for seed in config.bf16_seeds]
 
-    # 1) count error types of each language
     language_ratios = []
     used_counts = {}
     for language in LANGUAGES:
@@ -64,7 +63,6 @@ def main() -> None:
         error_types = [error_type or "other" for result in results for error_type in result[language]["error_types"]]
         language_ratios.append({error_type: error_types.count(error_type) / (used_counts[language] * len(results)) for error_type in ERROR_TYPE_COLORS})
 
-    # 2) count error types of first errors in each reasoning progress bin
     bin_counts = [dict.fromkeys(ERROR_TYPE_COLORS, 0) for _ in range(NUM_PROGRESS_BINS)]
     for language in LANGUAGES:
         for result, quantized_result in zip(results, quantized_results):
@@ -80,14 +78,14 @@ def main() -> None:
     fig, axes = plt.subplot_mosaic([["types"], ["progress"]], figsize=get_figsize([get_panel_width(len(LANGUAGES), 1)], 2), layout="constrained")
     plot_error_types(axes["types"], language_ratios)
     axes["types"].set_xticks(range(len(LANGUAGES)), LANGUAGES)
-    axes["types"].set_ylabel("ratio of problems bf16 solved")
+    axes["types"].set_ylabel("ratio of problems solved by all bf16 seeds")
     axes["types"].set_title(f"{config.method} (problems used {', '.join(f'{language} {used_counts[language]}' for language in LANGUAGES)})")
 
     plot_error_types(axes["progress"], progress_ratios)
     axes["progress"].set_xticks(range(NUM_PROGRESS_BINS), PROGRESS_LABELS)
     axes["progress"].set_xlabel("reasoning progress")
     axes["progress"].set_ylabel("ratio of first errors")
-    axes["progress"].set_title(f"{config.method} first error by reasoning progress (all languages)")
+    axes["progress"].set_title(f"{config.method} first errors by reasoning progress")
 
     fig.suptitle(f"{config.model_name} mgsm error types\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     fig.legend(handles=[Patch(color=color, label=error_type) for error_type, color in ERROR_TYPE_COLORS.items()], loc="outside lower center", ncol=len(ERROR_TYPE_COLORS))

@@ -39,8 +39,8 @@ def main() -> None:
     languages = list(MGSM_PROMPTS)
     problems = load_mgsm(languages)
 
-    # 1) put en question at start of reasoning, after prompt in each language
-    # e.g. sw prompt + "<|channel>thought\n" + "Janet's ducks lay 16 eggs per day. ..." + blank line
+    # 1) put en question at start of reasoning, after prompt with native instruction
+    # e.g. sw prompt + "<|channel>thought\n" + en question + "\n\n"
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     en_questions = [get_mgsm_question(prompt) for prompt, _ in problems["en"]]
     input_ids = [torch.cat([get_prompt_ids(tokenizer, prompt), get_think_ids(tokenizer, config.model_name, THINK_HEADER + en_question + "\n\n")]) for language in languages for (prompt, _), en_question in zip(problems[language], en_questions)]

@@ -58,7 +58,7 @@ def format_ratio(
     ratio: float,
     bf16_ratio: float,
 ) -> str:
-    return f"{ratio:.1%}\n{ratio - bf16_ratio:+.1%}p"
+    return f"{ratio:.1%}\n{round(ratio - bf16_ratio, 3) + 0.0:+.1%}p"
 
 
 def format_bf16_ratio(
@@ -86,7 +86,6 @@ def plot_bars(
             ax.bar(xs, [bf16_values[index]] * len(xs), width=1, color=BF16_COLOR)
         ax.bar(xs, values, width=1, color=color)
         for x, value, text in zip(xs, values, texts):
-            # put text above bf16 bar, so text does not cover it
             top = value if bf16_values is None else max(value, bf16_values[index])
             ax.annotate(text, (x, top), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
     ax.set_xticks([slot * slot_width for slot in range(len(labels))], labels)

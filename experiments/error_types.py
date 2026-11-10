@@ -79,7 +79,7 @@ def main() -> None:
     bf16_results = [load_result("mgsm", bf16_target, f"max_generation_len={config.max_generation_len},seed={seed}") for seed in config.bf16_seeds]
     quantized_result = load_result("mgsm", target, file_name)
 
-    # 1) take quantized wrong reasoning on problems solved by all bf16 seeds
+    # 1) take wrong reasoning on problems solved by all bf16 seeds
     problem_indices = {}
     prompts = []
     for language in languages:
@@ -97,8 +97,8 @@ def main() -> None:
             ))
         print(f"{target} {language} wrong {len(problem_indices[language])}")
 
-    # 2) judge and read line, type from end of response
-    # qwen3.5-27b needs more memory per sequence, so default 1024 sequences don't fit
+    # 2) read first wrong line and error type from end of judge response
+    # 256 sequences, because qwen3.5-27b does not fit default 1024 sequences
     model = load_vllm(config.judge_name, config.judge_name, config.seed, max_num_seqs=256)
     tokenizer = model.get_tokenizer()
     log_time = time.perf_counter()
