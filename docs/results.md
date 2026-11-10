@@ -1,6 +1,7 @@
 # results
 
 ## common setup
+![](diagrams/terms.png)
 all experiments use this setup unless noted
 - qwen3.5-2b, gemma-4-e2b-it, thinking mode on
 - bf16 baseline
@@ -67,6 +68,7 @@ check if calibration language matters
 check if prediction changes differ by language
 
 #### setup
+![](diagrams/teacher_forcing.png)
 - kl by reasoning progress is awq only
 - take bf16 seed 0 reasoning on problems solved by bf16 seed 0, 1
 - give that reasoning to bf16, quantized
@@ -81,6 +83,7 @@ check if prediction changes differ by language
 [teacher forcing](#teacher-forcing) shows kl gap with en is largest at start of reasoning, so check if reasoning or response decides accuracy
 
 #### setup
+![](diagrams/reasoning_swap.png)
 - take saved reasoning of bf16 or quantized on problems that reached response, correct or not
 - write response after it with bf16 or quantized, so four cases
 
@@ -114,6 +117,7 @@ check if prediction changes differ by language
 [error types](#error-types) shows sw, te may mostly read question wrong, so check if gap with en comes from translation or from solving
 
 #### setup
+![](diagrams/gold_translation_swap.png)
 - native instruction means instruction in each language
 - gold translation means mgsm en question
 - gold translation swap means gold translation put at start of reasoning, after prompt with native instruction
