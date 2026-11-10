@@ -19,6 +19,7 @@ from utils.paths import make_bf16_path
 class Config:
     seed: int = 0
     max_generation_len: int = 16384
+    # model that writes reasoning
     model_name: str = "google/gemma-4-E2B-it"
 
 
@@ -64,7 +65,7 @@ def main() -> None:
     log_time = time.perf_counter()
     outputs = generate_vllm(model, config.model_name, [prompt for prompt, _ in problems["en"]], config.max_generation_len)
     result = evaluate_mgsm(outputs, [answer for _, answer in problems["en"]], "en", tokenizer, config.model_name)
-    print(f"{target} en accuracy {result['accuracy']:.2%} think len {mean(result['think_lens']):.0f} truncated {mean(result['truncateds']):.2%}")
+    print(f"{target} en accuracy {result['accuracy']:.2%} reasoning len {mean(result['think_lens']):.0f} truncated {mean(result['truncateds']):.2%}")
     print(f"{target} time {format_duration(time.perf_counter() - log_time)}")
 
     # 2) keep prompt ids in each language and en reasoning ids on problems solved by bf16 in en

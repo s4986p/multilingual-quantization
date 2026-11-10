@@ -48,7 +48,7 @@ def main() -> None:
         end = start + len(language_problems)
         result[language] = evaluate_mmlu_prox_lite(outputs[start:end], [answer for _, answer in language_problems], language, tokenizer, config.model_name)
         start = end
-        print(f"{target} {language} accuracy {result[language]['accuracy']:.2%} think len {mean(result[language]['think_lens']):.0f} truncated {mean(result[language]['truncateds']):.2%}")
+        print(f"{target} {language} accuracy {result[language]['accuracy']:.2%} reasoning len {mean(result[language]['think_lens']):.0f} truncated {mean(result[language]['truncateds']):.2%}")
     print(f"{target} time {format_duration(time.perf_counter() - log_time)}")
     save_result("mmlu_prox_lite", target, file_name, result)
 

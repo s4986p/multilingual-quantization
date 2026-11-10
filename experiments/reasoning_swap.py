@@ -77,7 +77,7 @@ def main() -> None:
             answers = [problems[language][problem_index][1] for problem_index in problem_indices[language]]
             result[language] = {**evaluate_mgsm(outputs[start:end], answers, language, tokenizer, config.model_name), "problem_indices": problem_indices[language]}
             start = end
-            print(f"{target} {reasoning_method} {language} accuracy {result[language]['accuracy']:.2%} used {len(answers)}/{len(problems[language])}")
+            print(f"{target} {reasoning_method} {language} accuracy {result[language]['accuracy']:.2%} used {len(answers)} of {len(problems[language])}")
         print(f"{target} {reasoning_method} time {format_duration(time.perf_counter() - log_time)}")
         save_result(entry_name, target, file_names[reasoning_method], result)
 
