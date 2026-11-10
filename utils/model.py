@@ -4,14 +4,14 @@ from transformers import AutoModelForImageTextToText, PreTrainedModel, PreTraine
 from vllm import LLM, SamplingParams  # type: ignore
 from vllm.outputs import CompletionOutput  # type: ignore
 
-# recommended sampling settings for thinking mode, and reasoning start, end tokens
+# sampling settings recommended for thinking mode, with reasoning start, end tokens
 GENERATION_CONFIGS = {
     "Qwen/Qwen3.5-2B": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "presence_penalty": 1.5, "think_start": "", "think_end": "</think>"},
     "Qwen/Qwen3.5-27B": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "presence_penalty": 1.5, "think_start": "", "think_end": "</think>"},
     "google/gemma-4-E2B-it": {"temperature": 1.0, "top_p": 0.95, "top_k": 64, "presence_penalty": 0.0, "think_start": "<|channel>", "think_end": "<channel|>"},
 }
 
-# saved gemma reasoning starts with this after think start token
+# saved gemma reasoning starts with this after reasoning start token
 # e.g. "<|channel>thought\nHere's a thinking process ...<channel|>"
 THINK_HEADER = "thought\n"
 
@@ -75,5 +75,5 @@ def get_think_ids(
     model_name: str,
     think: str,
 ) -> Tensor:
-    # saved reasoning has no special tokens, so put back start token
+    # saved reasoning has no special tokens, so put back reasoning start token
     return tokenizer(GENERATION_CONFIGS[model_name]["think_start"] + think, add_special_tokens=False, return_tensors="pt")["input_ids"][0]

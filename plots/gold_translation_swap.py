@@ -7,11 +7,10 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
-from utils.hub import load_result, result_exists
+from utils.hub import load_result
 from utils.paths import make_bf16_path, make_target_path
-from utils.plot import ACCURACY_YMAX, LANGUAGE_COLORS, METHODS, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
+from utils.plot import ACCURACY_YMAX, LANGUAGE_COLORS, LANGUAGES, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
 
-LANGUAGES = list(LANGUAGE_COLORS)
 CELLS = [("bf16", "mgsm"), ("bf16", "gold_translation_swap/mgsm"), ("quantized", "mgsm"), ("quantized", "gold_translation_swap/mgsm")]
 LABELS = ["bf16, native instruction", "bf16, gold translation swap", "quantized, native instruction", "quantized, gold translation swap"]
 
@@ -19,7 +18,8 @@ LABELS = ["bf16, native instruction", "bf16, gold translation swap", "quantized,
 @dataclass
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
-    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
@@ -29,37 +29,26 @@ class Config:
 
 def main() -> None:
     config = parse(Config)
-    bf16_target = make_bf16_path(config.model_name)
+    targets = {"bf16": make_bf16_path(config.model_name), "quantized": make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)}
+    seed_results = [[load_result(entry_name, targets[model_method], f"max_generation_len={config.max_generation_len},seed={seed}") for model_method, entry_name in CELLS] for seed in config.seeds]
 
-    # 1) keep seeds that have all four cells
-    results = {}
-    for method in METHODS:
-        targets = {"bf16": bf16_target, "quantized": make_target_path(method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)}
-        for seed in config.seeds:
-            file_name = f"max_generation_len={config.max_generation_len},seed={seed}"
-            if all(result_exists(entry_name, targets[model_method], file_name) for model_method, entry_name in CELLS):
-                results.setdefault(method, []).append([load_result(entry_name, targets[model_method], file_name) for model_method, entry_name in CELLS])
+    groups = []
+    for language in LANGUAGES:
+        seed_accuracies = [[cell_result[language]["accuracy"] for cell_result in cell_results] for cell_results in seed_results]
+        accuracies = [mean(cell_accuracies) for cell_accuracies in zip(*seed_accuracies)]
+        texts = [format_bf16_ratio([cell_accuracies[0] for cell_accuracies in seed_accuracies]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
+        groups.append((accuracies, LANGUAGE_COLORS[language], texts))
 
-    panel_widths = [get_panel_width(len(CELLS), len(LANGUAGES))]
-    fig, axes = plt.subplots(len(results), 1, figsize=get_figsize(panel_widths, len(results)), layout="constrained", squeeze=False)
-    for ax, (method, seed_results) in zip(axes[:, 0], results.items()):
-        groups = []
-        for language in LANGUAGES:
-            seed_accuracies = [[cell_result[language]["accuracy"] for cell_result in cell_results] for cell_results in seed_results]
-            accuracies = [mean(cell_accuracies) for cell_accuracies in zip(*seed_accuracies)]
-            texts = [format_bf16_ratio([cell_accuracies[0] for cell_accuracies in seed_accuracies]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
-            groups.append((accuracies, LANGUAGE_COLORS[language], texts))
-
-        plot_bars(ax, LABELS, groups)
-        ax.set_ylim(0, ACCURACY_YMAX)
-        ax.set_ylabel("accuracy")
-        ax.set_title(method)
-        ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
+    fig, ax = plt.subplots(figsize=get_figsize([get_panel_width(len(CELLS), len(LANGUAGES))], 1), layout="constrained")
+    plot_bars(ax, LABELS, groups)
+    ax.set_ylim(0, ACCURACY_YMAX)
+    ax.set_ylabel("accuracy")
+    ax.set_title(config.method)
+    ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
     fig.suptitle(f"{config.model_name} mgsm gold translation swap\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     fig.legend(handles=[Patch(color=LANGUAGE_COLORS[language], label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
-    # panels share one column, so fit width by one panel
-    fit_bar_width(fig, [axes[0, 0]])
+    fit_bar_width(fig, [ax])
     save_figure(fig, config.model_name, "mgsm_gold_translation_swap")
 
 

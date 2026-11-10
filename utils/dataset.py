@@ -66,6 +66,14 @@ def load_mgsm(
     return problems
 
 
+def get_mgsm_question(
+    prompt: str,
+) -> str:
+    # drop instruction, blank line before question
+    # e.g. "Solve this math problem. ...\n\nJames decides to run ..." -> "James decides to run ..."
+    return prompt.split("\n\n", 1)[1]
+
+
 def load_mmlu_prox_lite(
     languages: list[str],
 ) -> dict[str, list[tuple[str, str]]]:

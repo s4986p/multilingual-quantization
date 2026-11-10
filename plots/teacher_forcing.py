@@ -7,19 +7,16 @@ from simple_parsing import parse
 import torch
 from torch import Tensor
 
-from utils.hub import load_tensors, result_exists
+from utils.hub import load_tensors
 from utils.paths import make_target_path
-from utils.plot import LANGUAGE_COLORS, METHODS, fit_bar_width, get_figsize, get_panel_width, plot_bars, save_figure
-
-LANGUAGES = list(LANGUAGE_COLORS)
-NUM_PROGRESS_BINS = 5
+from utils.plot import LANGUAGE_COLORS, LANGUAGES, METHODS, NUM_PROGRESS_BINS, PROGRESS_LABELS, fit_bar_width, get_figsize, get_panel_width, plot_bars, save_figure
 
 
 @dataclass
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "awq"
-    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
@@ -41,9 +38,8 @@ def main() -> None:
 
     results = {}
     for method in METHODS:
-        target = make_target_path(method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
-        if result_exists(entry_name, target, file_name, "safetensors"):
-            results[method] = load_tensors(entry_name, target, file_name)
+        target = make_target_path(method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
+        results[method] = load_tensors(entry_name, target, file_name)
 
     kl_groups = []
     for language in LANGUAGES:
@@ -64,8 +60,8 @@ def main() -> None:
 
     for language in LANGUAGES:
         progress_kls = torch.stack([torch.stack([bin_kl.mean() for bin_kl in kl.tensor_split(NUM_PROGRESS_BINS)]) for kl in split_problems(result[f"{language}/kl"], result[f"{language}/problem_index"])])
-        axes["progress"].plot(range(1, NUM_PROGRESS_BINS + 1), progress_kls.mean(dim=0), color=LANGUAGE_COLORS[language], marker="o", linewidth=2)
-    axes["progress"].set_xticks(range(1, NUM_PROGRESS_BINS + 1), [f"{(index - 1) * 20}~{index * 20}%" for index in range(1, NUM_PROGRESS_BINS + 1)])
+        axes["progress"].plot(range(NUM_PROGRESS_BINS), progress_kls.mean(dim=0), color=LANGUAGE_COLORS[language], marker="o", linewidth=2)
+    axes["progress"].set_xticks(range(NUM_PROGRESS_BINS), PROGRESS_LABELS)
     axes["progress"].set_xlabel("reasoning progress")
     axes["progress"].set_ylabel("mean kl per problem")
     axes["progress"].set_title(f"{config.method} kl by reasoning progress")

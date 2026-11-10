@@ -7,8 +7,11 @@ import matplotlib.pyplot as plt
 
 METHODS = ["gptq", "awq", "nf4", "mxfp4"]
 LANGUAGE_COLORS = {"en": "#3c5a9a", "zh": "#de2910", "sw": "#1eb53a", "ja": "#f4a6b7", "te": "#ff9933"}
+LANGUAGES = list(LANGUAGE_COLORS)
 BF16_COLOR = "#d9d9d9"
 ACCURACY_YMAX = 1.15
+NUM_PROGRESS_BINS = 5
+PROGRESS_LABELS = [f"{index * 100 // NUM_PROGRESS_BINS}~{(index + 1) * 100 // NUM_PROGRESS_BINS}%" for index in range(NUM_PROGRESS_BINS)]
 BAR_INCHES = 0.6
 BAR_GAP = 1
 PANEL_HEIGHT = 3.5

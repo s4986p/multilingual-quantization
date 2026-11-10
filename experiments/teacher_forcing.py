@@ -20,12 +20,13 @@ from utils.paths import make_bf16_path, make_target_path
 @dataclass
 class Config:
     seed: int = 0
+    bf16_seeds: tuple[int, ...] = (0, 1)
     max_generation_len: int = 16384
     logit_chunk_len: int = 2048
     # model to compare with bf16
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "awq"
-    languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
@@ -58,14 +59,15 @@ def main() -> None:
     config = parse(Config)
     file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
     entry_name = "teacher_forcing/mgsm"
-    target = make_target_path(config.method, config.model_name, config.languages, config.num_bits, config.group_size, config.num_samples)
+    target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
     if result_exists(entry_name, target, file_name, "safetensors"):
         print(f"{target} already evaluated")
         return
     languages = list(MGSM_PROMPTS)
     problems = load_mgsm(languages)
     bf16_target = make_bf16_path(config.model_name)
-    bf16_results = [load_result("mgsm", bf16_target, f"max_generation_len={config.max_generation_len},seed={seed}") for seed in [config.seed, config.seed + 1]]
+    bf16_result = load_result("mgsm", bf16_target, file_name)
+    bf16_results = [load_result("mgsm", bf16_target, f"max_generation_len={config.max_generation_len},seed={seed}") for seed in config.bf16_seeds]
 
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     bf16_model = load_model(config.model_name)
@@ -73,13 +75,13 @@ def main() -> None:
 
     tensors = defaultdict(list)
     for language in languages:
-        # 1) use bf16 reasoning on problems solved by both bf16 seeds
+        # 1) take bf16 reasoning on problems solved by all bf16 seeds
         all_correct_mask = get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results])
         samples = []
-        for problem_index, ((prompt, _), think, all_correct) in enumerate(zip(problems[language], bf16_results[0][language]["thinks"], all_correct_mask)):
+        for problem_index, ((prompt, _), think, all_correct) in enumerate(zip(problems[language], bf16_result[language]["thinks"], all_correct_mask)):
             if all_correct:
                 samples.append((problem_index, get_prompt_ids(tokenizer, prompt), get_think_ids(tokenizer, config.model_name, think)))
-        print(f"{language} samples {len(samples)} positions {sum(len(think_ids) for _, _, think_ids in samples)}")
+        print(f"{target} {language} samples {len(samples)} positions {sum(len(think_ids) for _, _, think_ids in samples)}")
 
         # 2) compare bf16, quantized next token predictions at each reasoning position
         log_time = time.perf_counter()
@@ -95,7 +97,7 @@ def main() -> None:
             tensors[f"{language}/problem_index"].append(torch.full_like(think_ids, problem_index, dtype=torch.int32))
 
             if (sample_index + 1) % 50 == 0:
-                print(f"{language} sample {sample_index + 1}/{len(samples)} time {format_duration(time.perf_counter() - log_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")
+                print(f"{target} {language} sample {sample_index + 1}/{len(samples)} time {format_duration(time.perf_counter() - log_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")
                 log_time = time.perf_counter()
                 torch.cuda.reset_peak_memory_stats()
 

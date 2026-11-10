@@ -68,13 +68,13 @@ def parse_mmlu_prox_lite_prediction(
     # drop markdown bold
     # e.g. "Jibu ni **E**" -> "Jibu ni E"
     response = response.replace("*", "")
-    # take single uppercase letter A-J after prefix
+    # take single uppercase letter A~J after prefix
     # e.g. "The answer is C" -> ["C"]
     #      "The answer is K" -> []
     #      "The answer is c" -> []
     #      "The answer is Cat" -> []
     letters = re.findall(rf"(?i:{re.escape(answer_prefix)})\s*[:：]?\s*\(?([A-J])\b\)?", response)
-    # if no letter is found, take any standalone uppercase letter A-J in response
+    # if no letter is found, take any standalone uppercase letter A~J in response
     # e.g. "Jibu: A"      -> ["A"]
     #      "I chose (D)." -> ["I", "D"]
     letters = letters or re.findall(r"\b([A-J])\b", response)
