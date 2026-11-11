@@ -46,7 +46,7 @@ def main() -> None:
     understandings = [get_understanding(think) for think in bf16_result["en"]["thinks"]]
     problem_indices = [problem_index for problem_index, understanding in enumerate(understandings) if understanding is not None]
 
-    # 2) put en understanding at start of reasoning, after prompt with native instruction
+    # 2) put en understanding at start of reasoning, after native prompt
     input_ids = [torch.cat([get_prompt_ids(tokenizer, problems[language][problem_index][0]), get_think_ids(tokenizer, config.model_name, understandings[problem_index])]) for language in languages for problem_index in problem_indices]
     model_path = config.model_name if config.method == "bf16" else download_model(target)
     model = load_vllm(model_path, config.model_name, config.seed)

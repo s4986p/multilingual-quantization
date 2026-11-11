@@ -12,7 +12,7 @@ from utils.paths import make_bf16_path, make_target_path
 from utils.plot import ACCURACY_YMAX, LANGUAGE_COLORS, LANGUAGES, fit_bar_width, format_bf16_ratio, format_ratio, get_figsize, get_panel_width, plot_bars, save_figure
 
 CELLS = [("bf16", "mgsm"), ("bf16", "en_question_insert/mgsm"), ("quantized", "mgsm"), ("quantized", "en_question_insert/mgsm")]
-LABELS = ["bf16, native instruction", "bf16, en question insert", "quantized, native instruction", "quantized, en question insert"]
+LABELS = ["bf16, native prompt", "bf16, en question insert", "quantized, native prompt", "quantized, en question insert"]
 
 
 @dataclass

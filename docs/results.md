@@ -22,6 +22,7 @@ all experiments use this setup unless noted
 - prompt means instruction, question
 - instruction means text before question
 - question means text of problem
+- native means in each language, e.g. native prompt
 - reasoning means text in thinking mode
 - understanding means part at start of reasoning that writes goal, given information in en
 - solving means reasoning after understanding
@@ -118,11 +119,10 @@ check if prediction changes differ by language
 
 #### setup
 ![](diagrams/en_question_insert.png)
-- native instruction means instruction in each language
 - en question means mgsm question of same problem in en
-- en question insert means en question put at start of reasoning, after prompt with native instruction
+- en question insert means en question put at start of reasoning, after native prompt
 - continue solving and response after en question with bf16 or quantized
-- compare en question insert with native instruction
+- compare en question insert with native prompt
 
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_en_question_insert.png)
@@ -135,9 +135,9 @@ check if prediction changes differ by language
 #### setup
 ![](diagrams/en_understanding_swap.png)
 - en understanding means understanding of bf16 reasoning on en prompt, up to first step whose title says calculate, determine, compute, solve, perform, set up, formulate
-- en understanding swap means en understanding put at start of reasoning, after prompt with native instruction
+- en understanding swap means en understanding put at start of reasoning, after native prompt
 - continue solving and response after en understanding with bf16 or quantized
-- compare en understanding swap with native instruction
+- compare en understanding swap with native prompt
 - use problems that have en understanding
 
 #### summary
