@@ -1,26 +1,17 @@
 from dataclasses import dataclass
-import math
-import random
-from statistics import mean
-import time
 from typing import Literal
 
 from simple_parsing import parse
 import torch
 from torch import Tensor
 from torch.nn import Linear, Module
-from torch.nn.functional import cross_entropy
-from torch.optim import AdamW
-from transformers import AutoTokenizer, PreTrainedModel, get_cosine_schedule_with_warmup, set_seed
+from transformers import AutoTokenizer, PreTrainedModel, set_seed
 
-from utils.format import format_duration, format_memory
-from utils.hub import load_tensors, save_model
-from utils.model import get_logits, get_think_hiddens, get_think_ids, load_model
-from utils.paths import make_bf16_path, make_qat_path
+from utils.hub import save_model
+from utils.model import load_model
+from utils.paths import make_qat_path
 from utils.quantization import MXFP4_GROUP_SIZE, find_fp4_scale, round_to_fp4
-from utils.understanding import get_understanding
-
-TRAIN_LANGUAGES = ["zh", "sw", "ja", "te"]
+from utils.training import load_samples, train
 
 
 @dataclass
@@ -87,67 +78,13 @@ def main() -> None:
     model = load_model(config.model_name)
     model.float()
 
-    # 1) put en or native understanding at start of reasoning, after prompt with native instruction
-    # e.g. sw prompt + "<|channel>thought\n" + understanding
-    tensors = load_tensors("gsm8k", make_bf16_path(config.model_name), f"max_generation_len={config.max_generation_len},seed={config.seed}")
-    language_prompt_ids = {language: tensors[f"{language}/prompt_ids"].split(tensors[f"{language}/prompt_lens"].tolist()) for language in TRAIN_LANGUAGES}
-    language_thinks = {language: tokenizer.batch_decode(tensors[f"{language}/think_ids"].split(tensors[f"{language}/think_lens"].tolist()), skip_special_tokens=True) for language in ["en", *TRAIN_LANGUAGES]}
-    samples = []
-    # data has only problems solved by bf16 in en
-    for problem_index, en_think in enumerate(language_thinks["en"]):
-        en_understanding = get_understanding(en_think)
-        if en_understanding is None:
-            continue
-        for language in TRAIN_LANGUAGES:
-            native_understanding = get_understanding(language_thinks[language][problem_index])
-            # skip if bf16 got it wrong in native language
-            if native_understanding is None or not tensors[f"{language}/corrects"][problem_index]:
-                continue
-            understanding = en_understanding if config.think_language == "en" else native_understanding
-            prompt_ids = language_prompt_ids[language][problem_index]
-            samples.append((torch.cat([prompt_ids, get_think_ids(tokenizer, config.model_name, understanding)]), len(prompt_ids)))
-    print(f"samples {len(samples)} of {len(language_thinks['en']) * len(TRAIN_LANGUAGES)}")
+    samples = load_samples(tokenizer, config.model_name, config.seed, config.max_generation_len, config.think_language)
 
-    # 2) use ste linears, because gradient must go through mxfp4 rounding
+    # 1) use ste linears, because gradient must go through mxfp4 rounding
     replaced = replace_linears(model)
-    ste_linears = [ste_linear for _, _, ste_linear in replaced]
-    for ste_linear in ste_linears:
-        ste_linear.weight.requires_grad_(True)
-    optimizer = AdamW([ste_linear.weight for ste_linear in ste_linears], lr=config.lr, weight_decay=0)
-    num_batches = math.ceil(len(samples) / config.batch_size)
-    num_steps = config.num_epochs * num_batches
-    scheduler = get_cosine_schedule_with_warmup(optimizer, round(config.warmup_ratio * num_steps), num_steps)
+    train(model, [ste_linear.weight for _, _, ste_linear in replaced], samples, config.lr, config.num_epochs, config.warmup_ratio, config.batch_size)
 
-    # 3) train next token predictions on understanding only, with cross entropy
-    losses = []
-    log_time = time.perf_counter()
-    torch.cuda.reset_peak_memory_stats()
-    for epoch in range(config.num_epochs):
-        random.shuffle(samples)
-        for batch_index, start in enumerate(range(0, len(samples), config.batch_size)):
-            step = epoch * num_batches + batch_index + 1
-            batch = samples[start : start + config.batch_size]
-            num_positions = sum(len(input_ids) - prompt_len for input_ids, prompt_len in batch)
-            batch_loss = 0.0
-
-            for input_ids, prompt_len in batch:
-                with torch.autocast("cuda", dtype=torch.bfloat16):
-                    logits = get_logits(model, get_think_hiddens(model, input_ids, prompt_len))
-                loss = cross_entropy(logits, input_ids[prompt_len:].to(logits.device), reduction="sum") / num_positions
-                loss.backward()
-                batch_loss += loss.item()
-
-            optimizer.step()
-            scheduler.step()
-            optimizer.zero_grad()
-            losses.append(batch_loss)
-            if step == 1 or step % 16 == 0:
-                print(f"epoch {epoch + 1}/{config.num_epochs} batch {batch_index + 1}/{num_batches} loss {mean(losses):.4f} lr {scheduler.get_last_lr()[0]:.2e} time {format_duration(time.perf_counter() - log_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")
-                losses = []
-                log_time = time.perf_counter()
-                torch.cuda.reset_peak_memory_stats()
-
-    # 4) put quantized weights back into linears and save
+    # 2) put quantized weights back into linears and save
     layers = model.model.language_model.layers
     with torch.no_grad():
         for name, linear, ste_linear in replaced:
