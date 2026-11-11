@@ -16,6 +16,9 @@ all experiments use this setup unless noted
 - qwen top-k 20, presence penalty 1.5, max generation len 32768
 - gemma top-k 64, presence penalty 0, max generation len 16384
 - mean of seed 0, 1, 2 unless noted
+- gsm8k train questions from [mcot](https://huggingface.co/datasets/laihuiyuan/mCoT-MATH) in zh, sw, ja and te for qat and finetune
+- adamw lr 1e-5, no weight decay, cosine schedule, 5% warmup, batch size 8, 1 epoch for qat and finetune
+- gsm8k problems solved by bf16 seed 0 in en and in that language, with understanding in both, for qat and finetune
 - mgsm only after loss section, because on mmlu-prox-lite, no language clearly loses more than en
 - gemma only after loss section, because it almost never loops
 - mxfp4 only after teacher forcing section, because it loses most
@@ -148,18 +151,38 @@ check if prediction changes differ by language
 [en understanding swap](#en-understanding-swap) shows gap with en mostly comes from understanding, not from solving, so check if qat on en understanding closes gap with en
 
 #### setup
-- native understanding means understanding of bf16 reasoning on prompt in each language
-- qat en means qat on en understanding
-- qat native means qat on native understanding
-- use gsm8k train questions from [mcot](https://huggingface.co/datasets/laihuiyuan/mCoT-MATH)
-- put en or native understanding at start of reasoning, after prompt with native instruction in zh, sw, ja and te
+- native understanding means understanding of bf16 reasoning on native prompt
+- qat en, qat native mean qat on en or native understanding
+- put en or native understanding at start of reasoning, after native prompt
 - train next token predictions on that understanding only, with cross entropy
 - train from bf16 weights with mxfp4 rounding
-- adamw lr 1e-5, no weight decay, cosine schedule, 5% warmup, batch size 8, 1 epoch
-- compare qat en and qat native with bf16 and mxfp4 on native instruction
-- use gsm8k problems solved by bf16 seed 0 in en and in that language, with both understandings
+- compare qat en and qat native with bf16 and mxfp4 on native prompt
 
 #### summary
 ![](../figures/gemma-4-E2B-it/mgsm_qat.png)
 - qat en and qat native both recover most of mxfp4 loss
 - **qat en does not beat qat native**, so training on en understanding may not close gap with en
+
+## finetune
+[qat](#qat) shows qat en does not beat qat native, so check if training on en understanding really helps understanding without mxfp4 loss, then look for better ways
+
+#### setup
+- ce means cross entropy, as in qat
+- kl means kl to bf16 on en prompt
+- on policy understanding, on policy reasoning mean understanding or reasoning that finetuned model writes on native prompt
+- each case means loss, text to train on, e.g. kl, on policy reasoning
+- on policy with kl only, because ce would train on its own text
+- for on policy, write reasoning on native prompt with finetuned model, up to 512 tokens for understanding and 2048 tokens for reasoning
+- put text to train on at start of reasoning, after native prompt
+- for kl, also put it after en prompt for bf16
+- train next token predictions on that text only, with ce or kl
+- train from bf16 weights without mxfp4 rounding
+- compare each case with bf16 on native prompt
+- first 4000 pairs of problem and language, about 1000 in each language
+- for on policy, skip reasoning without understanding
+
+#### summary
+![](../figures/gemma-4-E2B-it/mgsm_finetune.png)
+- **no case clearly beats bf16**, so training may not help understanding
+- en understanding cases lose to bf16, but on policy cases lose less, so training on text that model does not write may hurt
+- on policy reasoning beats on policy understanding in each language, but only reaches bf16

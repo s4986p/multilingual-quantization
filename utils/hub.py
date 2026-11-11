@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from huggingface_hub import HfApi, hf_hub_download, snapshot_download
+from huggingface_hub import HfApi, RepoFolder, hf_hub_download, snapshot_download
 from safetensors.torch import load_file, save
 from torch import Tensor
 from transformers import PreTrainedModel
@@ -49,6 +49,13 @@ def result_exists(
     extension: str = "json",
 ) -> bool:
     return HfApi().file_exists(get_repo_name(), f"{entry_name}/{target}/{file_name}.{extension}")
+
+
+def list_targets(
+    entry_name: str,
+    path: str,
+) -> list[str]:
+    return [folder.path.removeprefix(f"{entry_name}/") for folder in HfApi().list_repo_tree(get_repo_name(), path_in_repo=f"{entry_name}/{path}") if isinstance(folder, RepoFolder)]
 
 
 def save_result(

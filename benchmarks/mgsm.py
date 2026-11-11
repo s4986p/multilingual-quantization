@@ -10,7 +10,7 @@ from utils.evaluation import evaluate_mgsm
 from utils.format import format_duration
 from utils.hub import download_model, load_result, result_exists, save_result
 from utils.model import generate_vllm, load_vllm
-from utils.paths import make_target_path
+from utils.paths import make_finetune_path, make_qat_path, make_target_path
 
 
 @dataclass
@@ -19,17 +19,25 @@ class Config:
     max_generation_len: int = 16384
     # model to evaluate
     model_name: str = "google/gemma-4-E2B-it"
-    method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4", "qat_en", "qat_native"] = "bf16"
+    method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4", "qat", "finetune"] = "bf16"
     calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
+    loss: Literal["ce", "kl"] = "ce"
+    think_source: Literal["en", "native", "on_policy"] = "en"
+    think_part: Literal["understanding", "reasoning"] = "understanding"
 
 
 def main() -> None:
     config = parse(Config)
     file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
-    target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
+    if config.method == "qat":
+        target = make_qat_path(config.model_name, config.think_source)
+    elif config.method == "finetune":
+        target = make_finetune_path(config.model_name, config.loss, config.think_source, config.think_part)
+    else:
+        target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
     result = load_result("mgsm", target, file_name) if result_exists("mgsm", target, file_name) else {}
     missing_languages = [language for language in MGSM_PROMPTS if language not in result]
     if not missing_languages:

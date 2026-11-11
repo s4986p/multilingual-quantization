@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import partial
 from typing import Literal
 
 from simple_parsing import parse
@@ -11,7 +12,7 @@ from utils.hub import save_model
 from utils.model import load_model
 from utils.paths import make_qat_path
 from utils.quantization import MXFP4_GROUP_SIZE, find_fp4_scale, round_to_fp4
-from utils.training import load_samples, train
+from utils.training import get_ce_losses, load_samples, train
 
 
 @dataclass
@@ -22,7 +23,7 @@ class Config:
     warmup_ratio: float = 0.05
     batch_size: int = 8
     # data to train on
-    think_language: Literal["en", "native"] = "en"
+    think_source: Literal["en", "native"] = "en"
     seed: int = 0
     max_generation_len: int = 16384
 
@@ -78,11 +79,11 @@ def main() -> None:
     model = load_model(config.model_name)
     model.float()
 
-    samples = load_samples(tokenizer, config.model_name, config.seed, config.max_generation_len, config.think_language)
+    samples = load_samples(tokenizer, config.model_name, config.seed, config.max_generation_len, config.think_source, "understanding")
 
     # 1) use ste linears, because gradient must go through mxfp4 rounding
     replaced = replace_linears(model)
-    train(model, [ste_linear.weight for _, _, ste_linear in replaced], samples, config.lr, config.num_epochs, config.warmup_ratio, config.batch_size)
+    train(model, [ste_linear.weight for _, _, ste_linear in replaced], samples, partial(get_ce_losses, model), config.lr, config.num_epochs, config.warmup_ratio, config.batch_size)
 
     # 2) put quantized weights back into linears and save
     layers = model.model.language_model.layers
@@ -92,7 +93,7 @@ def main() -> None:
             parent_name, child_name = name.rsplit(".", 1)
             setattr(layers.get_submodule(parent_name), child_name, linear)
     model.to(torch.bfloat16)
-    save_model(make_qat_path(config.model_name, config.think_language), model)
+    save_model(make_qat_path(config.model_name, config.think_source), model)
 
 
 if __name__ == "__main__":
