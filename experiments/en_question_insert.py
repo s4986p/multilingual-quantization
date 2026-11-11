@@ -39,7 +39,7 @@ def main() -> None:
     languages = list(MGSM_PROMPTS)
     problems = load_mgsm(languages)
 
-    # 1) put en question at start of reasoning, after prompt with native instruction
+    # 1) put en question at start of reasoning, after native prompt
     # e.g. sw prompt + "<|channel>thought\n" + en question + "\n\n"
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     en_questions = [get_mgsm_question(prompt) for prompt, _ in problems["en"]]
