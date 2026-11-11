@@ -2,6 +2,7 @@ import math
 import random
 from statistics import mean
 import time
+from typing import Callable, Iterator
 
 import torch
 from torch import Tensor
@@ -23,12 +24,12 @@ def load_samples(
     model_name: str,
     seed: int,
     max_generation_len: int,
-    think_language: str,
-) -> list[tuple[Tensor, int]]:
-    # put en or native understanding at start of reasoning, after prompt with native instruction
-    # e.g. sw prompt + "<|channel>thought\n" + understanding
+    think_source: str,
+    think_part: str,
+) -> list[tuple[Tensor, Tensor, Tensor]]:
+    # keep native prompt, en prompt and en or native reasoning or its understanding of each problem
     tensors = load_tensors("gsm8k", make_bf16_path(model_name), f"max_generation_len={max_generation_len},seed={seed}")
-    language_prompt_ids = {language: tensors[f"{language}/prompt_ids"].split(tensors[f"{language}/prompt_lens"].tolist()) for language in TRAIN_LANGUAGES}
+    language_prompt_ids = {language: tensors[f"{language}/prompt_ids"].split(tensors[f"{language}/prompt_lens"].tolist()) for language in ["en", *TRAIN_LANGUAGES]}
     language_thinks = {language: tokenizer.batch_decode(tensors[f"{language}/think_ids"].split(tensors[f"{language}/think_lens"].tolist()), skip_special_tokens=True) for language in ["en", *TRAIN_LANGUAGES]}
     samples = []
     # data has only problems solved by bf16 in en
@@ -38,26 +39,40 @@ def load_samples(
             continue
         for language in TRAIN_LANGUAGES:
             native_understanding = get_understanding(language_thinks[language][problem_index])
-            # skip if bf16 got it wrong in native language
+            # skip if bf16 got it wrong on native prompt
             if native_understanding is None or not tensors[f"{language}/corrects"][problem_index]:
                 continue
-            understanding = en_understanding if think_language == "en" else native_understanding
-            prompt_ids = language_prompt_ids[language][problem_index]
-            samples.append((torch.cat([prompt_ids, get_think_ids(tokenizer, model_name, understanding)]), len(prompt_ids)))
+            think = language_thinks["en" if think_source == "en" else language][problem_index]
+            samples.append((language_prompt_ids[language][problem_index], language_prompt_ids["en"][problem_index], get_think_ids(tokenizer, model_name, get_understanding(think) if think_part == "understanding" else think)))
     print(f"samples {len(samples)} of {len(language_thinks['en']) * len(TRAIN_LANGUAGES)}")
     return samples
+
+
+def get_ce_losses(
+    model: PreTrainedModel,
+    batch: list[tuple[Tensor, Tensor, Tensor]],
+) -> Iterator[Tensor]:
+    # put reasoning after native prompt
+    # e.g. sw prompt + "<|channel>thought\n" + understanding
+    # train next token predictions on that reasoning only, with cross entropy
+    # yield loss of each sample, so train can backward it before next sample
+    num_positions = sum(len(think_ids) for _, _, think_ids in batch)
+    for prompt_ids, _, think_ids in batch:
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            logits = get_logits(model, get_think_hiddens(model, torch.cat([prompt_ids, think_ids]), len(prompt_ids)))
+        yield cross_entropy(logits, think_ids.to(logits.device), reduction="sum") / num_positions
 
 
 def train(
     model: PreTrainedModel,
     weights: list[Tensor],
-    samples: list[tuple[Tensor, int]],
+    samples: list[tuple[Tensor, Tensor, Tensor]],
+    get_losses: Callable[[list[tuple[Tensor, Tensor, Tensor]]], Iterator[Tensor]],
     lr: float,
     num_epochs: int,
     warmup_ratio: float,
     batch_size: int,
 ) -> None:
-    # train next token predictions on understanding only, with cross entropy
     for weight in weights:
         weight.requires_grad_(True)
     optimizer = AdamW(weights, lr=lr, weight_decay=0)
@@ -73,13 +88,8 @@ def train(
         for batch_index, start in enumerate(range(0, len(samples), batch_size)):
             step = epoch * num_batches + batch_index + 1
             batch = samples[start : start + batch_size]
-            num_positions = sum(len(input_ids) - prompt_len for input_ids, prompt_len in batch)
             batch_loss = 0.0
-
-            for input_ids, prompt_len in batch:
-                with torch.autocast("cuda", dtype=torch.bfloat16):
-                    logits = get_logits(model, get_think_hiddens(model, input_ids, prompt_len))
-                loss = cross_entropy(logits, input_ids[prompt_len:].to(logits.device), reduction="sum") / num_positions
+            for loss in get_losses(batch):
                 loss.backward()
                 batch_loss += loss.item()
 
