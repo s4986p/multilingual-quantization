@@ -59,7 +59,7 @@ def main() -> None:
                 samples.append((problem_index, get_prompt_ids(tokenizer, prompt), get_think_ids(tokenizer, config.model_name, think)))
         print(f"{target} {language} samples {len(samples)} positions {sum(len(think_ids) for _, _, think_ids in samples)}")
 
-        # 2. 추론 위치마다 bf16과 양자화 모델의 다음 token 예측을 kl로 비교
+        # 2. 추론 token마다 bf16과 양자화 모델의 다음 token 예측을 kl로 비교
         start_time = time.perf_counter()
         torch.cuda.reset_peak_memory_stats()
         for sample_index, (problem_index, prompt_ids, think_ids) in enumerate(samples):
