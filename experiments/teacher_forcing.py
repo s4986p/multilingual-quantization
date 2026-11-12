@@ -9,7 +9,7 @@ from torch.nn.functional import log_softmax
 from transformers import AutoTokenizer
 
 from utils.dataset import MGSM_PROMPTS, load_mgsm
-from utils.evaluation import get_all_correct_mask
+from utils.metrics import get_all_correct_mask
 from utils.format import format_duration, format_memory
 from utils.hub import download_model, load_result, save_tensors, tensors_exist
 from utils.model import get_logits, get_prompt_ids, get_think_hiddens, get_think_ids, load_model
