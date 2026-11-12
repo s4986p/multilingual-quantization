@@ -111,15 +111,33 @@ def plot_language_bars(
     plot_bars(ax, list(slot_results), series, bf16_values)
 
 
+def plot_case_bars(
+    ax: Axes,
+    slot_labels: list[str],
+    case_accuracies: dict[str, list[list[float]]],
+) -> None:
+    series = []
+    for language in LANGUAGES:
+        accuracies = [mean(seed_accuracies) for seed_accuracies in case_accuracies[language]]
+        texts = [format_bf16_ratio(case_accuracies[language][0]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
+        series.append((accuracies, LANGUAGE_COLORS[language], texts))
+    plot_bars(ax, slot_labels, series)
+
+
 def add_language_legend(
     fig: Figure,
-    bf16_results: list[dict],
+    bf16_results: list[dict] | None = None,
 ) -> None:
     handles = []
     for language in LANGUAGES:
-        bf16_accuracies = [bf16_result[language]["accuracy"] for bf16_result in bf16_results]
-        handles.append(Patch(color=LANGUAGE_COLORS[language], label=f"{language} (bf16 {mean(bf16_accuracies):.1%} ±{stdev(bf16_accuracies):.1%}p)"))
-    fig.legend(handles=[*handles, Patch(color=BF16_COLOR, label="bf16")], loc="outside lower center", ncol=len(handles) + 1)
+        label = language
+        if bf16_results is not None:
+            bf16_accuracies = [bf16_result[language]["accuracy"] for bf16_result in bf16_results]
+            label += f" (bf16 {mean(bf16_accuracies):.1%} ±{stdev(bf16_accuracies):.1%}p)"
+        handles.append(Patch(color=LANGUAGE_COLORS[language], label=label))
+    if bf16_results is not None:
+        handles.append(Patch(color=BF16_COLOR, label="bf16"))
+    fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
 
 
 def fit_bar_width(

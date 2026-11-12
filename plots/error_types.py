@@ -8,8 +8,8 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 from transformers import AutoTokenizer
 
-from utils.metrics import get_all_correct_mask
 from utils.hub import load_result
+from utils.metrics import get_all_correct_mask
 from utils.paths import make_target_path, make_uncalibrated_path
 from utils.plot import LANGUAGES, NUM_PROGRESS_BINS, PROGRESS_LABELS, get_figsize, get_panel_width, save_figure
 
