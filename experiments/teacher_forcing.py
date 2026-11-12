@@ -19,7 +19,7 @@ from utils.paths import make_target_path, make_uncalibrated_path
 @dataclass
 class Config:
     seed: int = 0
-    bf16_seeds: tuple[int, ...] = (0, 1)
+    bf16_seeds: tuple[int, ...] = (0, 1, 2)
     max_generation_len: int = 16384
     logit_chunk_len: int = 2048
     # bf16과 비교할 모델
