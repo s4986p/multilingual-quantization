@@ -5,13 +5,14 @@ from typing import Literal
 
 from simple_parsing import parse
 
+from utils.config import Language
 from utils.dataset import MGSM_PROMPTS, get_mgsm_question, load_mgsm
 from utils.evaluation import split_outputs
 from utils.format import format_duration
 from utils.generation import generate_vllm, load_vllm
 from utils.hub import load_result, result_exists, save_result
 from utils.metrics import get_all_correct_mask
-from utils.paths import Language, make_target_path, make_uncalibrated_path
+from utils.paths import make_target_path, make_uncalibrated_path
 
 ERROR_TYPES = ["fact", "relation", "target", "doubt", "arithmetic", "other"]
 JUDGE_PROMPT = """A small model solved a math word problem and got it wrong. Find the first line where its reasoning goes wrong, and say what kind of error it is.

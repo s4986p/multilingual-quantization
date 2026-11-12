@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
+from utils.config import Language
 from utils.hub import load_result
-from utils.paths import Language, make_target_path
+from utils.paths import make_target_path
 from utils.plot import ACCURACY_YMAX, LANGUAGES, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_case_bars, save_figure
 
 CASES = [("bf16", "bf16"), ("quantized", "bf16"), ("bf16", "quantized"), ("quantized", "quantized")]

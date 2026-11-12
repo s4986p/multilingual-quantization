@@ -5,8 +5,9 @@ from typing import Literal
 from datasets import load_dataset
 from simple_parsing import parse
 
+from utils.config import Language
 from utils.evaluation import evaluate_benchmark
-from utils.paths import Language, make_target_path
+from utils.paths import make_target_path
 
 MMLU_PROX_LITE_TEMPLATES = {
     "en": ("Question:", "Options:", 'The following are multiple choice questions (with answers) about {subject}. Think step by step and then finish your answer with "{answer_format}" where X is the correct letter choice.', "the answer is ({})"),

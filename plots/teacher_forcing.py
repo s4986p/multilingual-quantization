@@ -6,9 +6,10 @@ from simple_parsing import parse
 import torch
 from torch import Tensor
 
+from utils.config import Language
 from utils.hub import load_result, load_tensors
 from utils.metrics import get_all_correct_mask
-from utils.paths import Language, make_target_path, make_uncalibrated_path
+from utils.paths import make_target_path, make_uncalibrated_path
 from utils.plot import LANGUAGE_COLORS, LANGUAGE_NAMES, LANGUAGES, METHODS, NUM_PROGRESS_BINS, PROGRESS_LABELS, fit_bar_width, get_figsize, get_panel_width, plot_bars, save_figure
 
 
