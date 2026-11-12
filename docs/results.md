@@ -153,3 +153,26 @@ calibration 언어가 중요한지 확인
 - gemma mgsm에서, 양자화 손실은 언어마다 다르고 sw와 te가 가장 많이 잃음
 - 응답이 아니라 추론이, 그중에서도 풀이가 아니라 대부분 문제 이해가 손실을 결정
 - en 문제 이해나 en 질문을 주면 en과의 차이를 대부분 메움, 따라서 손실은 대부분 해당 언어 질문을 이해하는 데서 발생
+
+## en 문제 이해 학습
+[en 질문 삽입](#en-질문-삽입)에서 en과의 차이는 대부분 해당 언어 질문을 이해하는 데서 발생, 따라서 학습으로 문제 이해를 en처럼 바꿀 수 있는지, qat 전에 양자화 없이 bf16에서 먼저 확인
+
+#### 설정
+- ce: cross entropy
+- kl: en 프롬프트를 넣은 bf16과의 kl
+- on policy: 학습 중인 모델이 해당 언어 프롬프트에 직접 쓴 텍스트
+- on policy는 kl만, ce는 모델이 쓴 텍스트를 그대로 다시 학습하기 때문
+- 양자화 없이 bf16 weight에서 학습
+- gsm8k train 질문을 [mcot](https://huggingface.co/datasets/laihuiyuan/mCoT-MATH)에서 zh, sw, ja, te로 가져옴
+- adamw lr 1e-5, weight decay 없음, cosine schedule, warmup 5%, batch size 8, 1 epoch
+- on policy는 학습 중인 모델로 해당 언어 프롬프트에 추론 생성, 문제 이해는 512 token, 추론은 2048 token까지
+- 해당 언어 프롬프트 뒤, 추론 시작에 학습할 텍스트 입력
+- kl은 같은 텍스트를 en 프롬프트 뒤에도 넣어 bf16에 입력
+- 그 텍스트 위치에서만 다음 token 예측을 ce 또는 kl로 학습
+- 해당 언어 프롬프트에서 bf16과 비교
+- bf16 seed 0이 en과 해당 언어에서 모두 풀고 문제 이해가 있는 문제 중 앞 4000쌍, 언어마다 약 1000개
+- on policy는 문제 이해가 없는 추론 제외
+
+#### 요약
+![](../figures/gemma-4-E2B-it/mgsm_finetune.png)
+- **어느 조합도 bf16을 눈에 띄게 넘지 못함**
