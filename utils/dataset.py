@@ -26,6 +26,7 @@ def load_wikipedia(
     chunk_len = max_sequence_len - len(bos_ids)
     samples = []
     for language_index, language in enumerate(languages):
+        # 나누어떨어지지 않으면 남는 chunk를 앞 언어부터 하나씩 더함
         num_language_samples = num_samples // len(languages) + (language_index < num_samples % len(languages))
         dataset = load_dataset("wikimedia/wikipedia", f"20231101.{language}", split="train", streaming=True).shuffle(seed=shuffle_seed, buffer_size=10000)
         token_ids = []
