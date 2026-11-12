@@ -51,12 +51,12 @@ def load_samples(
     think_source: str,
     think_part: str,
 ) -> list[tuple[Tensor, Tensor, Tensor]]:
-    # 문제와 언어마다 해당 언어 프롬프트, en 프롬프트, 학습할 텍스트 반환
+    # 문제와 언어마다 해당 언어 프롬프트, 영어 프롬프트, 학습할 텍스트 반환
     tensors = load_tensors("gsm8k", make_uncalibrated_path("bf16", model_name), f"max_generation_len={max_generation_len},seed={seed}")
     language_prompt_ids = {language: tensors[f"{language}/prompt_ids"].split(tensors[f"{language}/prompt_lens"].tolist()) for language in ["en", *TRAIN_LANGUAGES]}
     language_thinks = {language: tokenizer.batch_decode(tensors[f"{language}/think_ids"].split(tensors[f"{language}/think_lens"].tolist()), skip_special_tokens=True) for language in ["en", *TRAIN_LANGUAGES]}
     samples = []
-    # 데이터에는 bf16이 en으로 푼 문제만 있음
+    # 데이터에는 bf16이 영어로 푼 문제만 있음
     for problem_index, en_think in enumerate(language_thinks["en"]):
         en_understanding = get_understanding(en_think)
         if en_understanding is None:
@@ -106,7 +106,7 @@ def get_ce_losses(
     batch: list[tuple[Tensor, Tensor, Tensor]],
 ) -> Iterator[Tensor]:
     # 해당 언어 프롬프트 뒤에 학습할 텍스트를 넣고 그 텍스트 위치에서만 다음 token 예측을 ce로 학습
-    # 예시) sw 프롬프트 + "<|channel>thought\n" + 문제 이해
+    # 예시) 스와힐리어 프롬프트 + "<|channel>thought\n" + 문제 이해
     # sample마다 loss 반환, sample마다 backward해 메모리를 아끼기 때문
     num_positions = sum(len(think_ids) for _, _, think_ids in batch)
     for prompt_ids, _, think_ids in batch:
@@ -120,8 +120,8 @@ def get_kl_losses(
     bf16_model: PreTrainedModel,
     batch: list[tuple[Tensor, Tensor, Tensor]],
 ) -> Iterator[Tensor]:
-    # 같은 텍스트를 학습 중인 모델에는 해당 언어 프롬프트 뒤에, bf16에는 en 프롬프트 뒤에 넣고 그 텍스트 위치에서만 다음 token 예측을 bf16에 kl로 맞춤
-    # 예시) sw 프롬프트 + "<|channel>thought\n" + 문제 이해, en 프롬프트 + "<|channel>thought\n" + 문제 이해
+    # 같은 텍스트를 학습 중인 모델에는 해당 언어 프롬프트 뒤에, bf16에는 영어 프롬프트 뒤에 넣고 그 텍스트 위치에서만 다음 token 예측을 bf16에 kl로 맞춤
+    # 예시) 스와힐리어 프롬프트 + "<|channel>thought\n" + 문제 이해, 영어 프롬프트 + "<|channel>thought\n" + 문제 이해
     num_positions = sum(len(think_ids) for _, _, think_ids in batch)
     for prompt_ids, en_prompt_ids, think_ids in batch:
         with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):

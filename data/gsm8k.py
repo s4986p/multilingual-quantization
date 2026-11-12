@@ -37,10 +37,10 @@ def load_gsm8k() -> dict[str, list[tuple[str, int]]]:
             if language in MGSM_PROMPTS:
                 questions[mcot_id][language] = question.strip()
 
-    # 2. mcot en 질문으로 각 언어 질문 찾음
+    # 2. mcot 영어 질문으로 각 언어 질문 찾음
     questions_by_en = {" ".join(language_questions["en"].split()): language_questions for language_questions in questions.values()}
 
-    # 3. gsm8k train 질문마다 같은 mcot en 질문 연결
+    # 3. gsm8k train 질문마다 같은 mcot 영어 질문 연결
     problems = {language: [] for language in MGSM_PROMPTS}
     for row in gsm8k:
         language_questions = questions_by_en[" ".join(row["question"].split())]
@@ -72,7 +72,7 @@ def main() -> None:
         print(f"{target} {language} accuracy {results[language]['accuracy']:.2%} reasoning len {mean(results[language]['think_lens']):.0f} truncated {mean(results[language]['truncateds']):.2%}")
         print(f"{target} {language} time {format_duration(time.perf_counter() - start_time)}")
 
-    # 2. bf16이 en으로 푼 문제에서 각 언어의 프롬프트, 추론, 정답 여부 저장
+    # 2. bf16이 영어로 푼 문제에서 각 언어의 프롬프트, 추론, 정답 여부 저장
     # 예시) "<|channel>thought\n...<channel|>Answer: 72" → "<|channel>thought\n..."
     tensors = defaultdict(list)
     for problem_index, en_correct in enumerate(results["en"]["corrects"]):
