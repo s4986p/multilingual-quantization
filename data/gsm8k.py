@@ -62,17 +62,24 @@ def main() -> None:
     model = load_vllm(config.model_name, config.model_name)
     tokenizer = model.get_tokenizer()
 
-    # 1. 각 언어로 생성하고 채점
+    # 1. 각 언어 프롬프트를 한 번에 생성
+    prompts = [prompt for language in MGSM_PROMPTS for prompt, _ in problems[language]]
+    start_time = time.perf_counter()
+    all_outputs = generate_vllm(model, config.model_name, prompts, [config.seed] * len(prompts), config.max_generation_len)
+    print(f"{target} time {format_duration(time.perf_counter() - start_time)}")
+
+    # 2. 언어마다 채점
     outputs = {}
     results = {}
+    start = 0
     for language in MGSM_PROMPTS:
-        start_time = time.perf_counter()
-        outputs[language] = generate_vllm(model, config.model_name, [prompt for prompt, _ in problems[language]], [config.seed] * len(problems[language]), config.max_generation_len)
+        end = start + len(problems[language])
+        outputs[language] = all_outputs[start:end]
         results[language] = evaluate_outputs(outputs[language], [answer for _, answer in problems[language]], language, tokenizer, config.model_name, parse_mgsm_prediction)
+        start = end
         print(f"{target} {language} accuracy {results[language]['accuracy']:.2%} reasoning len {mean(results[language]['think_lens']):.0f} truncated {mean(results[language]['truncateds']):.2%}")
-        print(f"{target} {language} time {format_duration(time.perf_counter() - start_time)}")
 
-    # 2. bf16이 영어로 푼 문제에서 각 언어의 프롬프트, 추론, 정답 여부 저장
+    # 3. bf16이 영어로 푼 문제에서 각 언어의 프롬프트, 추론, 정답 여부 저장
     # 예시) "<|channel>thought\n...<channel|>Answer: 72" → "<|channel>thought\n..."
     tensors = defaultdict(list)
     for problem_index, en_correct in enumerate(results["en"]["corrects"]):
