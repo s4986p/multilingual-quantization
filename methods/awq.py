@@ -119,7 +119,7 @@ def find_clip(
     groups = (weight.float() * smooth).reshape(weight.shape[0], -1, group_size)
     num_groups = groups.shape[1]
     smoothed_hessian = hessian / smooth[:, None] / smooth[None, :]
-    # 각 group의 대각 block만 유지, clip을 group마다 따로 탐색하기 때문
+    # 각 group의 대각 block만 유지
     hessian_blocks = smoothed_hessian.reshape(num_groups, group_size, num_groups, group_size).diagonal(dim1=0, dim2=2).permute(2, 0, 1)
 
     # 2. clip 탐색
@@ -131,6 +131,7 @@ def find_clip(
         scale, zero = find_grid(groups.clamp(-clip[..., None], clip[..., None]), num_bits)
         quantized_groups = round_to_grid(groups, scale[..., None], zero[..., None], num_bits)
         delta = quantized_groups - groups
+        # group 사이 오차는 무시하고 group마다 오차 계산, clip을 group마다 따로 탐색하기 때문
         error = torch.einsum("ogi,gij,ogj->og", delta, hessian_blocks, delta)
         is_better = error < best_error
         best_error = torch.where(is_better, error, best_error)
