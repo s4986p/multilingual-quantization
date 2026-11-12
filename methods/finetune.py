@@ -106,7 +106,7 @@ def get_ce_losses(
     model: PreTrainedModel,
     batch: list[tuple[Tensor, Tensor, Tensor]],
 ) -> Iterator[Tensor]:
-    # 해당 언어 프롬프트 뒤에 학습할 텍스트를 넣고 그 텍스트 위치에서만 다음 token 예측을 ce로 학습
+    # 해당 언어 프롬프트 뒤, 추론 시작에 학습할 텍스트를 넣고 그 텍스트 위치에서만 다음 token 예측을 ce로 학습
     # 예시) 스와힐리어 프롬프트 + "<|channel>thought\n" + 문제 이해
     # sample마다 loss 반환, sample마다 backward해 메모리를 아끼기 때문
     num_positions = sum(len(think_ids) for _, _, think_ids in batch)
