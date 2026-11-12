@@ -5,7 +5,7 @@ from simple_parsing import parse
 
 from utils.dataset import MGSM_PROMPTS, load_mgsm
 from utils.evaluation import evaluate_benchmark, parse_mgsm_prediction
-from utils.paths import make_finetune_path, make_target_path
+from utils.paths import Language, make_finetune_path, make_target_path
 
 
 @dataclass
@@ -15,7 +15,7 @@ class Config:
     # 평가할 모델
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4", "finetune"] = "bf16"
-    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Language, ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

@@ -1,3 +1,8 @@
+from typing import Literal
+
+Language = Literal["en", "zh", "sw", "ja", "te"]
+
+
 def make_uncalibrated_path(
     method: str,
     model_name: str,

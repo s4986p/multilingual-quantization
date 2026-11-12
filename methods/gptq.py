@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import time
-from typing import Literal
 
 from simple_parsing import parse
 import torch
@@ -12,7 +11,7 @@ from utils.dataset import load_wikipedia
 from utils.format import format_duration, format_memory
 from utils.hub import save_model
 from utils.model import load_model
-from utils.paths import make_calibrated_path
+from utils.paths import Language, make_calibrated_path
 from utils.quantization import find_grid, round_to_grid
 
 
@@ -24,7 +23,7 @@ class Config:
     damp_ratio: float = 0.01
     model_name: str = "google/gemma-4-E2B-it"
     # calibration할 데이터
-    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Language, ...] = ("en",)
     num_samples: int = 128
     max_sequence_len: int = 2048
     shuffle_seed: int = 0
