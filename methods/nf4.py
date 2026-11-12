@@ -25,6 +25,7 @@ def quantize_weight(
     groups = weight.float().reshape(weight.shape[0], -1, NF4_GROUP_SIZE)
     scale = groups.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
     values = torch.tensor(NF4_VALUES, device=weight.device)
+    # 가장 가까운 nf4 값 선택, 이웃 값의 중간점으로 구간을 나눔
     value_indices = torch.bucketize(groups / scale, (values[1:] + values[:-1]) / 2)
     return (values[value_indices] * scale).reshape(weight.shape)
 
