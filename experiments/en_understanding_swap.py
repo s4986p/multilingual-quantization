@@ -7,7 +7,6 @@ from simple_parsing import parse
 import torch
 from transformers import AutoTokenizer
 
-from utils.config import Language
 from utils.dataset import MGSM_PROMPTS, load_mgsm
 from utils.evaluation import evaluate_outputs, parse_mgsm_prediction
 from utils.format import format_duration
@@ -25,7 +24,7 @@ class Config:
     # 평가할 모델
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
-    calibration_languages: tuple[Language, ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

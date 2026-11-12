@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
@@ -6,7 +7,6 @@ from simple_parsing import parse
 import torch
 from torch import Tensor
 
-from utils.config import Language
 from utils.hub import load_result, load_tensors
 from utils.metrics import get_all_correct_mask
 from utils.paths import make_target_path, make_uncalibrated_path
@@ -16,7 +16,7 @@ from utils.plot import LANGUAGE_COLORS, LANGUAGE_NAMES, LANGUAGES, METHODS, NUM_
 @dataclass
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
-    calibration_languages: tuple[Language, ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
