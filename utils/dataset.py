@@ -22,7 +22,7 @@ def load_wikipedia(
 ) -> list[Tensor]:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     bos_ids = [] if tokenizer.bos_token_id is None else [tokenizer.bos_token_id]
-    # max_sequence_len은 bos 포함
+    # max_sequence_len에 bos 포함
     chunk_len = max_sequence_len - len(bos_ids)
     samples = []
     for language_index, language in enumerate(languages):

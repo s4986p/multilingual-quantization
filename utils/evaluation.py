@@ -48,13 +48,13 @@ def parse_mgsm_prediction(
 ) -> float | None:
     if response is None:
         return None
-    # 마지막 answer prefix 뒤 텍스트 추출, prefix가 없으면 응답 전체
+    # 마지막 answer prefix 뒤 텍스트 추출, prefix가 없으면 응답 전체 사용
     # 예시) "5+3=8，所以答案：8"      → "8"
     #      "Answer :7"            → "7"
     #      "Answer - 7"           → "Answer - 7"
     #      "Answer: 5. Answer: 8" → " 8"
     text = re.split(rf"{MGSM_ANSWER_PREFIXES[language]}\s*[:：]", response)[-1]
-    # 텍스트의 마지막 숫자 추출, 텍스트에 숫자가 없으면 응답 전체에서
+    # 텍스트의 마지막 숫자 추출, 숫자가 없으면 응답 전체 사용
     # 예시) "so 366.\n答え:" → 366.0
     numbers = re.findall(r"-?\d+(?:\.\d+)?", text.replace(",", "")) or re.findall(r"-?\d+(?:\.\d+)?", response.replace(",", ""))
     return float(numbers[-1]) if numbers else None
@@ -105,7 +105,7 @@ def evaluate_benchmark(
         return
     problems = load_problems(languages)
 
-    # 2. 빠진 seed와 언어를 한 번에 생성, vllm 로딩이 오래 걸리기 때문
+    # 2. 빠진 seed와 언어를 한 번에 생성, vllm을 띄우는 데 오래 걸리기 때문
     model_path = model_name if method == "bf16" else download_model(target)
     model = load_vllm(model_path, model_name)
     tokenizer = model.get_tokenizer()
