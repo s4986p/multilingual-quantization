@@ -3,9 +3,10 @@ from typing import Literal
 
 from simple_parsing import parse
 
+from utils.config import Language
 from utils.dataset import MGSM_PROMPTS, load_mgsm
 from utils.evaluation import evaluate_benchmark, parse_mgsm_prediction
-from utils.paths import Language, make_finetune_path, make_target_path
+from utils.paths import make_finetune_path, make_target_path
 
 
 @dataclass

@@ -4,8 +4,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
+from utils.config import Language
 from utils.hub import load_result
-from utils.paths import Language, make_target_path, make_uncalibrated_path
+from utils.paths import make_target_path, make_uncalibrated_path
 from utils.plot import ACCURACY_YMAX, LANGUAGES, METHODS, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_case_bars, plot_loss_difference_bars, save_figure
 
 CASES = [("bf16", "mgsm"), ("bf16", "en_question_insert/mgsm"), ("quantized", "mgsm"), ("quantized", "en_question_insert/mgsm")]

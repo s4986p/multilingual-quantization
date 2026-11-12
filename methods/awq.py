@@ -9,11 +9,12 @@ from torch import Tensor
 from torch.nn import Linear, Module
 
 from utils.capture import capture_layer_inputs, compute_abs_mean_and_hessian
+from utils.config import Language
 from utils.dataset import load_wikipedia
 from utils.format import format_duration, format_memory
 from utils.hub import save_model
 from utils.model import load_model
-from utils.paths import Language, make_calibrated_path
+from utils.paths import make_calibrated_path
 from utils.quantization import find_grid, round_to_grid
 
 

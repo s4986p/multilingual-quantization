@@ -7,13 +7,14 @@ from simple_parsing import parse
 import torch
 from transformers import AutoTokenizer
 
+from utils.config import Language
 from utils.dataset import MGSM_PROMPTS, get_mgsm_question, load_mgsm
 from utils.evaluation import evaluate_outputs, parse_mgsm_prediction
 from utils.format import format_duration
 from utils.generation import continue_vllm, load_vllm
 from utils.hub import download_model, result_exists, save_result
 from utils.model import get_prompt_ids, get_think_ids
-from utils.paths import Language, make_target_path
+from utils.paths import make_target_path
 
 # gemma가 저장한 추론은 추론 시작 token 뒤에 이 텍스트로 시작
 THINK_HEADER = "thought\n"
