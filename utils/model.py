@@ -42,7 +42,7 @@ def get_think_hiddens(
 ) -> Tensor:
     # 마지막 프롬프트 token부터 끝에서 두 번째 추론 token까지 유지, t의 hidden이 t+1 token을 예측하기 때문
     # 예시) 입력 [p0, p1, p2, r0, r1, r2]
-    #      유지 [        p2, r0, r1    ] (각각 r0, r1, r2 예측)
+    # 예시) 유지 [        p2, r0, r1    ] (각각 r0, r1, r2 예측)
     return model.model(input_ids=input_ids[None, :].to(model.device), use_cache=False).last_hidden_state[0, prompt_len - 1 : -1]
 
 
