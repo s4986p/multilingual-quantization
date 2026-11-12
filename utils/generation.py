@@ -8,8 +8,9 @@ from utils.model import GENERATION_CONFIGS
 def load_vllm(
     model_path: str,
     model_name: str,
+    max_num_seqs: int | None = None,
 ) -> LLM:
-    return LLM(model_path, tokenizer=model_name, dtype="bfloat16", max_model_len=40960, language_model_only=True)
+    return LLM(model_path, tokenizer=model_name, dtype="bfloat16", max_model_len=40960, language_model_only=True, max_num_seqs=max_num_seqs)
 
 
 def get_sampling_params(
