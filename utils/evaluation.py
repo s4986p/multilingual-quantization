@@ -49,9 +49,9 @@ def parse_mgsm_prediction(
     if response is None:
         return None
     # 마지막 answer prefix 뒤 텍스트 추출, prefix가 없으면 응답 전체
-    # 예시) "5+3=8，所以答案：8" → "8"
-    #       "Answer :7" → "7"
-    #       "Answer - 7" → "Answer - 7"
+    # 예시)  "5+3=8，所以答案：8"      → "8"
+    #       "Answer :7"            → "7"
+    #       "Answer - 7"           → "Answer - 7"
     #       "Answer: 5. Answer: 8" → " 8"
     text = re.split(rf"{MGSM_ANSWER_PREFIXES[language]}\s*[:：]", response)[-1]
     # 텍스트의 마지막 숫자 추출, 텍스트에 숫자가 없으면 응답 전체에서
