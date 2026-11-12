@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 METHODS = ["gptq", "awq", "nf4", "mxfp4"]
 LANGUAGE_COLORS = {"en": "#3c5a9a", "zh": "#de2910", "sw": "#1eb53a", "ja": "#f4a6b7", "te": "#ff9933"}
 LANGUAGES = list(LANGUAGE_COLORS)
+LANGUAGE_NAMES = {"en": "영어", "zh": "중국어", "sw": "스와힐리어", "ja": "일본어", "te": "텔루구어"}
 BF16_COLOR = "#d9d9d9"
 ACCURACY_YMAX = 1.15
 LOSS_DIFFERENCE_YLIM = (-0.05, 0.15)
@@ -151,14 +152,14 @@ def add_language_legend(
 ) -> None:
     handles = []
     for language in LANGUAGES:
-        label = language
+        label = LANGUAGE_NAMES[language]
         if bf16_results is not None:
             bf16_accuracies = [bf16_result[language]["accuracy"] for bf16_result in bf16_results]
             label += f" (bf16 {mean(bf16_accuracies):.1%} ±{stdev(bf16_accuracies):.1%}p)"
         handles.append(Patch(color=LANGUAGE_COLORS[language], label=label))
     if bf16_results is not None:
         handles.append(Patch(color=BF16_COLOR, label="bf16"))
-    fig.legend(handles=handles, loc="outside lower center", ncol=len(handles))
+    fig.legend(handles=handles, loc="outside lower center", ncol=len(handles) if bf16_results is None else 3)
 
 
 def fit_bar_width(

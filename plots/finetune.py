@@ -9,8 +9,8 @@ from utils.paths import make_finetune_path, make_uncalibrated_path
 from utils.plot import ACCURACY_YMAX, LANGUAGES, add_language_legend, fit_bar_width, get_accuracy, get_figsize, get_panel_width, plot_language_bars, save_figure
 
 CASES = {
-    "ce, en 문제 이해": ("ce", "en", "understanding"),
-    "kl, en 문제 이해": ("kl", "en", "understanding"),
+    "ce, 영어 문제 이해": ("ce", "en", "understanding"),
+    "kl, 영어 문제 이해": ("kl", "en", "understanding"),
     "kl, on policy 문제 이해": ("kl", "on_policy", "understanding"),
     "kl, on policy 추론": ("kl", "on_policy", "reasoning"),
 }

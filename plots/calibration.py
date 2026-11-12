@@ -8,7 +8,7 @@ from utils.hub import load_result
 from utils.paths import make_calibrated_path, make_uncalibrated_path
 from utils.plot import ACCURACY_YMAX, LANGUAGES, add_language_legend, fit_bar_width, get_accuracy, get_figsize, get_panel_width, plot_language_bars, save_figure
 
-CALIBRATIONS = {"en": ("en",), "sw": ("sw",), "te": ("te",), "all": ("en", "zh", "sw", "ja", "te")}
+CALIBRATIONS = {"영어": ("en",), "스와힐리어": ("sw",), "텔루구어": ("te",), "all": ("en", "zh", "sw", "ja", "te")}
 
 
 @dataclass
