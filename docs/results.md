@@ -1,7 +1,11 @@
 # 결과
 
 ## 공통 설정
-따로 적지 않으면 모든 실험에 적용
+
+#### 범위
+- 따로 적지 않으면 모든 실험에 적용
+- 언어별 손실 이후로는 mgsm만, mmlu-prox-lite에서는 en보다 눈에 띄게 더 잃는 언어가 없기 때문
+- 언어별 손실 이후로는 gemma만, gemma는 거의 반복하지 않아 손실만 보기 좋기 때문
 
 #### 용어
 - 프롬프트: 지시문, 질문
@@ -51,3 +55,16 @@
 - gemma mgsm에서, 거의 잘리지 않음, 따라서 손실은 대부분 오답에서 발생
 - **gemma mgsm에서, sw와 te가 가장 많이 잃음**
 - mmlu-prox-lite에서, en보다 눈에 띄게 더 잃는 언어 없음
+
+## calibration 언어 민감도
+calibration 언어가 중요한지 확인
+
+#### 설정
+- awq만, 직관적으로 awq가 calibration에 더 의존하기 때문
+- all: en, zh, sw, ja, te, 언어마다 chunk 약 26개
+- en, sw, te, all로 calibration
+
+#### 요약
+![](../figures/gemma-4-E2B-it/mgsm_calibration.png)
+- **sw와 te에서, 해당 언어로 calibration해도 눈에 띄게 나아지지 않음**
+- all로 calibration해도 눈에 띄게 나아지지 않음
