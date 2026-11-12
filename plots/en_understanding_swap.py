@@ -36,7 +36,6 @@ def get_used_accuracy(
 
 def main() -> None:
     config = parse(Config)
-    method_names = {"bf16": "bf16"}
     fig, axes = plt.subplots(len(METHODS), 1, figsize=get_figsize([get_panel_width(len(CELLS), len(LANGUAGES))], len(METHODS)), layout="constrained")
     for ax, method in zip(axes, METHODS):
         targets = {"bf16": make_uncalibrated_path("bf16", config.model_name), "quantized": make_target_path(method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)}
@@ -56,7 +55,7 @@ def main() -> None:
             texts = [format_bf16_ratio([cell_accuracies[0] for cell_accuracies in seed_accuracies]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
             series.append((accuracies, LANGUAGE_COLORS[language], texts))
 
-        method_names["quantized"] = method
+        method_names = {"bf16": "bf16", "quantized": method}
         plot_bars(ax, [f"{method_names[model_method]}, {CELL_LABELS[script_name]}" for model_method, script_name in CELLS], series)
         ax.set_ylim(0, ACCURACY_YMAX)
         ax.set_ylabel("정확도")
