@@ -5,6 +5,7 @@ from statistics import mean, stdev
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Patch
+from matplotlib.ticker import MultipleLocator, PercentFormatter
 import matplotlib.pyplot as plt
 
 METHODS = ["gptq", "awq", "nf4", "mxfp4"]
@@ -12,6 +13,7 @@ LANGUAGE_COLORS = {"en": "#3c5a9a", "zh": "#de2910", "sw": "#1eb53a", "ja": "#f4
 LANGUAGES = list(LANGUAGE_COLORS)
 BF16_COLOR = "#d9d9d9"
 ACCURACY_YMAX = 1.15
+LOSS_DIFFERENCE_YLIM = (-0.05, 0.15)
 NUM_PROGRESS_BINS = 5
 PROGRESS_LABELS = [f"{index * 100 // NUM_PROGRESS_BINS}~{(index + 1) * 100 // NUM_PROGRESS_BINS}%" for index in range(NUM_PROGRESS_BINS)]
 BAR_INCHES = 0.45
@@ -90,7 +92,7 @@ def plot_bars(
             ax.bar(xs, [bf16_values[series_index]] * len(xs), width=1, color=BF16_COLOR)
         ax.bar(xs, values, width=1, color=color)
         for x, value, text in zip(xs, values, texts):
-            top = value if bf16_values is None else max(value, bf16_values[series_index])
+            top = max(value, 0 if bf16_values is None else bf16_values[series_index])
             ax.annotate(text, (x, top), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
     ax.set_xticks([slot * slot_width for slot in range(len(slot_labels))], slot_labels)
     ax.set_xlim(-slot_width / 2, (len(slot_labels) - 0.5) * slot_width)
@@ -122,6 +124,25 @@ def plot_case_bars(
         texts = [format_bf16_ratio(case_accuracies[language][0]), *[format_ratio(accuracy, accuracies[0]) for accuracy in accuracies[1:]]]
         series.append((accuracies, LANGUAGE_COLORS[language], texts))
     plot_bars(ax, slot_labels, series)
+
+
+def plot_loss_difference_bars(
+    ax: Axes,
+    slot_labels: list[str],
+    bf16_accuracies: dict[str, list[list[float]]],
+    quantized_accuracies: dict[str, list[list[float]]],
+) -> None:
+    losses = {language: [[bf16 - quantized for bf16, quantized in zip(bf16_seeds, quantized_seeds)] for bf16_seeds, quantized_seeds in zip(bf16_accuracies[language], quantized_accuracies[language])] for language in LANGUAGES}
+    series = []
+    for language in LANGUAGES[1:]:
+        loss_differences = [[loss - en_loss for loss, en_loss in zip(seed_losses, en_seed_losses)] for seed_losses, en_seed_losses in zip(losses[language], losses["en"])]
+        values = [mean(seed_loss_differences) for seed_loss_differences in loss_differences]
+        texts = [f"{round(mean(seed_loss_differences), 3) + 0.0:+.1%}p\n±{stdev(seed_loss_differences):.1%}p" for seed_loss_differences in loss_differences]
+        series.append((values, LANGUAGE_COLORS[language], texts))
+    plot_bars(ax, slot_labels, series)
+    ax.set_ylim(*LOSS_DIFFERENCE_YLIM)
+    ax.yaxis.set_major_locator(MultipleLocator(0.05))
+    ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol="%p"))
 
 
 def add_language_legend(
