@@ -61,9 +61,9 @@ def quantize_weight(
 ) -> Tensor:
     weight = weight.float().clone()
     # 1. hessian 대각이 0인 열은 weight 0, 대각 1로 설정, 대각이 0이면 cholesky 분해가 실패하기 때문
-    is_dead = hessian.diagonal() == 0
-    weight[:, is_dead] = 0
-    hessian.diagonal()[is_dead] = 1
+    is_zero_diagonal = hessian.diagonal() == 0
+    weight[:, is_zero_diagonal] = 0
+    hessian.diagonal()[is_zero_diagonal] = 1
 
     # 2. 대각에 damp 추가, 역행렬이 안정적이어야 하기 때문
     hessian.diagonal().add_(damp_ratio * hessian.diagonal().mean())
