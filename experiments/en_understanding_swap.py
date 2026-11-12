@@ -44,7 +44,7 @@ def main() -> None:
     problems = load_mgsm(list(MGSM_PROMPTS))
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
 
-    # 2. bf16 en 추론에서 en 문제 이해를 추출하고 해당 언어 프롬프트 뒤 추론 시작에 입력
+    # 2. bf16 en 추론에서 en 문제 이해를 추출하고 해당 언어 프롬프트 뒤, 추론 시작에 입력
     problem_indices = {}
     input_ids = []
     prompt_seeds = []

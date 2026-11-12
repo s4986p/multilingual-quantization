@@ -51,7 +51,7 @@ def load_samples(
     think_source: str,
     think_part: str,
 ) -> list[tuple[Tensor, Tensor, Tensor]]:
-    # 문제마다 해당 언어 프롬프트, en 프롬프트, en 또는 해당 언어 추론이나 그 문제 이해 저장
+    # 문제와 언어마다 해당 언어 프롬프트, en 프롬프트, 학습할 텍스트 반환
     tensors = load_tensors("gsm8k", make_uncalibrated_path("bf16", model_name), f"max_generation_len={max_generation_len},seed={seed}")
     language_prompt_ids = {language: tensors[f"{language}/prompt_ids"].split(tensors[f"{language}/prompt_lens"].tolist()) for language in ["en", *TRAIN_LANGUAGES]}
     language_thinks = {language: tokenizer.batch_decode(tensors[f"{language}/think_ids"].split(tensors[f"{language}/think_lens"].tolist()), skip_special_tokens=True) for language in ["en", *TRAIN_LANGUAGES]}
@@ -63,7 +63,6 @@ def load_samples(
             continue
         for language in TRAIN_LANGUAGES:
             native_understanding = get_understanding(language_thinks[language][problem_index])
-            # bf16이 해당 언어 프롬프트에서 틀렸으면 제외
             if native_understanding is None or not tensors[f"{language}/corrects"][problem_index]:
                 continue
             think = language_thinks["en" if think_source == "en" else language][problem_index]
@@ -85,7 +84,7 @@ def generate_thinks(
     with torch.autocast("cuda", dtype=torch.bfloat16):
         output_ids = model.generate(**inputs, do_sample=True, temperature=sampling["temperature"], top_p=sampling["top_p"], top_k=sampling["top_k"], max_new_tokens=MAX_UNDERSTANDING_LEN if think_part == "understanding" else MAX_THINK_LEN)
 
-    # 2. 추론 끝에서 자르기
+    # 2. 추론 끝에서 자름
     # 예시) "<|channel>thought\n...<channel|>Answer: 72" → "thought\n..."
     think_end_id = tokenizer.convert_tokens_to_ids(GENERATION_CONFIGS[model_name]["think_end"])
     thinks = []
@@ -93,7 +92,7 @@ def generate_thinks(
         end = (ids == think_end_id).nonzero()
         thinks.append(tokenizer.decode(ids[: end[0, 0]] if len(end) else ids, skip_special_tokens=True))
 
-    # 3. 추론을 생성한 것으로 바꾸고, 문제 이해가 없으면 제외
+    # 3. 추론을 생성한 것으로 바꾸고 문제 이해가 없으면 제외
     generated_batch = []
     for (prompt_ids, en_prompt_ids, _), think in zip(batch, thinks):
         understanding = get_understanding(think)
@@ -106,9 +105,9 @@ def get_ce_losses(
     model: PreTrainedModel,
     batch: list[tuple[Tensor, Tensor, Tensor]],
 ) -> Iterator[Tensor]:
-    # 해당 언어 프롬프트 뒤에 추론을 넣고, 그 추론 위치에서만 다음 token 예측을 ce로 학습
+    # 해당 언어 프롬프트 뒤에 학습할 텍스트를 넣고 그 텍스트 위치에서만 다음 token 예측을 ce로 학습
     # 예시) sw 프롬프트 + "<|channel>thought\n" + 문제 이해
-    # 다음 sample 전에 backward하도록 sample마다 loss 반환
+    # sample마다 loss 반환, sample마다 backward해 메모리를 아끼기 때문
     num_positions = sum(len(think_ids) for _, _, think_ids in batch)
     for prompt_ids, _, think_ids in batch:
         with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -121,7 +120,7 @@ def get_kl_losses(
     bf16_model: PreTrainedModel,
     batch: list[tuple[Tensor, Tensor, Tensor]],
 ) -> Iterator[Tensor]:
-    # 같은 추론을 학습할 모델에는 해당 언어 프롬프트 뒤에, bf16에는 en 프롬프트 뒤에 넣고, 추론 위치에서만 다음 token 예측을 bf16에 kl로 맞춤
+    # 같은 텍스트를 학습 중인 모델에는 해당 언어 프롬프트 뒤에, bf16에는 en 프롬프트 뒤에 넣고 그 텍스트 위치에서만 다음 token 예측을 bf16에 kl로 맞춤
     # 예시) sw 프롬프트 + "<|channel>thought\n" + 문제 이해, en 프롬프트 + "<|channel>thought\n" + 문제 이해
     num_positions = sum(len(think_ids) for _, _, think_ids in batch)
     for prompt_ids, en_prompt_ids, think_ids in batch:
