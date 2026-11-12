@@ -61,9 +61,9 @@ def main() -> None:
         progress_kls = torch.stack([torch.stack([bin_kl.mean() for bin_kl in kl.tensor_split(NUM_PROGRESS_BINS)]) for kl in problem_kls])
         axes["progress"].plot(range(NUM_PROGRESS_BINS), progress_kls.mean(dim=0), color=LANGUAGE_COLORS[language], marker="o", linewidth=2)
     axes["progress"].set_xticks(range(NUM_PROGRESS_BINS), PROGRESS_LABELS)
-    axes["progress"].set_xlabel("추론 진행도")
+    axes["progress"].set_xlabel("추론 위치")
     axes["progress"].set_ylabel("문제당 평균 kl")
-    axes["progress"].set_title("mxfp4 추론 진행도별 kl")
+    axes["progress"].set_title("mxfp4 추론 위치별 kl")
 
     fig.suptitle(f"{config.model_name} mgsm teacher forcing\n{file_name},bf16_seeds={','.join(map(str, config.bf16_seeds))}")
     fig.legend(handles=[Line2D([], [], color=LANGUAGE_COLORS[language], marker="o", linewidth=2, label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))

@@ -84,9 +84,9 @@ def main() -> None:
 
     plot_error_types(axes["progress"], progress_ratios)
     axes["progress"].set_xticks(range(NUM_PROGRESS_BINS), PROGRESS_LABELS)
-    axes["progress"].set_xlabel("추론 진행도")
+    axes["progress"].set_xlabel("추론 위치")
     axes["progress"].set_ylabel("첫 오류 중 비율")
-    axes["progress"].set_title(f"{config.method} 추론 진행도별 첫 오류")
+    axes["progress"].set_title(f"{config.method} 추론 위치별 첫 오류")
 
     fig.suptitle(f"{config.model_name} mgsm error types\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))},bf16_seeds={','.join(map(str, config.bf16_seeds))}")
     fig.legend(handles=[Patch(color=color, label=ERROR_TYPE_LABELS[error_type]) for error_type, color in ERROR_TYPE_COLORS.items()], loc="outside lower center", ncol=len(ERROR_TYPE_COLORS) // 2)
