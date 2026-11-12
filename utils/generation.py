@@ -1,3 +1,4 @@
+from torch import Tensor
 from vllm import LLM, SamplingParams  # type: ignore
 from vllm.outputs import CompletionOutput  # type: ignore
 
@@ -28,4 +29,16 @@ def generate_vllm(
 ) -> list[CompletionOutput]:
     messages = [[{"role": "user", "content": prompt}] for prompt in prompts]
     outputs = model.chat(messages, get_sampling_params(model_name, prompt_seeds, max_generation_len), use_tqdm=True, chat_template_kwargs={"enable_thinking": True})
+    return [output.outputs[0] for output in outputs]
+
+
+def continue_vllm(
+    model: LLM,
+    model_name: str,
+    input_ids: list[Tensor],
+    prompt_seeds: list[int],
+    max_generation_len: int,
+) -> list[CompletionOutput]:
+    prompts = [{"prompt_token_ids": ids.tolist()} for ids in input_ids]
+    outputs = model.generate(prompts, get_sampling_params(model_name, prompt_seeds, max_generation_len), use_tqdm=True)
     return [output.outputs[0] for output in outputs]

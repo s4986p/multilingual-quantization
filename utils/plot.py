@@ -65,6 +65,12 @@ def format_ratio(
     return f"{ratio:.1%}\n{round(ratio - bf16_ratio, 3) + 0.0:+.1%}p"
 
 
+def format_bf16_ratio(
+    bf16_ratios: list[float],
+) -> str:
+    return f"{mean(bf16_ratios):.1%}\n±{stdev(bf16_ratios):.1%}p"
+
+
 def get_accuracy(
     result: dict,
 ) -> float:
