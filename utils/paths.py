@@ -16,6 +16,16 @@ def make_calibrated_path(
     return f"{method}/{model_name}/calibration_languages={'_'.join(calibration_languages)},num_bits={num_bits},group_size={group_size},num_samples={num_samples}"
 
 
+
+def make_finetune_path(
+    model_name: str,
+    loss: str,
+    think_source: str,
+    think_part: str,
+) -> str:
+    return f"finetune/{model_name}/loss={loss},think_source={think_source},think_part={think_part}"
+
+
 def make_target_path(
     method: str,
     model_name: str,
