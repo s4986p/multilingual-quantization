@@ -86,11 +86,7 @@ def forward_layer(
     layer: Module,
     layer_inputs: list[tuple[tuple, dict]],
 ) -> list[Tensor]:
-    layer_outputs = []
-    for layer_args, layer_kwargs in layer_inputs:
-        layer_output = layer(*layer_args, **layer_kwargs)
-        layer_outputs.append(layer_output[0] if isinstance(layer_output, tuple) else layer_output)
-    return layer_outputs
+    return [layer(*layer_args, **layer_kwargs) for layer_args, layer_kwargs in layer_inputs]
 
 
 def quantize_weight(

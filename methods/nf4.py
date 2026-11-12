@@ -1,12 +1,10 @@
 from dataclasses import dataclass
-import time
 
 from simple_parsing import parse
 import torch
 from torch import Tensor
 from torch.nn import Linear
 
-from utils.format import format_duration, format_memory
 from utils.hub import save_model
 from utils.model import load_model
 from utils.paths import make_uncalibrated_path
@@ -35,18 +33,8 @@ def quantize_weight(
 def main() -> None:
     config = parse(Config)
     model = load_model(config.model_name)
-    layers = model.model.language_model.layers
-
-    start_time = time.perf_counter()
-    torch.cuda.reset_peak_memory_stats()
-    for layer_index, layer in enumerate(layers):
-        for linear in [module for module in layer.modules() if isinstance(module, Linear)]:
-            linear.weight.copy_(quantize_weight(linear.weight))
-
-        print(f"layer {layer_index + 1}/{len(layers)} time {format_duration(time.perf_counter() - start_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")
-        start_time = time.perf_counter()
-        torch.cuda.reset_peak_memory_stats()
-
+    for linear in [module for module in model.model.language_model.layers.modules() if isinstance(module, Linear)]:
+        linear.weight.copy_(quantize_weight(linear.weight))
     save_model(make_uncalibrated_path("nf4", config.model_name), model)
 
 
