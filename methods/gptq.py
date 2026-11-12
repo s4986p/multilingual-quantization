@@ -81,10 +81,12 @@ def quantize_weight(
             # group 시작 시 grid 설정, 앞 열이 갱신한 weight를 써야 하기 때문
             if column_index % group_size == 0:
                 scale[:, group_index], zero[:, group_index] = find_grid(weight[:, column_index : column_index + group_size], num_bits)
+
             # 4. 열을 양자화하고 그 오차를 같은 block 안 뒤 열로 전파
             quantized[:, column_index] = round_to_grid(weight[:, column_index], scale[:, group_index], zero[:, group_index], num_bits)
             error[:, column_index - block_start] = (weight[:, column_index] - quantized[:, column_index]) / hessian_inv[column_index, column_index]
             weight[:, column_index:block_end] -= torch.outer(error[:, column_index - block_start], hessian_inv[column_index, column_index:block_end])
+
         # 5. block 오차를 block 뒤 모든 열로 전파
         weight[:, block_end:] -= error[:, : block_end - block_start] @ hessian_inv[block_start:block_end, block_end:]
     return quantized
