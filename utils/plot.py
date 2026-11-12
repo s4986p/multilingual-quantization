@@ -1,8 +1,10 @@
+from collections.abc import Callable
 from pathlib import Path
 from statistics import mean, stdev
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 
 METHODS = ["gptq", "awq", "nf4", "mxfp4"]
@@ -61,10 +63,10 @@ def format_ratio(
     return f"{ratio:.1%}\n{round(ratio - bf16_ratio, 3) + 0.0:+.1%}p"
 
 
-def format_bf16_accuracy(
-    bf16_accuracies: list[float],
-) -> str:
-    return f"bf16 {mean(bf16_accuracies):.1%} ±{stdev(bf16_accuracies):.1%}p"
+def get_accuracy(
+    result: dict,
+) -> float:
+    return result["accuracy"]
 
 
 def plot_bars(
@@ -82,6 +84,32 @@ def plot_bars(
             ax.annotate(text, (x, max(value, bf16_values[series_index])), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
     ax.set_xticks([slot * slot_width for slot in range(len(slot_labels))], slot_labels)
     ax.set_xlim(-slot_width / 2, (len(slot_labels) - 0.5) * slot_width)
+
+
+def plot_language_bars(
+    ax: Axes,
+    slot_results: dict[str, list[dict]],
+    bf16_results: list[dict],
+    get_value: Callable[[dict], float],
+) -> None:
+    series = []
+    bf16_values = []
+    for language in LANGUAGES:
+        bf16_values.append(mean(get_value(bf16_result[language]) for bf16_result in bf16_results))
+        values = [mean(get_value(result[language]) for result in results) for results in slot_results.values()]
+        series.append((values, LANGUAGE_COLORS[language], [format_ratio(value, bf16_values[-1]) for value in values]))
+    plot_bars(ax, list(slot_results), series, bf16_values)
+
+
+def add_language_legend(
+    fig: Figure,
+    bf16_results: list[dict],
+) -> None:
+    handles = []
+    for language in LANGUAGES:
+        bf16_accuracies = [bf16_result[language]["accuracy"] for bf16_result in bf16_results]
+        handles.append(Patch(color=LANGUAGE_COLORS[language], label=f"{language} (bf16 {mean(bf16_accuracies):.1%} ±{stdev(bf16_accuracies):.1%}p)"))
+    fig.legend(handles=[*handles, Patch(color=BF16_COLOR, label="bf16")], loc="outside lower center", ncol=len(handles) + 1)
 
 
 def fit_bar_width(
