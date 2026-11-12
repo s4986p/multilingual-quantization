@@ -29,6 +29,7 @@ def round_to_fp4(
     scale: Tensor,
 ) -> Tensor:
     magnitude = (weight.abs() / scale).clamp(max=6)
+    # fp4 값 [0, 0.5, 1, 1.5, 2, 3, 4, 6] 중 가까운 값으로 반올림
     step = torch.where(magnitude < 2, 0.5, torch.where(magnitude < 4, 1.0, 2.0))
     return torch.sign(weight) * torch.round(magnitude / step) * step * scale
 

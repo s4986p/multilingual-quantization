@@ -37,6 +37,7 @@ def find_linear_groups(
     layer_args: tuple,
     layer_kwargs: dict,
 ) -> list[list[Linear]]:
+    # 같은 입력을 받는 linear끼리 묶음, smooth를 묶음마다 하나로 찾기 때문
     linear_groups = []
 
     def hook(
