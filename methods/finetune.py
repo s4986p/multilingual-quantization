@@ -1,10 +1,11 @@
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import partial
 import math
 import random
 from statistics import mean
 import time
-from typing import Callable, Iterator, Literal
+from typing import Literal
 
 from simple_parsing import parse
 import torch
@@ -62,8 +63,8 @@ def load_samples(
         if en_understanding is None:
             continue
         for language in TRAIN_LANGUAGES:
-            native_understanding = get_understanding(language_thinks[language][problem_index])
-            if native_understanding is None or not tensors[f"{language}/corrects"][problem_index]:
+            understanding = get_understanding(language_thinks[language][problem_index])
+            if understanding is None or not tensors[f"{language}/corrects"][problem_index]:
                 continue
             think = language_thinks["en" if think_source == "en" else language][problem_index]
             samples.append((language_prompt_ids[language][problem_index], language_prompt_ids["en"][problem_index], get_think_ids(tokenizer, model_name, get_understanding(think) if think_part == "understanding" else think)))

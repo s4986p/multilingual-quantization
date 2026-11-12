@@ -1,6 +1,6 @@
 from collections.abc import Callable
-from statistics import mean
 import re
+from statistics import mean
 import time
 
 from vllm.outputs import CompletionOutput  # type: ignore

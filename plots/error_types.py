@@ -60,7 +60,7 @@ def main() -> None:
     language_ratios = []
     used_counts = {}
     for language in LANGUAGES:
-        used_counts[language] = sum(get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results]))
+        used_counts[language] = sum(get_all_correct_mask(bf16_results, language))
         error_types = [error_type or "other" for result in results for error_type in result[language]["error_types"]]
         language_ratios.append({error_type: error_types.count(error_type) / (used_counts[language] * len(results)) for error_type in ERROR_TYPE_COLORS})
 
@@ -71,8 +71,8 @@ def main() -> None:
                 if error_line is None:
                     continue
                 lines = quantized_result[language]["thinks"][problem_index].split("\n")
-                error_start = len(tokenizer("\n".join(lines[: error_line - 1]), add_special_tokens=False)["input_ids"])
-                bin_counts[min(error_start * NUM_PROGRESS_BINS // quantized_result[language]["think_lens"][problem_index], NUM_PROGRESS_BINS - 1)][error_type or "other"] += 1
+                error_token_index = len(tokenizer("\n".join(lines[: error_line - 1]), add_special_tokens=False)["input_ids"])
+                bin_counts[min(error_token_index * NUM_PROGRESS_BINS // quantized_result[language]["think_lens"][problem_index], NUM_PROGRESS_BINS - 1)][error_type or "other"] += 1
     num_errors = sum(sum(counts.values()) for counts in bin_counts)
     progress_ratios = [{error_type: count / num_errors for error_type, count in counts.items()} for counts in bin_counts]
 

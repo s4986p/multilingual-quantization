@@ -5,8 +5,8 @@ from statistics import mean, stdev
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Patch
-from matplotlib.ticker import MultipleLocator, PercentFormatter
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, PercentFormatter
 
 METHODS = ["gptq", "awq", "nf4", "mxfp4"]
 LANGUAGE_COLORS = {"en": "#3c5a9a", "zh": "#de2910", "sw": "#1eb53a", "ja": "#f4a6b7", "te": "#ff9933"}
@@ -133,7 +133,7 @@ def plot_loss_difference_bars(
     bf16_accuracies: dict[str, list[list[float]]],
     quantized_accuracies: dict[str, list[list[float]]],
 ) -> None:
-    losses = {language: [[bf16 - quantized for bf16, quantized in zip(bf16_seeds, quantized_seeds)] for bf16_seeds, quantized_seeds in zip(bf16_accuracies[language], quantized_accuracies[language])] for language in LANGUAGES}
+    losses = {language: [[bf16 - quantized for bf16, quantized in zip(bf16_seed_accuracies, quantized_seed_accuracies)] for bf16_seed_accuracies, quantized_seed_accuracies in zip(bf16_accuracies[language], quantized_accuracies[language])] for language in LANGUAGES}
     series = []
     for language in LANGUAGES[1:]:
         loss_differences = [[loss - en_loss for loss, en_loss in zip(seed_losses, en_seed_losses)] for seed_losses, en_seed_losses in zip(losses[language], losses["en"])]
