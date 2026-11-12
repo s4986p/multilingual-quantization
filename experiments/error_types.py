@@ -87,7 +87,7 @@ def main() -> None:
         bf16_result = load_result("mgsm", bf16_target, file_names[seed])
         quantized_result = load_result("mgsm", target, file_names[seed])
         for language in MGSM_PROMPTS:
-            all_correct_mask = get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results])
+            all_correct_mask = get_all_correct_mask(bf16_results, language)
             problem_indices[seed, language] = [problem_index for problem_index, (all_correct, correct) in enumerate(zip(all_correct_mask, quantized_result[language]["corrects"])) if all_correct and not correct]
             for problem_index in problem_indices[seed, language]:
                 prompt, answer = problems[language][problem_index]
@@ -100,17 +100,17 @@ def main() -> None:
                     numbered_think="\n".join(f"{line_index + 1}: {line}" for line_index, line in enumerate(think.split("\n"))),
                 ))
                 prompt_seeds.append(seed)
-            print(f"{target} seed {seed} {language} wrong {len(problem_indices[seed, language])}")
+            print(f"{target} seed {seed} {language} wrong {len(problem_indices[seed, language])} of {len(problems[language])}")
 
-    # 3. judge 응답을 한 번에 생성, vllm을 띄우는 데 오래 걸리기 때문
-    # 시퀀스 256개, qwen3.5-27b는 기본 1024개로는 메모리에 안 들어가기 때문
+    # 3. 판정을 한 번에 생성, vllm을 띄우는 데 오래 걸리기 때문
+    # sequence 256개, qwen3.5-27b는 기본 1024개로는 메모리에 안 들어가기 때문
     model = load_vllm(config.judge_name, config.judge_name, max_num_seqs=256)
     tokenizer = model.get_tokenizer()
     start_time = time.perf_counter()
     outputs = generate_vllm(model, config.judge_name, prompts, prompt_seeds, config.judge_max_generation_len)
     print(f"{target} time {format_duration(time.perf_counter() - start_time)}")
 
-    # 4. judge 응답 끝에서 처음 틀린 줄과 오류 유형 추출하고 저장
+    # 4. 판정 끝에서 처음 틀린 줄과 오류 유형 추출하고 저장
     start = 0
     for seed in missing_seeds:
         result = {}

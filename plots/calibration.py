@@ -8,7 +8,7 @@ from utils.hub import load_result
 from utils.paths import make_calibrated_path, make_uncalibrated_path
 from utils.plot import ACCURACY_YMAX, LANGUAGES, add_language_legend, fit_bar_width, get_accuracy, get_figsize, get_panel_width, plot_language_bars, save_figure
 
-CALIBRATIONS = {"영어": ("en",), "스와힐리어": ("sw",), "텔루구어": ("te",), "all": ("en", "zh", "sw", "ja", "te")}
+CASES = {"영어": ("en",), "스와힐리어": ("sw",), "텔루구어": ("te",), "all": ("en", "zh", "sw", "ja", "te")}
 
 
 @dataclass
@@ -27,7 +27,7 @@ def main() -> None:
     bf16_target = make_uncalibrated_path("bf16", config.model_name)
     bf16_results = [load_result("mgsm", bf16_target, f"max_generation_len={config.max_generation_len},seed={seed}") for seed in config.bf16_seeds]
     results = {}
-    for calibration, calibration_languages in CALIBRATIONS.items():
+    for calibration, calibration_languages in CASES.items():
         target = make_calibrated_path("awq", config.model_name, calibration_languages, config.num_bits, config.group_size, config.num_samples)
         results[calibration] = [load_result("mgsm", target, f"max_generation_len={config.max_generation_len},seed={seed}") for seed in config.seeds]
 

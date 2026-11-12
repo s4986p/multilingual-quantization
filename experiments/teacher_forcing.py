@@ -35,8 +35,8 @@ class Config:
 def main() -> None:
     config = parse(Config)
     script_name = "teacher_forcing/mgsm"
-    file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
     target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
+    file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
     if tensors_exist(script_name, target, file_name):
         print(f"{target} already evaluated")
         return
@@ -52,12 +52,12 @@ def main() -> None:
     tensors = defaultdict(list)
     for language in MGSM_PROMPTS:
         # 1. 모든 bf16 seed가 푼 문제에서 bf16 추론 추출
-        all_correct_mask = get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results])
+        all_correct_mask = get_all_correct_mask(bf16_results, language)
         samples = []
         for problem_index, ((prompt, _), think, all_correct) in enumerate(zip(problems[language], bf16_result[language]["thinks"], all_correct_mask)):
             if all_correct:
                 samples.append((problem_index, get_prompt_ids(tokenizer, prompt), get_think_ids(tokenizer, config.model_name, think)))
-        print(f"{target} {language} samples {len(samples)} positions {sum(len(think_ids) for _, _, think_ids in samples)}")
+        print(f"{target} {language} samples {len(samples)} of {len(problems[language])} positions {sum(len(think_ids) for _, _, think_ids in samples)}")
 
         # 2. 추론 token마다 bf16과 양자화 모델의 다음 token 예측을 kl로 비교
         start_time = time.perf_counter()
