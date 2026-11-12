@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 from utils.hub import load_result
 from utils.metrics import get_all_correct_mask
 from utils.paths import make_target_path, make_uncalibrated_path
-from utils.plot import LANGUAGES, NUM_PROGRESS_BINS, PROGRESS_LABELS, get_figsize, get_panel_width, save_figure
+from utils.plot import LANGUAGE_NAMES, LANGUAGES, NUM_PROGRESS_BINS, PROGRESS_LABELS, get_figsize, get_panel_width, save_figure
 
 ERROR_TYPE_COLORS = {"fact": "#2a78d6", "relation": "#eb6834", "target": "#1baf7a", "doubt": "#eda100", "arithmetic": "#e87ba4", "other": "#a3a29b"}
 ERROR_TYPE_LABELS = {"fact": "사실 오류", "relation": "관계 오류", "target": "목표 오류", "doubt": "조건 무시", "arithmetic": "계산 오류", "other": "기타"}
@@ -78,9 +78,9 @@ def main() -> None:
 
     fig, axes = plt.subplot_mosaic([["types"], ["progress"]], figsize=get_figsize([get_panel_width(len(LANGUAGES), 1)], 2), layout="constrained")
     plot_error_types(axes["types"], language_ratios)
-    axes["types"].set_xticks(range(len(LANGUAGES)), LANGUAGES)
+    axes["types"].set_xticks(range(len(LANGUAGES)), [LANGUAGE_NAMES[language] for language in LANGUAGES])
     axes["types"].set_ylabel("모든 bf16 seed가 푼 문제 중 비율")
-    axes["types"].set_title(f"{config.method} (사용한 문제 {', '.join(f'{language} {used_counts[language]}' for language in LANGUAGES)})")
+    axes["types"].set_title(f"{config.method}\n(사용한 문제 {', '.join(f'{LANGUAGE_NAMES[language]} {used_counts[language]}' for language in LANGUAGES)})")
 
     plot_error_types(axes["progress"], progress_ratios)
     axes["progress"].set_xticks(range(NUM_PROGRESS_BINS), PROGRESS_LABELS)

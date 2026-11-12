@@ -8,10 +8,10 @@ from simple_parsing import parse
 
 from utils.hub import load_result
 from utils.paths import make_target_path, make_uncalibrated_path
-from utils.plot import ACCURACY_YMAX, LANGUAGES, METHODS, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_case_bars, plot_loss_difference_bars, save_figure
+from utils.plot import ACCURACY_YMAX, LANGUAGE_NAMES, LANGUAGES, METHODS, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_case_bars, plot_loss_difference_bars, save_figure
 
 CASES = [("bf16", "mgsm"), ("bf16", "en_understanding_swap/mgsm"), ("quantized", "mgsm"), ("quantized", "en_understanding_swap/mgsm")]
-CASE_LABELS = {"mgsm": "해당 언어 프롬프트", "en_understanding_swap/mgsm": "en 문제 이해 교체"}
+CASE_LABELS = {"mgsm": "해당 언어 프롬프트", "en_understanding_swap/mgsm": "영어 문제 이해 교체"}
 
 
 @dataclass
@@ -52,12 +52,12 @@ def main() -> None:
         plot_case_bars(accuracy_ax, [f"{method_names[model_method]}, {CASE_LABELS[script_name]}" for model_method, script_name in CASES], case_accuracies)
         accuracy_ax.set_ylim(0, ACCURACY_YMAX)
         accuracy_ax.set_ylabel("정확도")
-        accuracy_ax.set_title(f"{method} (사용한 문제 {', '.join(f'{language} {used_counts[language]:.0f}' for language in LANGUAGES)})")
+        accuracy_ax.set_title(f"{method} (사용한 문제 {', '.join(f'{LANGUAGE_NAMES[language]} {used_counts[language]:.0f}' for language in LANGUAGES)})")
         accuracy_ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
         plot_loss_difference_bars(loss_difference_ax, [CASE_LABELS[script_name] for _, script_name in CASES[:2]], {language: accuracies[:2] for language, accuracies in case_accuracies.items()}, {language: accuracies[2:] for language, accuracies in case_accuracies.items()})
-        loss_difference_ax.set_ylabel("en과의 손실 차이")
-        loss_difference_ax.set_title(f"{method} en과의 손실 차이")
+        loss_difference_ax.set_ylabel("영어와의 손실 차이")
+        loss_difference_ax.set_title(f"{method} 영어와의 손실 차이")
 
     fig.suptitle(f"{config.model_name} mgsm en understanding swap\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
     add_language_legend(fig)

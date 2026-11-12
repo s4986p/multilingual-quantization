@@ -10,7 +10,7 @@ from torch import Tensor
 from utils.hub import load_result, load_tensors
 from utils.metrics import get_all_correct_mask
 from utils.paths import make_target_path, make_uncalibrated_path
-from utils.plot import LANGUAGE_COLORS, LANGUAGES, METHODS, NUM_PROGRESS_BINS, PROGRESS_LABELS, fit_bar_width, get_figsize, get_panel_width, plot_bars, save_figure
+from utils.plot import LANGUAGE_COLORS, LANGUAGE_NAMES, LANGUAGES, METHODS, NUM_PROGRESS_BINS, PROGRESS_LABELS, fit_bar_width, get_figsize, get_panel_width, plot_bars, save_figure
 
 
 @dataclass
@@ -53,7 +53,7 @@ def main() -> None:
     plot_bars(axes["kl"], list(results), series)
     axes["kl"].set_ylim(0, max(max(values) for values, _, _ in series) * 1.15)
     axes["kl"].set_ylabel("문제당 평균 kl")
-    used_counts = [f"{language} {used[language].sum()}" for language in LANGUAGES]
+    used_counts = [f"{LANGUAGE_NAMES[language]} {used[language].sum()}" for language in LANGUAGES]
     axes["kl"].set_title(f"kl (사용한 문제 {', '.join(used_counts)})")
 
     for language in LANGUAGES:
@@ -66,7 +66,7 @@ def main() -> None:
     axes["progress"].set_title("mxfp4 추론 위치별 kl")
 
     fig.suptitle(f"{config.model_name} mgsm teacher forcing\n{file_name},bf16_seeds={','.join(map(str, config.bf16_seeds))}")
-    fig.legend(handles=[Line2D([], [], color=LANGUAGE_COLORS[language], marker="o", linewidth=2, label=language) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
+    fig.legend(handles=[Line2D([], [], color=LANGUAGE_COLORS[language], marker="o", linewidth=2, label=LANGUAGE_NAMES[language]) for language in LANGUAGES], loc="outside lower center", ncol=len(LANGUAGES))
     fit_bar_width(fig, [axes["kl"]])
     save_figure(fig, config.model_name, "mgsm_teacher_forcing")
 
