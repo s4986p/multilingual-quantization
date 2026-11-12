@@ -24,7 +24,7 @@
 - 따로 적지 않으면 seed 0, 1, 2 평균
 
 #### 평가
-- en, zh, sw, ja, te, 각 언어 프롬프트, zero shot
+- en, zh, sw, ja, te, 해당 언어 프롬프트, zero shot
 - 언어마다 mgsm 250개, mmlu-prox-lite 588개 문제
 - mgsm 지시문은 [simple-evals](https://github.com/openai/simple-evals/blob/main/mgsm_eval.py)에서 가져옴
 - mmlu-prox-lite 지시문은 [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/lm_eval/tasks/mmlu_prox/lang_libs.py)에서 가져옴
@@ -48,6 +48,6 @@
 - mgsm에서, gemma가 qwen보다 적게 잃음
 - qwen mgsm에서, 양자화 모델이 많이 잘리고 그 대부분이 반복
 - qwen bf16 mgsm에서, sw와 te가 약함
-- gemma mgsm에서, 거의 잘리지 않음, 따라서 틀린 답으로 잃음
+- gemma mgsm에서, 거의 잘리지 않음, 따라서 손실은 대부분 오답에서 발생
 - **gemma mgsm에서, sw와 te가 가장 많이 잃음**
 - mmlu-prox-lite에서, en보다 눈에 띄게 더 잃는 언어 없음
