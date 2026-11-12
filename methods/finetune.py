@@ -22,9 +22,9 @@ from utils.paths import make_finetune_path, make_uncalibrated_path
 from utils.understanding import get_understanding
 
 TRAIN_LANGUAGES = ["zh", "sw", "ja", "te"]
-# 생성은 512 token까지, gsm8k 해당 언어 문제 이해의 약 95%가 그 안에 들어가기 때문
+# 문제 이해 생성은 512 token까지, gsm8k 해당 언어 문제 이해의 약 95%가 그 안에 들어가기 때문
 MAX_UNDERSTANDING_LEN = 512
-# 생성은 2048 token까지, gsm8k 해당 언어 추론의 약 98%가 그 안에 들어가기 때문
+# 추론 생성은 2048 token까지, gsm8k 해당 언어 추론의 약 98%가 그 안에 들어가기 때문
 MAX_THINK_LEN = 2048
 
 
@@ -121,8 +121,10 @@ def get_kl_losses(
     bf16_model: PreTrainedModel,
     batch: list[tuple[Tensor, Tensor, Tensor]],
 ) -> Iterator[Tensor]:
-    # 같은 텍스트를 학습 중인 모델에는 해당 언어 프롬프트 뒤에, bf16에는 영어 프롬프트 뒤에 넣고 그 텍스트 위치에서만 다음 token 예측을 bf16에 kl로 맞춤
-    # 예시) 스와힐리어 프롬프트 + "<|channel>thought\n" + 문제 이해, 영어 프롬프트 + "<|channel>thought\n" + 문제 이해
+    # 같은 텍스트를 학습 중인 모델에는 해당 언어 프롬프트 뒤에, bf16에는 영어 프롬프트 뒤에 넣음
+    # 그 텍스트 위치에서만 다음 token 예측을 bf16에 kl로 맞춤
+    # 예시) 학습 중인 모델: 스와힐리어 프롬프트 + "<|channel>thought\n" + 문제 이해
+    # 예시) bf16: 영어 프롬프트 + "<|channel>thought\n" + 문제 이해
     num_positions = sum(len(think_ids) for _, _, think_ids in batch)
     for prompt_ids, en_prompt_ids, think_ids in batch:
         with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
