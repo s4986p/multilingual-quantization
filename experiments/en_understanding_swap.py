@@ -44,7 +44,7 @@ def main() -> None:
     problems = load_mgsm(list(MGSM_PROMPTS))
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
 
-    # 2. bf16 en 추론에서 en 문제 이해를 추출하고 해당 언어 프롬프트 뒤, 추론 시작에 입력
+    # 2. bf16 영어 추론에서 영어 문제 이해를 추출하고 해당 언어 프롬프트 뒤, 추론 시작에 입력
     problem_indices = {}
     input_ids = []
     prompt_seeds = []
@@ -57,7 +57,7 @@ def main() -> None:
                 input_ids.append(torch.cat([get_prompt_ids(tokenizer, problems[language][problem_index][0]), get_think_ids(tokenizer, config.model_name, understandings[problem_index])]))
                 prompt_seeds.append(seed)
 
-    # 3. en 문제 이해에 이어서 풀이와 응답을 한 번에 생성, vllm을 띄우는 데 오래 걸리기 때문
+    # 3. 영어 문제 이해에 이어서 풀이와 응답을 한 번에 생성, vllm을 띄우는 데 오래 걸리기 때문
     model_path = config.model_name if config.method == "bf16" else download_model(target)
     model = load_vllm(model_path, config.model_name)
     start_time = time.perf_counter()
