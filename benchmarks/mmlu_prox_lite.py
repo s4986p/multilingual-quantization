@@ -5,7 +5,6 @@ from typing import Literal
 from datasets import load_dataset
 from simple_parsing import parse
 
-from utils.config import Language
 from utils.evaluation import evaluate_benchmark
 from utils.paths import make_target_path
 
@@ -32,7 +31,7 @@ class Config:
     # 평가할 모델
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
-    calibration_languages: tuple[Language, ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

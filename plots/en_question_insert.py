@@ -1,10 +1,10 @@
 from dataclasses import dataclass
+from typing import Literal
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
-from utils.config import Language
 from utils.hub import load_result
 from utils.paths import make_target_path, make_uncalibrated_path
 from utils.plot import ACCURACY_YMAX, LANGUAGES, METHODS, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_case_bars, plot_loss_difference_bars, save_figure
@@ -16,7 +16,7 @@ CASE_LABELS = {"mgsm": "해당 언어 프롬프트", "en_question_insert/mgsm": 
 @dataclass
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
-    calibration_languages: tuple[Language, ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

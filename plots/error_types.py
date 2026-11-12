@@ -8,7 +8,6 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 from transformers import AutoTokenizer
 
-from utils.config import Language
 from utils.hub import load_result
 from utils.metrics import get_all_correct_mask
 from utils.paths import make_target_path, make_uncalibrated_path
@@ -22,7 +21,7 @@ ERROR_TYPE_LABELS = {"fact": "사실 오류", "relation": "관계 오류", "targ
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
-    calibration_languages: tuple[Language, ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

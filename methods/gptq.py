@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import time
+from typing import Literal
 
 from simple_parsing import parse
 import torch
@@ -7,7 +8,6 @@ from torch import Tensor
 from torch.nn import Linear
 
 from utils.capture import capture_layer_inputs, compute_abs_mean_and_hessian
-from utils.config import Language
 from utils.dataset import load_wikipedia
 from utils.format import format_duration, format_memory
 from utils.hub import save_model
@@ -24,7 +24,7 @@ class Config:
     damp_ratio: float = 0.01
     model_name: str = "google/gemma-4-E2B-it"
     # calibration할 데이터
-    calibration_languages: tuple[Language, ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_samples: int = 128
     max_sequence_len: int = 2048
     shuffle_seed: int = 0

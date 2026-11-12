@@ -5,7 +5,6 @@ from typing import Literal
 
 from simple_parsing import parse
 
-from utils.config import Language
 from utils.dataset import MGSM_PROMPTS, get_mgsm_question, load_mgsm
 from utils.evaluation import split_outputs
 from utils.format import format_duration
@@ -56,7 +55,7 @@ class Config:
     # 틀린 추론을 쓴 모델
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
-    calibration_languages: tuple[Language, ...] = ("en",)
+    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
