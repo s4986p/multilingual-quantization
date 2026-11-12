@@ -14,7 +14,7 @@
 - seed 노이즈: seed 사이의 표준편차, plot의 ± 값
 - 잘림: 최대 생성 길이에 닿고 틀린 문제
 - 반복: 같은 글을 되풀이한 문제, 추론 또는 응답 끝에서 200~150번째 글자 50개가 그 앞에 5번 이상 나오는지로 판단
-- 문제 이해: 추론 시작에서 목표와 주어진 정보를 영어로 쓰는 부분, 제목에 calculate, determine, compute, solve, perform, set up, formulate가 처음 나오는 단계 앞까지, 추론의 약 1/4
+- 문제 이해: 추론 시작에서 목표와 주어진 정보를 영어로 쓰는 부분, 제목에 calculate, determine, compute, solve, perform, set up, formulate가 처음 나오는 단계 앞까지, 추론의 약 30%
 - 영어 문제 이해: bf16이 영어 프롬프트에 쓴 문제 이해
 - 풀이: 문제 이해 뒤 추론
 - 추론 위치: 추론에서 어디쯤인지, 문제마다 추론 token을 5등분한 구간
@@ -27,7 +27,7 @@
 #### 모델
 - qwen3.5-2b, gemma-4-e2b-it, thinking mode 사용
 - bf16 기준
-- 4 bit, linear layer weight만 양자화
+- 4 bit, language model layer의 linear weight만 양자화
 - gptq, awq group size 128, nf4 group size 64, mxfp4 group size 32
 - gptq, awq는 영어 wikipedia chunk 128개로 calibration, chunk마다 2048 token
 
@@ -56,14 +56,15 @@
 ![](../figures/gemma-4-E2B-it/mgsm_loss.png)
 ![](../figures/Qwen3.5-2B/mmlu_prox_lite_loss.png)
 ![](../figures/gemma-4-E2B-it/mmlu_prox_lite_loss.png)
-- mgsm에서, awq가 가장 적게 잃고 mxfp4가 가장 많이 잃음
+- mgsm에서, mxfp4가 가장 많이 잃음
+- qwen mgsm에서, awq가 가장 적게 잃음
 - mgsm에서, gemma가 qwen보다 적게 잃음
 - qwen mgsm에서, 양자화 모델이 많이 잘리고 그 대부분이 반복
 - qwen nf4와 mxfp4 mgsm에서, 중국어가 크게 잃고 그 대부분이 잘림
 - qwen bf16 mgsm에서, 스와힐리어와 텔루구어가 약함
 - gemma mgsm에서, 거의 잘리지 않음, 따라서 손실은 대부분 틀린 응답에서 발생
 - **gemma mgsm에서, 스와힐리어와 텔루구어가 가장 많이 잃음**
-- gemma mgsm에서, 일본어도 영어보다 더 잃음, 그러나 스와힐리어와 텔루구어보다 적음
+- gemma mxfp4 mgsm에서, 일본어도 영어보다 더 잃음, 그러나 스와힐리어와 텔루구어보다 적음
 - mmlu-prox-lite에서, 영어보다 눈에 띄게 더 잃는 언어 없음
 
 ## calibration 언어 민감도
@@ -135,13 +136,13 @@ calibration 언어가 중요한지 확인
 
 #### 요약
 ![](../figures/gemma-4-E2B-it/mgsm_en_understanding_swap.png)
-- bf16과 각 양자화 방법에서, 영어 문제 이해 교체가 영어와의 차이를 대부분 메움, 따라서 영어와의 차이는 풀이가 아니라 대부분 문제 이해에서 발생
+- bf16과 각 양자화 방법에서, 영어 문제 이해 교체가 영어와의 차이를 절반 넘게 메움, 따라서 영어와의 차이는 풀이보다 문제 이해에서 더 많이 발생
 - **mxfp4에서, 영어 문제 이해 교체가 영어와의 손실 차이도 대부분 없앰**, 따라서 영어와의 손실 차이도 대부분 문제 이해에서 발생
 - mxfp4 스와힐리어에서, 영어와의 손실 차이가 일부 남음
 - gptq, awq, nf4에서, 영어와의 손실 차이가 작아 seed 노이즈와 구분하기 어려움
 
 ## 영어 질문 삽입
-[영어 문제 이해 교체](#영어-문제-이해-교체)에서 영어와의 차이는 대부분 문제 이해에서 발생, 따라서 bf16 문제 이해 없이 영어 질문만 넣어도 영어와의 차이를 메우는지 확인
+[영어 문제 이해 교체](#영어-문제-이해-교체)에서 영어와의 차이는 풀이보다 문제 이해에서 더 많이 발생, 따라서 bf16 문제 이해 없이 영어 질문만 넣어도 영어와의 차이를 메우는지 확인
 
 #### 설정
 - 해당 언어 프롬프트 뒤, 추론 시작에 같은 문제의 영어 질문 입력
@@ -159,7 +160,7 @@ calibration 언어가 중요한지 확인
 ## 중간 결론
 - gemma mgsm에서, 손실은 언어마다 다르고 스와힐리어와 텔루구어가 가장 많이 잃음
 - 응답이 아니라 추론이 정확도를 결정
-- 영어와의 차이는 풀이가 아니라 대부분 문제 이해에서 발생
+- 영어와의 차이는 풀이보다 문제 이해에서 더 많이 발생
 - mxfp4에서, 영어 문제 이해 교체와 영어 질문 삽입이 영어와의 손실 차이를 대부분 없앰, 따라서 영어와의 손실 차이는 대부분 해당 언어 질문을 이해하는 데서 발생
 - mxfp4 스와힐리어에서, 영어와의 손실 차이가 일부 남음
 
