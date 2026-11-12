@@ -64,22 +64,22 @@ def parse_mmlu_prox_lite_prediction(
         return None
     _, _, _, answer_format = MMLU_PROX_LITE_TEMPLATES[language]
     # "("부터 끝까지 제거
-    # 예시)  "the answer is ({})" → "the answer is"
-    #       "答案是 ({})"          → "答案是"
-    #       "答えは ({}) です"      → "答えは"
+    # 예시) "the answer is ({})" → "the answer is"
+    #      "答案是 ({})"          → "答案是"
+    #      "答えは ({}) です"      → "答えは"
     answer_prefix = answer_format.split("(")[0].strip()
     # markdown 굵은 글씨 제거
     # 예시) "Jibu ni **E**" → "Jibu ni E"
     response = response.replace("*", "")
     # prefix 뒤 A~J 대문자 한 글자 추출
-    # 예시)  "The answer is C"   → ["C"]
-    #       "The answer is K"   → []
-    #       "The answer is c"   → []
-    #       "The answer is Cat" → []
+    # 예시) "The answer is C"   → ["C"]
+    #      "The answer is K"   → []
+    #      "The answer is c"   → []
+    #      "The answer is Cat" → []
     letters = re.findall(rf"(?i:{re.escape(answer_prefix)})\s*[:：]?\s*\(?([A-J])\b\)?", response)
     # 못 찾으면 응답 전체에서 따로 떨어진 A~J 대문자 추출
     # 예시) "Jibu: A"      → ["A"]
-    #       "I chose (D)." → ["I", "D"]
+    #      "I chose (D)." → ["I", "D"]
     letters = letters or re.findall(r"\b([A-J])\b", response)
     return letters[-1] if letters else None
 
