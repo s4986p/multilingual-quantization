@@ -12,6 +12,8 @@ LANGUAGE_COLORS = {"en": "#3c5a9a", "zh": "#de2910", "sw": "#1eb53a", "ja": "#f4
 LANGUAGES = list(LANGUAGE_COLORS)
 BF16_COLOR = "#d9d9d9"
 ACCURACY_YMAX = 1.15
+NUM_PROGRESS_BINS = 5
+PROGRESS_LABELS = [f"{index * 100 // NUM_PROGRESS_BINS}~{(index + 1) * 100 // NUM_PROGRESS_BINS}%" for index in range(NUM_PROGRESS_BINS)]
 BAR_INCHES = 0.45
 BAR_GAP = 1
 PANEL_HEIGHT = 3.0
@@ -73,15 +75,17 @@ def plot_bars(
     ax: Axes,
     slot_labels: list[str],
     series: list[tuple[list[float], str, list[str]]],
-    bf16_values: list[float],
+    bf16_values: list[float] | None = None,
 ) -> None:
     slot_width = len(series) + BAR_GAP
     for series_index, (values, color, texts) in enumerate(series):
         xs = [slot * slot_width + series_index - (len(series) - 1) / 2 for slot in range(len(slot_labels))]
-        ax.bar(xs, [bf16_values[series_index]] * len(xs), width=1, color=BF16_COLOR)
+        if bf16_values is not None:
+            ax.bar(xs, [bf16_values[series_index]] * len(xs), width=1, color=BF16_COLOR)
         ax.bar(xs, values, width=1, color=color)
         for x, value, text in zip(xs, values, texts):
-            ax.annotate(text, (x, max(value, bf16_values[series_index])), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+            top = value if bf16_values is None else max(value, bf16_values[series_index])
+            ax.annotate(text, (x, top), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
     ax.set_xticks([slot * slot_width for slot in range(len(slot_labels))], slot_labels)
     ax.set_xlim(-slot_width / 2, (len(slot_labels) - 0.5) * slot_width)
 

@@ -72,3 +72,18 @@ calibration 언어가 중요한지 확인
 ![](../figures/gemma-4-E2B-it/mgsm_calibration.png)
 - **sw와 te에서, 해당 언어로 calibration해도 눈에 띄게 나아지지 않음**
 - all로 calibration해도 눈에 띄게 나아지지 않음
+
+## 추론 위치별 예측 차이
+언어마다 예측 변화가 다른지 확인
+
+#### 설정
+- 추론 진행도: 문제마다 추론 token을 5등분한 구간
+- 추론 진행도별 kl은 mxfp4만
+- bf16 seed 0과 1이 모두 푼 문제에서 bf16 seed 0 추론 추출
+- 그 추론을 bf16과 양자화 모델에 입력
+- 추론 위치마다 두 모델의 다음 token 예측을 kl로 비교
+
+#### 요약
+![](../figures/gemma-4-E2B-it/mgsm_teacher_forcing.png)
+- 언어 사이에서는 kl이 손실과 맞음, 그러나 방법 사이에서는 눈에 띄게 맞지 않음
+- **sw와 te에서, en과의 kl 차이가 추론 시작에서 가장 큼**

@@ -3,6 +3,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from huggingface_hub import HfApi, hf_hub_download, snapshot_download
+from safetensors.torch import load_file, save
+from torch import Tensor
 from transformers import PreTrainedModel
 
 REPO_NAME = "s4986p/multilingual-quantization"
@@ -61,3 +63,28 @@ def load_result(
     file_name: str,
 ) -> dict:
     return json.loads(Path(download_file(f"{script_name}/{target}/{file_name}.json")).read_text())
+
+
+def tensors_exist(
+    script_name: str,
+    target: str,
+    file_name: str,
+) -> bool:
+    return HfApi().file_exists(REPO_NAME, f"{script_name}/{target}/{file_name}.safetensors")
+
+
+def save_tensors(
+    script_name: str,
+    target: str,
+    file_name: str,
+    tensors: dict[str, Tensor],
+) -> None:
+    upload_file(f"{script_name}/{target}/{file_name}.safetensors", save(tensors))
+
+
+def load_tensors(
+    script_name: str,
+    target: str,
+    file_name: str,
+) -> dict[str, Tensor]:
+    return load_file(download_file(f"{script_name}/{target}/{file_name}.safetensors"))
