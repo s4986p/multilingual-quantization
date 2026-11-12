@@ -88,7 +88,7 @@ def main() -> None:
     axes["progress"].set_ylabel("첫 오류 중 비율")
     axes["progress"].set_title(f"{config.method} 추론 진행도별 첫 오류")
 
-    fig.suptitle(f"{config.model_name} mgsm error types\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
+    fig.suptitle(f"{config.model_name} mgsm error types\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))},bf16_seeds={','.join(map(str, config.bf16_seeds))}")
     fig.legend(handles=[Patch(color=color, label=ERROR_TYPE_LABELS[error_type]) for error_type, color in ERROR_TYPE_COLORS.items()], loc="outside lower center", ncol=len(ERROR_TYPE_COLORS) // 2)
     save_figure(fig, config.model_name, "mgsm_error_types")
 
