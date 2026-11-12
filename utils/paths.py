@@ -1,13 +1,8 @@
-def make_nf4_path(
+def make_uncalibrated_path(
+    method: str,
     model_name: str,
 ) -> str:
-    return f"nf4/{model_name}"
-
-
-def make_mxfp4_path(
-    model_name: str,
-) -> str:
-    return f"mxfp4/{model_name}"
+    return f"{method}/{model_name}"
 
 
 def make_calibrated_path(

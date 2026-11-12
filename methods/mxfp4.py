@@ -9,7 +9,7 @@ from torch.nn import Linear
 from utils.format import format_duration, format_memory
 from utils.hub import save_model
 from utils.model import load_model
-from utils.paths import make_mxfp4_path
+from utils.paths import make_uncalibrated_path
 
 MXFP4_GROUP_SIZE = 32
 
@@ -58,7 +58,7 @@ def main() -> None:
         start_time = time.perf_counter()
         torch.cuda.reset_peak_memory_stats()
 
-    save_model(make_mxfp4_path(config.model_name), model)
+    save_model(make_uncalibrated_path("mxfp4", config.model_name), model)
 
 
 if __name__ == "__main__":

@@ -3,9 +3,7 @@ from tempfile import TemporaryDirectory
 from huggingface_hub import HfApi
 from transformers import PreTrainedModel
 
-
-def get_repo_name() -> str:
-    return f"{HfApi().whoami()['name']}/multilingual-quantization"
+REPO_NAME = "s4986p/multilingual-quantization"
 
 
 def save_model(
@@ -14,5 +12,5 @@ def save_model(
 ) -> None:
     with TemporaryDirectory() as directory:
         model.save_pretrained(directory)
-        HfApi().upload_folder(folder_path=directory, path_in_repo=path, repo_id=get_repo_name(), commit_message=f"save {path}")
+        HfApi().upload_folder(folder_path=directory, path_in_repo=path, repo_id=REPO_NAME, commit_message=f"save {path}")
     print(f"saved {path}")
