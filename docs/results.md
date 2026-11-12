@@ -51,9 +51,11 @@
 - mgsm에서, awq가 가장 적게 잃고 mxfp4가 가장 많이 잃음
 - mgsm에서, gemma가 qwen보다 적게 잃음
 - qwen mgsm에서, 양자화 모델이 많이 잘리고 그 대부분이 반복
+- qwen nf4와 mxfp4 mgsm에서, zh가 크게 잃고 그 대부분이 잘림
 - qwen bf16 mgsm에서, sw와 te가 약함
 - gemma mgsm에서, 거의 잘리지 않음, 따라서 손실은 대부분 오답에서 발생
 - **gemma mgsm에서, sw와 te가 가장 많이 잃음**
+- gemma mgsm에서, ja도 en보다 더 잃음, 하지만 sw와 te보다 적음
 - mmlu-prox-lite에서, en보다 눈에 띄게 더 잃는 언어 없음
 
 ## calibration 언어 민감도
