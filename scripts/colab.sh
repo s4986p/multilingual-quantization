@@ -17,7 +17,7 @@ trap 'rm -f "$tar_path"; colab stop -s "$session" || true' EXIT
 until colab new -s "$session" --gpu "${GPU:-A100}"; do
     sleep 10
 done
-COPYFILE_DISABLE=1 tar -czf "$tar_path" --exclude .git --exclude .venv --exclude __pycache__ --exclude logs .
+COPYFILE_DISABLE=1 tar -czf "$tar_path" --exclude .git --exclude checks --exclude .venv --exclude __pycache__ --exclude logs .
 colab upload -s "$session" "$tar_path" content/project.tar.gz
 
 colab exec -s "$session" --timeout 86400 <<EOF 2>&1 | tee "$log_path"
