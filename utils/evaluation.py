@@ -60,15 +60,16 @@ def parse_mgsm_prediction(
     return float(numbers[-1]) if numbers else None
 
 
-def evaluate_mgsm(
+def evaluate_outputs(
     outputs: list[CompletionOutput],
-    answers: list[int],
+    answers: list[int | str],
     language: str,
     tokenizer: TokenizerLike,
     model_name: str,
+    parse_prediction: Callable[[str | None, str], float | str | None],
 ) -> dict:
     split = split_outputs(outputs, tokenizer, model_name)
-    predictions = [parse_mgsm_prediction(response, language) for response in split["responses"]]
+    predictions = [parse_prediction(response, language) for response in split["responses"]]
     corrects = [prediction == answer for prediction, answer in zip(predictions, answers)]
     return {
         "accuracy": sum(corrects) / len(outputs),
@@ -82,7 +83,7 @@ def evaluate_benchmark(
     script_name: str,
     languages: list[str],
     load_problems: Callable[[list[str]], dict],
-    evaluate_outputs: Callable[..., dict],
+    parse_prediction: Callable[[str | None, str], float | str | None],
     target: str,
     method: str,
     model_name: str,
@@ -124,7 +125,7 @@ def evaluate_benchmark(
     for seed, seed_languages in missing_languages.items():
         for language in seed_languages:
             end = start + len(problems[language])
-            language_result = evaluate_outputs(outputs[start:end], [answer for _, answer in problems[language]], language, tokenizer, model_name)
+            language_result = evaluate_outputs(outputs[start:end], [answer for _, answer in problems[language]], language, tokenizer, model_name, parse_prediction)
             results[seed][language] = language_result
             start = end
             print(f"{target} seed {seed} {language} accuracy {language_result['accuracy']:.2%} reasoning len {mean(language_result['think_lens']):.0f} truncated {mean(language_result['truncateds']):.2%}")

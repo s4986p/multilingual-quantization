@@ -8,7 +8,7 @@ import torch
 from transformers import AutoTokenizer
 
 from utils.dataset import MGSM_PROMPTS, get_mgsm_question, load_mgsm
-from utils.evaluation import evaluate_mgsm
+from utils.evaluation import evaluate_outputs, parse_mgsm_prediction
 from utils.format import format_duration
 from utils.generation import continue_vllm, load_vllm
 from utils.hub import download_model, result_exists, save_result
@@ -66,7 +66,7 @@ def main() -> None:
         result = {}
         for language in MGSM_PROMPTS:
             end = start + len(problems[language])
-            result[language] = evaluate_mgsm(outputs[start:end], [answer for _, answer in problems[language]], language, tokenizer, config.model_name)
+            result[language] = evaluate_outputs(outputs[start:end], [answer for _, answer in problems[language]], language, tokenizer, config.model_name, parse_mgsm_prediction)
             start = end
             print(f"{target} seed {seed} {language} accuracy {result[language]['accuracy']:.2%} reasoning len {mean(result[language]['think_lens']):.0f} truncated {mean(result[language]['truncateds']):.2%}")
         save_result(script_name, target, file_names[seed], result)
