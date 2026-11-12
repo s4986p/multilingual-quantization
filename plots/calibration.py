@@ -39,7 +39,7 @@ def main() -> None:
     ax.set_title("awq")
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
-    fig.suptitle(f"{config.model_name} mgsm calibration\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))}")
+    fig.suptitle(f"{config.model_name} mgsm calibration\nmax_generation_len={config.max_generation_len},seeds={','.join(map(str, config.seeds))},bf16_seeds={','.join(map(str, config.bf16_seeds))}")
     add_language_legend(fig, bf16_results)
     fit_bar_width(fig, [ax])
     save_figure(fig, config.model_name, "mgsm_calibration")
