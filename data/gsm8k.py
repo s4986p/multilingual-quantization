@@ -28,7 +28,7 @@ def load_gsm8k() -> dict[str, list[tuple[str, int]]]:
     gsm8k = load_dataset("openai/gsm8k", "main", split="train")
     mcot = load_dataset("laihuiyuan/mCoT-MATH", data_files="train_part_*.jsonl", split="train").select_columns(["question", "lang-id"])
 
-    # 1. mcot 질문을 id로 묶기, 같은 문제는 언어마다 id가 같기 때문
+    # 1. mcot 질문을 id로 묶음, 같은 문제는 언어마다 id가 같기 때문
     # 예시) "en-54530", "sw-54530" → questions["54530"] = {"en": ..., "sw": ...}
     questions = defaultdict(dict)
     for batch in mcot.iter(batch_size=100000):
@@ -37,7 +37,7 @@ def load_gsm8k() -> dict[str, list[tuple[str, int]]]:
             if language in MGSM_PROMPTS:
                 questions[mcot_id][language] = question.strip()
 
-    # 2. mcot en 질문으로 각 언어 질문 찾기
+    # 2. mcot en 질문으로 각 언어 질문 찾음
     questions_by_en = {" ".join(language_questions["en"].split()): language_questions for language_questions in questions.values()}
 
     # 3. gsm8k train 질문마다 같은 mcot en 질문 연결

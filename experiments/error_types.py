@@ -52,7 +52,7 @@ class Config:
     seeds: tuple[int, ...] = (0, 1, 2)
     bf16_seeds: tuple[int, ...] = (0, 1, 2)
     max_generation_len: int = 16384
-    # 틀린 추론을 판정할 모델
+    # 틀린 추론을 쓴 모델
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
     calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
@@ -87,7 +87,7 @@ def main() -> None:
         bf16_result = load_result("mgsm", bf16_target, file_names[seed])
         quantized_result = load_result("mgsm", target, file_names[seed])
         for language in MGSM_PROMPTS:
-            all_correct_mask = get_all_correct_mask([result[language] for result in bf16_results])
+            all_correct_mask = get_all_correct_mask([bf16_result[language] for bf16_result in bf16_results])
             problem_indices[seed, language] = [problem_index for problem_index, (all_correct, correct) in enumerate(zip(all_correct_mask, quantized_result[language]["corrects"])) if all_correct and not correct]
             for problem_index in problem_indices[seed, language]:
                 prompt, answer = problems[language][problem_index]
