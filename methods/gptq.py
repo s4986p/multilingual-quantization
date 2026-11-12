@@ -5,9 +5,9 @@ from typing import Literal
 from simple_parsing import parse
 import torch
 from torch import Tensor
-from torch.nn import Linear, Module
+from torch.nn import Linear
 
-from utils.capture import capture_layer_inputs
+from utils.capture import capture_layer_inputs, compute_abs_mean_and_hessian
 from utils.dataset import load_wikipedia
 from utils.format import format_duration, format_memory
 from utils.hub import save_model
@@ -28,27 +28,6 @@ class Config:
     num_samples: int = 128
     max_sequence_len: int = 2048
     shuffle_seed: int = 0
-
-
-def compute_hessian(
-    layer: Module,
-    linear: Linear,
-    layer_inputs: list[tuple[tuple, dict]],
-) -> Tensor:
-    hessian = torch.zeros(linear.in_features, linear.in_features, device=linear.weight.device)
-
-    def hook(
-        module: Module,
-        args: tuple[Tensor, ...],
-    ) -> None:
-        activations = args[0].reshape(-1, args[0].shape[-1]).float()
-        hessian.add_(activations.T @ activations)
-
-    handle = linear.register_forward_pre_hook(hook)
-    for layer_args, layer_kwargs in layer_inputs:
-        layer(*layer_args, **layer_kwargs)
-    handle.remove()
-    return hessian
 
 
 def quantize_weight(
@@ -104,7 +83,7 @@ def main() -> None:
     for layer_index, layer in enumerate(layers):
         layer_inputs = capture_layer_inputs(model, layer, samples)
         for linear in [module for module in layer.modules() if isinstance(module, Linear)]:
-            hessian = compute_hessian(layer, linear, layer_inputs)
+            _, hessian = compute_abs_mean_and_hessian(layer, linear, layer_inputs)
             linear.weight.copy_(quantize_weight(linear.weight, hessian, config.num_bits, config.group_size, config.block_size, config.damp_ratio))
 
         print(f"layer {layer_index + 1}/{len(layers)} time {format_duration(time.perf_counter() - start_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")
