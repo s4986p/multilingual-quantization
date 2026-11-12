@@ -4,7 +4,7 @@ from typing import Literal
 from simple_parsing import parse
 
 from utils.dataset import MGSM_PROMPTS, load_mgsm
-from utils.evaluation import evaluate_benchmark, evaluate_mgsm
+from utils.evaluation import evaluate_benchmark, parse_mgsm_prediction
 from utils.paths import make_finetune_path, make_target_path
 
 
@@ -30,7 +30,7 @@ def main() -> None:
         target = make_finetune_path(config.model_name, config.loss, config.think_source, config.think_part)
     else:
         target = make_target_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_samples)
-    evaluate_benchmark("mgsm", list(MGSM_PROMPTS), load_mgsm, evaluate_mgsm, target, config.method, config.model_name, config.seeds, config.max_generation_len)
+    evaluate_benchmark("mgsm", list(MGSM_PROMPTS), load_mgsm, parse_mgsm_prediction, target, config.method, config.model_name, config.seeds, config.max_generation_len)
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ from simple_parsing import parse
 import torch
 
 from utils.dataset import MGSM_PROMPTS
-from utils.evaluation import evaluate_mgsm
+from utils.evaluation import evaluate_outputs, parse_mgsm_prediction
 from utils.format import format_duration
 from utils.generation import generate_vllm, load_vllm
 from utils.hub import save_tensors, tensors_exist
@@ -68,7 +68,7 @@ def main() -> None:
     for language in MGSM_PROMPTS:
         start_time = time.perf_counter()
         outputs[language] = generate_vllm(model, config.model_name, [prompt for prompt, _ in problems[language]], [config.seed] * len(problems[language]), config.max_generation_len)
-        results[language] = evaluate_mgsm(outputs[language], [answer for _, answer in problems[language]], language, tokenizer, config.model_name)
+        results[language] = evaluate_outputs(outputs[language], [answer for _, answer in problems[language]], language, tokenizer, config.model_name, parse_mgsm_prediction)
         print(f"{target} {language} accuracy {results[language]['accuracy']:.2%} reasoning len {mean(results[language]['think_lens']):.0f} truncated {mean(results[language]['truncateds']):.2%}")
         print(f"{target} {language} time {format_duration(time.perf_counter() - start_time)}")
 
