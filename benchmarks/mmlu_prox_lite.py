@@ -6,7 +6,7 @@ from datasets import load_dataset
 from simple_parsing import parse
 
 from utils.evaluation import evaluate_benchmark
-from utils.paths import make_target_path
+from utils.paths import Language, make_target_path
 
 MMLU_PROX_LITE_TEMPLATES = {
     "en": ("Question:", "Options:", 'The following are multiple choice questions (with answers) about {subject}. Think step by step and then finish your answer with "{answer_format}" where X is the correct letter choice.', "the answer is ({})"),
@@ -31,7 +31,7 @@ class Config:
     # 평가할 모델
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
-    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Language, ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

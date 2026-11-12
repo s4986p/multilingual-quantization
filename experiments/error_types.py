@@ -11,7 +11,7 @@ from utils.format import format_duration
 from utils.generation import generate_vllm, load_vllm
 from utils.hub import load_result, result_exists, save_result
 from utils.metrics import get_all_correct_mask
-from utils.paths import make_target_path, make_uncalibrated_path
+from utils.paths import Language, make_target_path, make_uncalibrated_path
 
 ERROR_TYPES = ["fact", "relation", "target", "doubt", "arithmetic", "other"]
 JUDGE_PROMPT = """A small model solved a math word problem and got it wrong. Find the first line where its reasoning goes wrong, and say what kind of error it is.
@@ -55,7 +55,7 @@ class Config:
     # 틀린 추론을 쓴 모델
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
-    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Language, ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 
 from utils.hub import load_result
 from utils.metrics import get_all_correct_mask
-from utils.paths import make_target_path, make_uncalibrated_path
+from utils.paths import Language, make_target_path, make_uncalibrated_path
 from utils.plot import LANGUAGE_NAMES, LANGUAGES, NUM_PROGRESS_BINS, PROGRESS_LABELS, get_figsize, get_panel_width, save_figure
 
 ERROR_TYPE_COLORS = {"fact": "#2a78d6", "relation": "#eb6834", "target": "#1baf7a", "doubt": "#eda100", "arithmetic": "#e87ba4", "other": "#a3a29b"}
@@ -21,7 +21,7 @@ ERROR_TYPE_LABELS = {"fact": "사실 오류", "relation": "관계 오류", "targ
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
-    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Language, ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

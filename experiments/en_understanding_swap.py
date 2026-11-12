@@ -13,7 +13,7 @@ from utils.format import format_duration
 from utils.generation import continue_vllm, load_vllm
 from utils.hub import download_model, load_result, result_exists, save_result
 from utils.model import get_prompt_ids, get_think_ids
-from utils.paths import make_target_path, make_uncalibrated_path
+from utils.paths import Language, make_target_path, make_uncalibrated_path
 from utils.understanding import get_understanding
 
 
@@ -24,7 +24,7 @@ class Config:
     # 평가할 모델
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4"] = "bf16"
-    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Language, ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

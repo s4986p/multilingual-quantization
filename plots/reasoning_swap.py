@@ -6,7 +6,7 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
 from utils.hub import load_result
-from utils.paths import make_target_path
+from utils.paths import Language, make_target_path
 from utils.plot import ACCURACY_YMAX, LANGUAGES, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_case_bars, save_figure
 
 CASES = [("bf16", "bf16"), ("quantized", "bf16"), ("bf16", "quantized"), ("quantized", "quantized")]
@@ -16,7 +16,7 @@ CASES = [("bf16", "bf16"), ("quantized", "bf16"), ("bf16", "quantized"), ("quant
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
     method: Literal["gptq", "awq", "nf4", "mxfp4"] = "mxfp4"
-    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Language, ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128

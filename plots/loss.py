@@ -7,7 +7,7 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
 from utils.hub import load_result
-from utils.paths import make_target_path, make_uncalibrated_path
+from utils.paths import Language, make_target_path, make_uncalibrated_path
 from utils.plot import ACCURACY_YMAX, LANGUAGES, METHODS, add_language_legend, fit_bar_width, get_accuracy, get_figsize, get_panel_width, plot_language_bars, save_figure
 
 
@@ -15,7 +15,7 @@ from utils.plot import ACCURACY_YMAX, LANGUAGES, METHODS, add_language_legend, f
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
     benchmark: Literal["mgsm", "mmlu_prox_lite"] = "mgsm"
-    calibration_languages: tuple[Literal["en", "zh", "sw", "ja", "te"], ...] = ("en",)
+    calibration_languages: tuple[Language, ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
