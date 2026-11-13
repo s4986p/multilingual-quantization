@@ -8,7 +8,7 @@ from simple_parsing import parse
 
 from utils.hub import load_result
 from utils.paths import make_target_path, make_uncalibrated_path
-from utils.plot import ACCURACY_YMAX, LANGUAGE_NAMES, LANGUAGES, METHODS, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_case_bars, plot_loss_difference_bars, save_figure
+from utils.plot import ACCURACY_YMAX, LANGUAGE_NAMES, LANGUAGES, METHODS, add_language_legend, fit_bar_width, get_figsize, get_panel_width, get_used_accuracy, plot_case_bars, plot_loss_difference_bars, save_figure
 
 CASES = [("bf16", "mgsm"), ("bf16", "en_understanding_swap/mgsm"), ("quantized", "mgsm"), ("quantized", "en_understanding_swap/mgsm")]
 CASE_LABELS = {"mgsm": "해당 언어 프롬프트", "en_understanding_swap/mgsm": "영어 문제 이해 교체"}
@@ -23,14 +23,6 @@ class Config:
     num_samples: int = 128
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def get_used_accuracy(
-    result: dict,
-    used: set[int],
-) -> float:
-    problem_indices = result.get("problem_indices", range(len(result["corrects"])))
-    return mean(correct for problem_index, correct in zip(problem_indices, result["corrects"]) if problem_index in used)
 
 
 def main() -> None:

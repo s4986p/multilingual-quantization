@@ -80,6 +80,14 @@ def get_accuracy(
     return result["accuracy"]
 
 
+def get_used_accuracy(
+    result: dict,
+    used: set[int],
+) -> float:
+    problem_indices = result.get("problem_indices", range(len(result["corrects"])))
+    return mean(correct for problem_index, correct in zip(problem_indices, result["corrects"]) if problem_index in used)
+
+
 def plot_bars(
     ax: Axes,
     slot_labels: list[str],
