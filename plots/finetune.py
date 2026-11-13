@@ -13,6 +13,7 @@ CASES = {
     "kl, 영어 문제 이해": ("kl", "en", "understanding"),
     "kl, on policy 문제 이해": ("kl", "on_policy", "understanding"),
     "kl, on policy 추론": ("kl", "on_policy", "reasoning"),
+    "hidden, on policy 문제 이해": ("hidden", "on_policy", "understanding"),
 }
 
 

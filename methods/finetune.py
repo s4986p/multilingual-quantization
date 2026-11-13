@@ -11,7 +11,7 @@ from simple_parsing import parse
 import torch
 from torch import Tensor
 from torch.nn import Linear
-from torch.nn.functional import cross_entropy, log_softmax
+from torch.nn.functional import cosine_similarity, cross_entropy, log_softmax
 from torch.optim import AdamW
 from transformers import AutoTokenizer, PreTrainedModel, PreTrainedTokenizerBase, get_cosine_schedule_with_warmup, set_seed
 
@@ -34,7 +34,7 @@ class Config:
     num_epochs: int = 1
     warmup_ratio: float = 0.05
     batch_size: int = 8
-    loss: Literal["ce", "kl"] = "ce"
+    loss: Literal["ce", "kl", "hidden"] = "ce"
     model_name: str = "google/gemma-4-E2B-it"
     # 학습할 데이터
     think_source: Literal["en", "on_policy"] = "en"
@@ -134,6 +134,31 @@ def get_kl_losses(
         yield (bf16_logprobs.exp() * (bf16_logprobs - logprobs)).sum() / num_positions
 
 
+def get_layer_hiddens(
+    model: PreTrainedModel,
+    input_ids: Tensor,
+    prompt_len: int,
+) -> Tensor:
+    # layer마다 텍스트 위치 hidden state 반환, embedding은 두 입력에서 같아 제외
+    hidden_states = model.model(input_ids=input_ids[None, :].to(model.device), output_hidden_states=True, use_cache=False).hidden_states
+    return torch.stack(hidden_states[1:])[:, 0, prompt_len:]
+
+
+def get_hidden_losses(
+    model: PreTrainedModel,
+    bf16_model: PreTrainedModel,
+    batch: list[tuple[Tensor, Tensor, Tensor]],
+) -> Iterator[Tensor]:
+    # kl과 같이 넣고 그 텍스트 위치에서 layer마다 hidden state를 bf16에 cosine 유사도로 맞춤
+    num_positions = sum(len(think_ids) for _, _, think_ids in batch)
+    for prompt_ids, en_prompt_ids, think_ids in batch:
+        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+            bf16_hiddens = get_layer_hiddens(bf16_model, torch.cat([en_prompt_ids, think_ids]), len(en_prompt_ids))
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            hiddens = get_layer_hiddens(model, torch.cat([prompt_ids, think_ids]), len(prompt_ids))
+        yield (1 - cosine_similarity(hiddens.float(), bf16_hiddens.float(), dim=-1)).mean(0).sum() / num_positions
+
+
 def get_losses(
     model: PreTrainedModel,
     bf16_model: PreTrainedModel | None,
@@ -148,7 +173,11 @@ def get_losses(
         batch = generate_thinks(model, tokenizer, model_name, think_part, batch)
     if loss == "ce":
         return get_ce_losses(model, batch)
-    return get_kl_losses(model, bf16_model, batch)
+    if loss == "kl":
+        return get_kl_losses(model, bf16_model, batch)
+    if loss == "hidden":
+        return get_hidden_losses(model, bf16_model, batch)
+    raise ValueError(f"unknown loss {loss}")
 
 
 def train(
@@ -196,7 +225,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     model = load_model(config.model_name)
     model.float()
-    # kl에는 고정된 bf16 따로 사용, 학습 중 모델이 바뀌기 때문
+    # kl, hidden에는 고정된 bf16 따로 사용, 학습 중 모델이 바뀌기 때문
     bf16_model = None if config.loss == "ce" else load_model(config.model_name)
     samples = load_samples(tokenizer, config.model_name, config.seed, config.max_generation_len, config.think_source, config.think_part)[: config.num_samples]
 

@@ -170,15 +170,16 @@ calibration 언어가 중요한지 확인
 #### 설정
 - ce: cross entropy
 - kl: 영어 프롬프트를 넣은 bf16의 다음 token 예측과의 kl
+- hidden: 영어 프롬프트를 넣은 bf16의 layer마다 hidden state와의 cosine 유사도
 - on policy: 학습 중인 모델이 해당 언어 프롬프트에 직접 쓴 텍스트
-- on policy는 kl만, ce는 모델이 쓴 텍스트를 그대로 다시 학습하기 때문
+- on policy는 kl과 hidden만, ce는 모델이 쓴 텍스트를 그대로 다시 학습하기 때문
 - 양자화 없이 bf16 weight에서 학습, 양자화 모델을 학습하기 전에 먼저 확인하기 때문
 - gsm8k train 질문을 [mcot](https://huggingface.co/datasets/laihuiyuan/mCoT-MATH)에서 중국어, 스와힐리어, 일본어, 텔루구어로 가져옴
 - adamw lr 1e-5, weight decay 없음, cosine schedule, warmup 5%, batch size 8, 1 epoch
 - on policy는 학습 중인 모델로 해당 언어 프롬프트에 추론 생성, 문제 이해는 512 token, 추론은 2048 token까지
 - 해당 언어 프롬프트 뒤, 추론 시작에 학습할 텍스트 입력
-- kl은 같은 텍스트를 영어 프롬프트 뒤에도 넣어 bf16에 입력
-- 그 텍스트 위치에서만 다음 token 예측을 ce 또는 kl로 학습
+- kl과 hidden은 같은 텍스트를 영어 프롬프트 뒤에도 넣어 bf16에 입력
+- 그 텍스트 위치에서만 ce, kl 또는 hidden으로 학습
 - 해당 언어 프롬프트에서 bf16과 비교
 - bf16 seed 0이 영어와 해당 언어에서 모두 풀고 두 추론에 모두 문제 이해가 있는 문제 중 앞 4000개, 언어마다 약 1000개
 - on policy는 문제 이해가 없는 추론 제외

@@ -19,7 +19,7 @@ class Config:
     num_bits: int = 4
     group_size: int = 128
     num_samples: int = 128
-    loss: Literal["ce", "kl"] = "ce"
+    loss: Literal["ce", "kl", "hidden"] = "ce"
     think_source: Literal["en", "on_policy"] = "en"
     think_part: Literal["understanding", "reasoning"] = "understanding"
 
