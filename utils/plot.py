@@ -6,6 +6,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, PercentFormatter
 
 from utils.dataset import LANGUAGES
 
@@ -15,6 +16,7 @@ LANGUAGE_NAMES = {"en": "영어", "zh": "중국어", "ja": "일본어", "sw": "�
 # bf16과의 차이를 언어 색 빗금으로 표시
 BF16_HATCH = "////"
 ACCURACY_YMAX = 1.15
+LOSS_GAP_YLIM = (-0.05, 0.15)
 NUM_POSITION_BINS = 5
 POSITION_LABELS = [f"{index * 100 // NUM_POSITION_BINS}~{(index + 1) * 100 // NUM_POSITION_BINS}%" for index in range(NUM_POSITION_BINS)]
 BAR_INCHES = 0.45
@@ -74,6 +76,15 @@ def get_accuracy(
     return result["accuracy"]
 
 
+def get_subset_accuracy(
+    result: dict,
+    problem_indices: set[int],
+) -> float:
+    # 일부 문제만 넣은 result는 problem_indices가 있고, 없으면 모든 문제
+    result_problem_indices = result.get("problem_indices", range(len(result["corrects"])))
+    return mean(correct for problem_index, correct in zip(result_problem_indices, result["corrects"]) if problem_index in problem_indices)
+
+
 def plot_bars(
     ax: Axes,
     case_labels: list[str],
@@ -106,6 +117,26 @@ def plot_language_bars(
         values = [mean(get_value(result[language]) for result in results) for results in case_results.values()]
         series.append((values, LANGUAGE_COLORS[language], [format_accuracy(value, bf16_values[-1]) for value in values]))
     plot_bars(ax, list(case_results), series, bf16_values)
+
+
+def plot_loss_gap_bars(
+    ax: Axes,
+    case_labels: list[str],
+    bf16_accuracies: dict[str, list[list[float]]],
+    quantized_accuracies: dict[str, list[list[float]]],
+) -> None:
+    # 손실 격차: 해당 언어 손실 - 영어 손실, seed마다 계산
+    losses = {language: [[bf16 - quantized for bf16, quantized in zip(bf16_seed_accuracies, quantized_seed_accuracies)] for bf16_seed_accuracies, quantized_seed_accuracies in zip(bf16_accuracies[language], quantized_accuracies[language])] for language in LANGUAGES}
+    series = []
+    for language in LANGUAGES[1:]:
+        loss_gaps = [[loss - en_loss for loss, en_loss in zip(seed_losses, en_seed_losses)] for seed_losses, en_seed_losses in zip(losses[language], losses["en"])]
+        values = [mean(seed_loss_gaps) for seed_loss_gaps in loss_gaps]
+        texts = [f"{round(mean(seed_loss_gaps), 3) + 0.0:+.1%}p\n±{stdev(seed_loss_gaps):.1%}p" for seed_loss_gaps in loss_gaps]
+        series.append((values, LANGUAGE_COLORS[language], texts))
+    plot_bars(ax, case_labels, series)
+    ax.set_ylim(*LOSS_GAP_YLIM)
+    ax.yaxis.set_major_locator(MultipleLocator(0.05))
+    ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol="%p"))
 
 
 def add_language_legend(
