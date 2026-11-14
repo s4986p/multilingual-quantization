@@ -15,6 +15,8 @@ LANGUAGE_COLORS = {"en": "#3c5a9a", "zh": "#de2910", "ja": "#f4a6b7", "sw": "#1e
 LANGUAGE_NAMES = {"en": "영어", "zh": "중국어", "ja": "일본어", "sw": "스와힐리어", "te": "텔루구어"}
 # bf16과의 차이를 언어 색 빗금으로 표시
 BF16_HATCH = "////"
+# 삽입으로 오른 정확도를 같은 언어 색의 연한 버전으로 표시
+INSERT_ALPHA = 0.35
 ACCURACY_YMAX = 1.15
 LOSS_GAP_YLIM = (-0.05, 0.15)
 NUM_POSITION_BINS = 5
@@ -119,6 +121,31 @@ def plot_language_bars(
     plot_bars(ax, list(case_results), series, bf16_values)
 
 
+def plot_insert_bars(
+    ax: Axes,
+    case_labels: list[str],
+    case_accuracies: dict[str, list[tuple[list[float], list[float] | None]]],
+) -> None:
+    # case마다 (삽입 없음, 삽입) seed별 정확도를 받아 삽입 없음 위에 삽입으로 오른 정확도를 겹쳐 그림
+    # 삽입이 None이면 삽입 없음만 그림
+    case_width = len(LANGUAGES) + BAR_GAP
+    for language_index, language in enumerate(LANGUAGES):
+        color = LANGUAGE_COLORS[language]
+        for case_index, (base_accuracies, insert_accuracies) in enumerate(case_accuracies[language]):
+            x = case_index * case_width + language_index - (len(LANGUAGES) - 1) / 2
+            base = mean(base_accuracies)
+            if insert_accuracies is None:
+                ax.bar(x, base, width=1, color=color)
+                ax.annotate(f"{base:.1%}", (x, base), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+                continue
+            inserted = mean(insert_accuracies)
+            ax.bar(x, inserted, width=1, color=color, alpha=INSERT_ALPHA)
+            ax.bar(x, base, width=1, color=color)
+            ax.annotate(format_accuracy(inserted, base), (x, max(base, inserted)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+    ax.set_xticks([case_index * case_width for case_index in range(len(case_labels))], case_labels)
+    ax.set_xlim(-case_width / 2, (len(case_labels) - 0.5) * case_width)
+
+
 def plot_loss_gap_bars(
     ax: Axes,
     case_labels: list[str],
@@ -142,6 +169,7 @@ def plot_loss_gap_bars(
 def add_language_legend(
     fig: Figure,
     bf16_results: list[dict] | None = None,
+    insert_label: str | None = None,
 ) -> None:
     handles = []
     for language in LANGUAGES:
@@ -152,7 +180,9 @@ def add_language_legend(
         handles.append(Patch(color=LANGUAGE_COLORS[language], label=label))
     if bf16_results is not None:
         handles.append(Patch(facecolor="white", edgecolor="#808080", hatch=BF16_HATCH, linewidth=0, label="bf16 대비 손실"))
-    fig.legend(handles=handles, loc="outside lower center", ncol=len(handles) if bf16_results is None else 3)
+    if insert_label is not None:
+        handles.append(Patch(color="#808080", alpha=INSERT_ALPHA, label=insert_label))
+    fig.legend(handles=handles, loc="outside lower center", ncol=len(handles) if len(handles) <= len(LANGUAGES) else 3)
 
 
 def fit_bar_width(
