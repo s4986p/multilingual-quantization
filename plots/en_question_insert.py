@@ -8,7 +8,7 @@ from simple_parsing import parse
 from utils.dataset import LANGUAGES
 from utils.hub import load_result
 from utils.paths import make_hub_path
-from utils.plot import ACCURACY_YMAX, QUANTIZATION_METHODS, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_insert_bars, plot_loss_gap_bars, save_figure
+from utils.plot import ACCURACY_YMAX, add_language_legend, fit_bar_width, get_figsize, get_panel_width, plot_insert_bars, plot_loss_gap_bars, save_figure
 
 CASES = [("bf16", "mgsm"), ("bf16", "en_question_insert/mgsm"), ("quantized", "mgsm"), ("quantized", "en_question_insert/mgsm")]
 CASE_LABELS = {"mgsm": "삽입 없음", "en_question_insert/mgsm": "영어 question 삽입"}
@@ -21,6 +21,7 @@ class Config:
     num_bits: int = 4
     group_size: int = 128
     num_chunks: int = 128
+    methods: tuple[Literal["gptq", "awq", "nf4", "mxfp4"], ...] = ("gptq", "awq", "nf4", "mxfp4")
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
 
@@ -28,8 +29,8 @@ class Config:
 def main() -> None:
     config = parse(Config)
     panel_widths = [get_panel_width(2, len(LANGUAGES)), get_panel_width(2, len(LANGUAGES) - 1)]
-    fig, axes = plt.subplots(len(QUANTIZATION_METHODS), 2, figsize=get_figsize(panel_widths, len(QUANTIZATION_METHODS)), width_ratios=panel_widths, layout="constrained")
-    for (accuracy_ax, loss_gap_ax), method in zip(axes, QUANTIZATION_METHODS):
+    fig, axes = plt.subplots(len(config.methods), 2, figsize=get_figsize(panel_widths, len(config.methods)), width_ratios=panel_widths, layout="constrained", squeeze=False)
+    for (accuracy_ax, loss_gap_ax), method in zip(axes, config.methods):
         hub_paths = {"bf16": make_hub_path("bf16", config.model_name), "quantized": make_hub_path(method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_chunks)}
         case_results = [[load_result(experiment_name, hub_paths[model_method], f"max_generation_len={config.max_generation_len},seed={seed}") for seed in config.seeds] for model_method, experiment_name in CASES]
         case_accuracies = {language: [[result[language]["accuracy"] for result in results] for results in case_results] for language in LANGUAGES}
