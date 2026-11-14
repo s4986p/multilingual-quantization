@@ -15,6 +15,8 @@ LANGUAGE_NAMES = {"en": "영어", "zh": "중국어", "ja": "일본어", "sw": "�
 # bf16과의 차이를 언어 색 빗금으로 표시
 BF16_HATCH = "////"
 ACCURACY_YMAX = 1.15
+NUM_POSITION_BINS = 5
+POSITION_LABELS = [f"{index * 100 // NUM_POSITION_BINS}~{(index + 1) * 100 // NUM_POSITION_BINS}%" for index in range(NUM_POSITION_BINS)]
 BAR_INCHES = 0.45
 BAR_GAP = 1
 PANEL_HEIGHT = 3.0
