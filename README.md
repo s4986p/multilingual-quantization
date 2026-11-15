@@ -59,7 +59,7 @@
 
 [the multilingual quantization tax](https://arxiv.org/abs/2608.09941)가 보고한 언어별 손실이 thinking mode를 켜고 여러 양자화 방법과 seed로 돌려도 나타나는지 먼저 확인한다.
 
-bf16과 양자화 모델로 mgsm과 mmlu-prox-lite를 풀고, 언어마다 손실을 비교한다. 손실이 답을 틀려서인지 생성이 끝나지 않아서인지 보려고 잘림과 반복도 센다.
+bf16과 양자화 모델로 mgsm과 mmlu-prox-lite를 풀고, 언어마다 손실을 비교한다. 손실이 답을 틀려서인지 생성이 끝나지 않아서인지 보려고 잘림과 반복도 센다. mmlu-prox-lite는 언어마다 손실이 비슷해 보여 seed를 줄인다.
 
 #### 설정
 - 잘림: 최대 생성 길이에 닿고 틀린 문제
@@ -83,7 +83,7 @@ bf16과 양자화 모델로 mgsm과 mmlu-prox-lite를 풀고, 언어마다 손�
 
 gptq와 awq는 calibration 데이터로 양자화하기 때문에, calibration 언어가 손실에 영향을 줄 수 있다. 그래서 해당 언어로 calibration해 본다.
 
-gptq와 awq를 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합으로 각각 calibration하고, 영어로 calibration한 모델과 mgsm 정확도를 비교한다.
+gptq와 awq를 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합으로 각각 calibration하고, 영어로 calibration한 모델과 mgsm 정확도를 비교한다. 이 실험부터는 반복이 적은 gemma와, 언어 차이가 나타난 mgsm만 쓴다.
 
 #### 설정
 - 모델은 gemma, 벤치마크는 mgsm
@@ -99,7 +99,7 @@ gptq와 awq를 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합으로
 
 양자화 모델의 예측이 reasoning의 어디서부터 bf16과 달라지는지 한 번 확인해 본다.
 
-모든 bf16 seed가 맞힌 문제에서 bf16이 쓴 reasoning을 bf16과 양자화 모델에 똑같이 넣고, reasoning token마다 두 모델의 다음 token 예측 사이 kl을 잰다. mxfp4는 reasoning 위치별로도 나눠 본다.
+모든 bf16 seed가 맞힌 문제에서 bf16이 쓴 reasoning을 bf16과 양자화 모델에 똑같이 넣고, reasoning token마다 두 모델의 다음 token 예측 사이 kl을 잰다. 손실이 가장 큰 mxfp4는 reasoning 위치별로도 나눠 본다.
 
 #### 설정
 - reasoning 위치: 문제마다 reasoning token을 5등분한 구간
@@ -117,7 +117,7 @@ gptq와 awq를 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합으로
 
 스와힐리어와 텔루구어는 영어와의 kl 차이가 reasoning 앞부분에서 가장 컸다. 그렇다면 양자화 모델이 왜 틀리는지 한 번 파악해 본다. 직접 읽기에는 오래 걸려 판정 모델로 확인하고, 결과는 참고 정도로만 본다.
 
-모든 bf16 seed가 맞힌 문제 중 mxfp4가 틀린 reasoning을, 같은 문제의 mgsm 영어 원문, 해당 언어 question, 정답, bf16 reasoning과 함께 판정 모델에 넣는다. 판정 모델이 처음 틀린 줄과 오류 유형을 고르면, 그 줄의 reasoning 위치도 본다.
+모든 bf16 seed가 맞힌 문제 중 손실이 가장 큰 mxfp4가 틀린 reasoning을, 같은 문제의 mgsm 영어 원문, 해당 언어 question, 정답, bf16 reasoning과 함께 판정 모델에 넣는다. 판정 모델이 처음 틀린 줄과 오류 유형을 고르면, 그 줄의 reasoning 위치도 본다.
 
 #### 설정
 - 사실 오류: question의 숫자, 단위, 단어, 이름을 잘못 옮김
@@ -140,7 +140,7 @@ gptq와 awq를 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합으로
 
 스와힐리어와 텔루구어의 오류는 대부분 question을 잘못 이해한 것이고, reasoning 앞부분에서 생겼다. [why do multilingual reasoning gaps emerge in reasoning language models](https://arxiv.org/abs/2510.27269)도 bf16에서 언어 간 차이가 주로 입력 이해에서 생긴다고 보고한다. 그렇다면 양자화로 이해가 더 손상된 것일 수 있어, reasoning 시작에서 question을 이해한 부분만 bf16이 쓴 것으로 바꿔 넣어 본다.
 
-해당 언어 prompt 뒤, reasoning 시작에 같은 seed의 bf16이 해당 언어 prompt에 쓴 understanding을 넣고, 이어서 양자화 모델이 solving과 response를 쓴다. bf16은 자기 understanding을 받으면 결과가 거의 같아서, 넣지 않은 결과를 기준으로 쓴다.
+해당 언어 prompt 뒤, reasoning 시작에 같은 seed의 bf16이 해당 언어 prompt에 쓴 understanding을 넣고, 이어서 양자화 모델이 solving과 response를 쓴다. bf16은 자기 understanding을 받으면 결과가 거의 같아서, 넣지 않은 결과를 기준으로 쓴다. 영어 prompt에 쓴 understanding 삽입과 같은 문제로 비교하려고, 영어 bf16 reasoning에도 understanding이 있는 문제만 쓴다.
 
 #### 설정
 - understanding: reasoning 시작에서 목표와 주어진 정보를 정리하는 부분, 제목에 calculate, determine, compute, solve, perform, set up, formulate가 처음 나오는 단계 앞까지
@@ -160,7 +160,7 @@ gptq와 awq를 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합으로
 
 understanding만 bf16 것으로 바꿔도 손실이 절반 넘게 줄었다. 그러나 understanding 내용 덕분인지, 단지 bf16 reasoning 앞부분을 넣어 준 덕분인지는 아직 모른다. 그래서 대조군으로 bf16 reasoning 앞부분을 understanding보다 짧게, 또 길게 넣어 본다.
 
-bf16이 해당 언어 prompt에 쓴 reasoning을 understanding 길이의 여러 배수에서 잘라 넣고, 이어서 양자화 모델이 reasoning과 response를 쓴다. 1배 근처에서 손실이 크게 줄고 그 뒤로 평평하면, 길이보다 understanding 내용이 중요하다.
+bf16이 해당 언어 prompt에 쓴 reasoning을 understanding 길이의 여러 배수에서 잘라 넣고, 이어서 양자화 모델이 reasoning과 response를 쓴다. 배수끼리 같은 문제로 비교하려고 reasoning이 understanding의 2배 이상인 문제만 쓴다. 1배 근처에서 손실이 크게 줄고 그 뒤로 평평하면, 길이보다 understanding 내용이 중요하다.
 
 #### 설정
 - 모델은 gemma, 벤치마크는 mgsm
@@ -178,7 +178,7 @@ bf16이 해당 언어 prompt에 쓴 reasoning을 understanding 길이의 여러 
 
 bf16이 해당 언어 prompt에 쓴 understanding에는, bf16이 해당 언어를 영어보다 덜 이해하는 만큼이 그대로 남는다. 그렇다면 bf16이 영어 question을 보고 쓴 understanding을 넣으면 손실이 더 줄어드는지 확인해 본다.
 
-해당 언어 prompt 뒤, reasoning 시작에 같은 seed의 bf16이 영어 prompt에 쓴 understanding을 넣고, 이어서 bf16 또는 양자화 모델이 solving과 response를 쓴다. 이번에는 bf16도 다른 understanding을 받으므로 bf16에도 넣는다.
+해당 언어 prompt 뒤, reasoning 시작에 같은 seed의 bf16이 영어 prompt에 쓴 understanding을 넣고, 이어서 bf16 또는 양자화 모델이 solving과 response를 쓴다. 이번에는 bf16도 다른 understanding을 받으므로 bf16에도 넣는다. 해당 언어 prompt에 쓴 understanding 삽입과 같은 문제를 쓴다.
 
 #### 설정
 - 모델은 gemma, 벤치마크는 mgsm
@@ -196,7 +196,7 @@ bf16이 해당 언어 prompt에 쓴 understanding에는, bf16이 해당 언어�
 
 영어 understanding도 결국 bf16이 쓴 것이다. 그렇다면 [why do multilingual reasoning gaps emerge in reasoning language models](https://arxiv.org/abs/2510.27269)처럼 영어 question만 넣어 주고, 양자화 모델이 직접 이해해도 손실이 줄어드는지 확인해 본다.
 
-해당 언어 prompt 뒤, reasoning 시작에 같은 문제의 영어 question을 넣고, 이어서 bf16 또는 양자화 모델이 reasoning과 response를 쓴다. 해당 논문과 달리 문장으로 감싸지 않고 원문만 넣으며, qwen에서도 bf16과 mxfp4로 확인한다.
+해당 언어 prompt 뒤, reasoning 시작에 같은 문제의 영어 question을 넣고, 이어서 bf16 또는 양자화 모델이 reasoning과 response를 쓴다. 해당 논문과 달리 문장으로 감싸지 않고 원문만 넣으며, qwen에서도 bf16과 손실이 가장 큰 mxfp4로 확인한다.
 
 #### 설정
 - 영어 question: 같은 문제의 mgsm 영어 원문
