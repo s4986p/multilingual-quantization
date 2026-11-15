@@ -32,8 +32,8 @@ def load_gsm8k_reasonings(
     max_generation_len: int,
 ) -> dict[str, dict[str, list]]:
     # 언어마다 bf16이 gsm8k에 쓴 prompt_ids, reasoning, 정답 여부
-    # data/gsm8k.py가 bf16이 영어로 맞힌 문제만 저장했기 때문에 언어끼리 같은 문제 순서
-    tensors = load_tensors("gsm8k", make_hub_path("bf16", model_name), f"max_generation_len={max_generation_len},seed={seed}")
+    # data/reasoning.py가 bf16이 영어로 맞힌 문제만 저장했기 때문에 언어끼리 같은 문제 순서
+    tensors = load_tensors("reasoning/gsm8k", make_hub_path("bf16", model_name), f"max_generation_len={max_generation_len},seed={seed}")
     return {
         language: {
             "prompt_ids": tensors[f"{language}/prompt_ids"].split(tensors[f"{language}/prompt_lens"].tolist()),

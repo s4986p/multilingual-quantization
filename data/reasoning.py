@@ -51,9 +51,10 @@ def load_gsm8k() -> dict[str, list[tuple[str, int]]]:
 
 def main() -> None:
     config = parse(Config)
+    experiment_name = "reasoning/gsm8k"
     hub_path = make_hub_path("bf16", config.model_name)
     file_name = f"max_generation_len={config.max_generation_len},seed={config.seed}"
-    if tensors_exist("gsm8k", hub_path, file_name):
+    if tensors_exist(experiment_name, hub_path, file_name):
         print(f"{hub_path} already generated")
         return
     problems = load_gsm8k()
@@ -92,7 +93,7 @@ def main() -> None:
             tensors[f"{language}/reasoning_lens"].append(torch.tensor([len(reasoning_ids)]))
             tensors[f"{language}/corrects"].append(torch.tensor([results[language]["corrects"][problem_index]]))
     print(f"{hub_path} problems {len(tensors['en/prompt_lens'])} of {len(outputs['en'])}")
-    save_tensors("gsm8k", hub_path, file_name, {name: torch.cat(values) for name, values in tensors.items()})
+    save_tensors(experiment_name, hub_path, file_name, {name: torch.cat(values) for name, values in tensors.items()})
 
 
 if __name__ == "__main__":
