@@ -220,7 +220,7 @@ def save_checkpoint(
     num_trained_samples = min(step * config.batch_size, config.num_epochs * config.num_samples)
     fp32_weights = [weight.detach().clone() for weight in weights]
     model.to(torch.bfloat16)
-    save_model(make_finetune_path(config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, num_trained_samples), model)
+    save_model(make_finetune_path("finetune", config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, num_trained_samples), model)
     model.float()
     with torch.no_grad():
         for weight, fp32_weight in zip(weights, fp32_weights):
@@ -258,7 +258,7 @@ def main() -> None:
     train(weights, samples, get_batch_losses, config.lr, config.num_epochs, config.warmup_ratio, config.batch_size)
 
     model.to(torch.bfloat16)
-    save_model(make_finetune_path(config.model_name, config.loss, config.reasoning_source, config.train_part), model)
+    save_model(make_finetune_path("finetune", config.model_name, config.loss, config.reasoning_source, config.train_part), model)
 
 
 if __name__ == "__main__":

@@ -34,7 +34,7 @@ def main() -> None:
     bf16_results = [load_result("mgsm", make_hub_path("bf16", config.model_name), file_name) for file_name in file_names]
     results = {}
     for case, (loss, reasoning_source, train_part) in CASES.items():
-        hub_path = make_finetune_path(config.model_name, loss, reasoning_source, train_part)
+        hub_path = make_finetune_path("finetune", config.model_name, loss, reasoning_source, train_part)
         results[case] = [load_result("mgsm", hub_path, file_name) for file_name in file_names]
 
     fig, axes = plt.subplots(1 + len(GROUPS), 1, figsize=get_figsize([get_panel_width(len(CASES), len(LANGUAGES))], 1 + len(GROUPS)), layout="constrained")

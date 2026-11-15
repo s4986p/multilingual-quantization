@@ -13,6 +13,7 @@ def make_hub_path(
 
 
 def make_finetune_path(
+    method: str,
     model_name: str,
     loss: str,
     reasoning_source: str,
@@ -23,7 +24,7 @@ def make_finetune_path(
     # en_question은 checkpoint마다 학습 전체 sample 수와 지금까지 학습한 sample 수 추가
     # ce는 mcot 영어 question만 학습해 reasoning_source 없음
     if train_part == "en_question" and loss == "ce":
-        return f"finetune/{model_name}/loss={loss},train_part={train_part},num_samples={num_samples},num_trained_samples={num_trained_samples}"
+        return f"{method}/{model_name}/loss={loss},train_part={train_part},num_samples={num_samples},num_trained_samples={num_trained_samples}"
     if train_part == "en_question":
-        return f"finetune/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part},num_samples={num_samples},num_trained_samples={num_trained_samples}"
-    return f"finetune/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part}"
+        return f"{method}/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part},num_samples={num_samples},num_trained_samples={num_trained_samples}"
+    return f"{method}/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part}"

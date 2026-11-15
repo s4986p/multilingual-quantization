@@ -23,9 +23,9 @@ def main() -> None:
     file_names = [f"max_generation_len={config.max_generation_len},seed={seed}" for seed in config.seeds]
     bf16_hub_path = make_hub_path("bf16", config.model_name)
     cases = {
-        "ce, 800 sample 학습": ("mgsm", make_finetune_path(config.model_name, "ce", "", "en_question", 50000, 800)),
-        **{f"ce_kl, {num_trained_samples} sample 학습": ("mgsm", make_finetune_path(config.model_name, "ce_kl", "bf16_en_question_insert", "en_question", 20000, num_trained_samples)) for num_trained_samples in (800, 4000, 20000)},
-        "ce_kl, 29492 sample 학습": ("mgsm", make_finetune_path(config.model_name, "ce_kl", "bf16_en_question_insert", "en_question", 29492, 29492)),
+        "ce, 800 sample 학습": ("mgsm", make_finetune_path("finetune", config.model_name, "ce", "", "en_question", 50000, 800)),
+        **{f"ce_kl, {num_trained_samples} sample 학습": ("mgsm", make_finetune_path("finetune", config.model_name, "ce_kl", "bf16_en_question_insert", "en_question", 20000, num_trained_samples)) for num_trained_samples in (800, 4000, 20000)},
+        "ce_kl, 29492 sample 학습": ("mgsm", make_finetune_path("finetune", config.model_name, "ce_kl", "bf16_en_question_insert", "en_question", 29492, 29492)),
         "bf16 번역 삽입": ("bf16_translation_insert/mgsm", bf16_hub_path),
         "영어 question 삽입": ("en_question_insert/mgsm", bf16_hub_path),
     }
