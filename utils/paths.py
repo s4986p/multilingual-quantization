@@ -10,3 +10,12 @@ def make_hub_path(
     if method in ("bf16", "nf4", "mxfp4"):
         return f"{method}/{model_name}"
     return f"{method}/{model_name}/calibration_languages={'_'.join(calibration_languages)},num_bits={num_bits},group_size={group_size},num_chunks={num_chunks}"
+
+
+def make_finetune_path(
+    model_name: str,
+    loss: str,
+    reasoning_source: str,
+    train_part: str,
+) -> str:
+    return f"finetune/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part}"
