@@ -7,8 +7,9 @@
 ## 요약
 - thinking mode를 켠 gemma에서, 언어별 양자화 손실은 mgsm에서만 나타나고 스와힐리어와 텔루구어가 가장 많이 잃음
 - 이 손실은 calibration 언어 때문이 아니라, 주로 reasoning 앞부분에서 question을 이해하는 understanding(reasoning의 약 30%)에서 생김
-- understanding만 bf16 것으로 바꿔도 mxfp4 손실이 절반 넘게 줄고, 영어로 이해한 understanding이나 영어 question을 넣으면 bf16 해당 언어 정확도보다 높아짐
+- understanding만 bf16 것으로 바꿔도 mxfp4 손실이 절반 넘게 줄고, bf16이 영어 prompt에 쓴 understanding이나 영어 question을 넣으면 bf16 해당 언어 정확도보다 높아짐
 - 따라서 양자화 모델은 푸는 능력이 대체로 남아 있고, 주로 해당 언어 question 이해에서 잃음
+- bf16에 영어 question과 그 뒤 reasoning을 함께 학습하면, 넣어 주지 않아도 대부분의 학습 언어에서 bf16 해당 언어 정확도를 넘음
 
 ## 관련 연구
 
@@ -33,6 +34,7 @@
 - reasoning: thinking mode에서 쓴 텍스트
 - response: reasoning 뒤 텍스트
 - 해당 언어: 문제와 같은 언어
+- 영어 question: 같은 문제의 영어 원문
 - 손실: bf16 정확도에서 양자화 모델 정확도를 뺀 값
 - 영어와의 손실 격차: 해당 언어 손실에서 영어 손실을 뺀 값
 - seed 노이즈: seed 사이의 표준편차, 그림의 ± 값
@@ -117,7 +119,7 @@ gptq와 awq를 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합으로
 
 스와힐리어와 텔루구어는 영어와의 kl 차이가 reasoning 앞부분에서 가장 컸다. 그렇다면 양자화 모델이 왜 틀리는지 한 번 파악해 본다. 직접 읽기에는 오래 걸려 판정 모델로 확인하고, 결과는 참고 정도로만 본다.
 
-모든 bf16 seed가 맞힌 문제 중 손실이 가장 큰 mxfp4가 틀린 reasoning을, 같은 문제의 mgsm 영어 원문, 해당 언어 question, 정답, bf16 reasoning과 함께 판정 모델에 넣는다. 판정 모델이 처음 틀린 줄과 오류 유형을 고르면, 그 줄의 reasoning 위치도 본다.
+모든 bf16 seed가 맞힌 문제 중 손실이 가장 큰 mxfp4가 틀린 reasoning을, 영어 question, 해당 언어 question, 정답, bf16 reasoning과 함께 판정 모델에 넣는다. 판정 모델이 처음 틀린 줄과 오류 유형을 고르면, 그 줄의 reasoning 위치도 본다.
 
 #### 설정
 - 사실 오류: question의 숫자, 단위, 단어, 이름을 잘못 옮김
@@ -133,17 +135,18 @@ gptq와 awq를 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합으로
 
 #### 요약
 ![](figures/gemma-4-E2B-it/mgsm_error_types.png)
-- **스와힐리어와 텔루구어에서, 오류는 계산 오류가 아니라 대부분 사실 오류와 관계 오류**, 따라서 question을 잘못 이해한 것일 수 있음
+- **스와힐리어와 텔루구어에서, 오류는 계산 오류가 아니라 대부분 사실 오류와 관계 오류**
 - 첫 오류는 대부분 reasoning 위치 0~60%, 사실 오류는 대부분 0~20%에서 발생
+- *추측) question을 잘못 이해해서 틀림*
 
 ### bf16이 해당 언어 prompt에 쓴 understanding 삽입
 
-스와힐리어와 텔루구어의 오류는 대부분 question을 잘못 이해한 것이고, reasoning 앞부분에서 생겼다. [why do multilingual reasoning gaps emerge in reasoning language models](https://arxiv.org/abs/2510.27269)도 bf16에서 언어 간 차이가 주로 입력 이해에서 생긴다고 보고한다. 그렇다면 양자화로 이해가 더 손상된 것일 수 있어, reasoning 시작에서 question을 이해한 부분만 bf16이 쓴 것으로 바꿔 넣어 본다.
+스와힐리어와 텔루구어의 오류는 대부분 사실 오류와 관계 오류였고, reasoning 앞부분에서 생겼다. [why do multilingual reasoning gaps emerge in reasoning language models](https://arxiv.org/abs/2510.27269)도 bf16에서 언어 간 차이가 주로 입력 이해에서 생긴다고 보고한다. 그렇다면 양자화로 question 이해가 더 손상되었을 수 있어, reasoning 시작에서 question을 이해한 부분만 bf16이 쓴 것으로 바꿔 넣어 본다.
 
 해당 언어 prompt 뒤, reasoning 시작에 같은 seed의 bf16이 해당 언어 prompt에 쓴 understanding을 넣고, 이어서 양자화 모델이 solving과 response를 쓴다. bf16은 자기 understanding을 받으면 결과가 거의 같아서, 넣지 않은 결과를 기준으로 쓴다. 영어 prompt에 쓴 understanding 삽입과 같은 문제로 비교하려고, 영어 bf16 reasoning에도 understanding이 있는 문제만 쓴다.
 
 #### 설정
-- understanding: reasoning 시작에서 목표와 주어진 정보를 정리하는 부분, 제목에 calculate, determine, compute, solve, perform, set up, formulate가 처음 나오는 단계 앞까지
+- understanding: reasoning 시작에서 목표와 주어진 정보를 정리하는 부분, 제목에 calculate, determine, compute, solve, perform, set up, formulate가 처음 나오는 단계 앞까지, bf16 reasoning token의 약 30%
 - solving: understanding 뒤 reasoning
 - 모델은 gemma, 벤치마크는 mgsm
 - 양자화 방법은 gptq, awq, nf4, mxfp4
@@ -196,10 +199,9 @@ bf16이 해당 언어 prompt에 쓴 understanding에는, bf16이 해당 언어�
 
 영어 understanding도 결국 bf16이 쓴 것이다. 그렇다면 [why do multilingual reasoning gaps emerge in reasoning language models](https://arxiv.org/abs/2510.27269)처럼 영어 question만 넣어 주고, 양자화 모델이 직접 이해해도 손실이 줄어드는지 확인해 본다.
 
-해당 언어 prompt 뒤, reasoning 시작에 같은 문제의 영어 question을 넣고, 이어서 bf16 또는 양자화 모델이 reasoning과 response를 쓴다. 해당 논문과 달리 문장으로 감싸지 않고 원문만 넣으며, qwen에서도 bf16과 손실이 가장 큰 mxfp4로 확인한다.
+해당 언어 prompt 뒤, reasoning 시작에 영어 question을 넣고, 이어서 bf16 또는 양자화 모델이 reasoning과 response를 쓴다. 해당 논문과 달리 문장으로 감싸지 않고 원문만 넣으며, qwen에서도 bf16과 손실이 가장 큰 mxfp4로 확인한다.
 
 #### 설정
-- 영어 question: 같은 문제의 mgsm 영어 원문
 - 모델은 gemma, qwen, 벤치마크는 mgsm
 - 양자화 방법은 gemma에서 gptq, awq, nf4, mxfp4, qwen에서 mxfp4
 
@@ -219,10 +221,11 @@ bf16이 해당 언어 prompt에 쓴 understanding에는, bf16이 해당 언어�
 
 #### 설정
 - on policy: 학습 중인 모델이 해당 언어 prompt에 쓴 understanding 또는 reasoning
+- 학습 sample: 학습 문제와 학습 언어 쌍
 - 모델은 gemma, 벤치마크는 mgsm
 - 학습 방법은 ce, kl, hidden, kl과 hidden은 영어 prompt를 받은 bf16에 맞춤
 - 학습 언어는 중국어, 일본어, 스와힐리어, 텔루구어
-- 학습 문제는 gsm8k train 4000개, bf16이 해당 언어로 맞힌 문제만 사용
+- 학습 sample은 gsm8k train 4000개, bf16이 해당 언어로 맞힌 것만 사용
 - bf16이 맞힌 문제와 틀린 문제는 다른 두 bf16 seed로 나누고, 남은 seed로 채점
 
 #### 요약
@@ -231,3 +234,43 @@ bf16이 해당 언어 prompt에 쓴 understanding에는, bf16이 해당 언어�
 - bf16이 틀린 문제는 일부 맞히게 됨, 그러나 bf16이 맞힌 문제를 더 많이 잃음
 - kl, on policy reasoning은 잃은 만큼 더 맞혀 bf16과 비슷
 - *추측) bf16이 해당 언어로 맞힌 문제만 학습에 써서, 잘못 이해하던 문제에서 배울 신호가 적음*
+
+### 영어 question finetune
+
+앞선 finetune은 bf16이 해당 언어로 맞힌 문제만 학습에 썼다. 그래서 정답 여부와 상관없는 영어 question을 학습해, 넣어 주지 않아도 reasoning 시작에 영어 question을 직접 쓰도록 해 본다.
+
+해당 언어 prompt 뒤, reasoning 시작에 영어 question을 넣고, 그 위치의 다음 token 예측만 ce로 학습한다.
+
+#### 설정
+- 모델은 gemma, 벤치마크는 mgsm
+- 학습 방법은 ce
+- 학습 언어는 중국어, 일본어, 스와힐리어, 텔루구어
+- 학습 sample은 mgsm과 겹치지 않는 mcot 50000개
+- 평가는 800 sample까지 학습한 모델, lr은 아직 warmup 중
+
+#### 요약
+- **800 sample만 학습해도 해당 언어 정확도가 크게 무너짐**, 영어는 거의 그대로
+- 해당 언어에서 많이 잘리고 그 대부분이 반복
+
+### 영어 question과 reasoning finetune
+
+영어 question만 학습하면 영어 question 뒤에서 반복하며 무너졌다. 영어 question 뒤에 무엇을 쓸지 학습하지 않아서일 수 있어, 영어 question 뒤에 이어지는 reasoning까지 함께 학습해 본다.
+
+해당 언어 prompt 뒤, reasoning 시작에 영어 question과 bf16이 그 뒤에 쓴 reasoning을 넣는다. 영어 question 위치는 ce로 학습하고, reasoning 위치는 같은 입력을 받은 bf16에 kl로 맞춘다. 학습 없이 bf16이 번역한 question을 넣은 결과와도 비교한다.
+
+#### 설정
+- bf16 번역 삽입: 해당 언어 prompt 뒤, reasoning 시작에 bf16이 thinking mode 없이 영어로 번역한 question을 넣음
+- 모델은 gemma, 벤치마크는 mgsm
+- 학습 방법은 영어 question에 ce, reasoning에 kl, reasoning이 훨씬 길어 두 loss를 각자의 token 수로 나눔
+- 학습 언어는 중국어, 일본어, 스와힐리어, 텔루구어
+- 학습 sample은 gsm8k train 중 reasoning이 2048 token 이하인 29492개에서 20000개
+- reasoning은 bf16이 영어 question 삽입으로 쓴 것, kl은 정답 여부와 상관없이 bf16에 맞추므로 정답 여부로 거르지 않음
+- 평가는 800, 4000, 20000 sample까지 학습한 모델과 29492개를 모두 학습한 모델
+
+#### 요약
+![](figures/gemma-4-E2B-it/mgsm_en_question_finetune.png)
+- **20000 sample까지 학습하면 중국어, 스와힐리어, 텔루구어에서 bf16 해당 언어 정확도를 넘음**, 일본어는 seed 노이즈와 비슷
+- 800, 4000 sample까지는 거의 그대로, 29492개를 모두 학습해도 20000 sample과 비슷
+- bf16 번역 삽입보다 중국어, 스와힐리어, 텔루구어는 높고, 일본어는 낮음
+- 영어 question 삽입보다는 아직 낮음
+- reasoning 시작에 영어 원문을 그대로 쓰지 않고 자기 말로 번역해 씀
