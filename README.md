@@ -8,7 +8,7 @@
 - thinking mode를 켠 gemma에서, 언어별 양자화 손실은 mgsm에서만 나타나고 스와힐리어와 텔루구어가 가장 많이 잃음
 - 이 손실은 calibration 언어 때문이 아니라, 주로 reasoning 앞부분에서 question을 이해하는 understanding(reasoning의 약 30%)에서 생김
 - understanding만 bf16 것으로 바꿔도 mxfp4 손실이 절반 넘게 줄고, 영어로 이해한 understanding이나 영어 question을 넣으면 bf16 해당 언어 정확도보다 높아짐
-- 따라서 양자화 손실의 병목은 해당 언어 question 이해
+- 따라서 양자화 모델은 푸는 능력이 대체로 남아 있고, 주로 해당 언어 question 이해에서 잃음
 
 ## 관련 연구
 
@@ -230,4 +230,4 @@ bf16이 해당 언어 prompt에 쓴 understanding에는, bf16이 해당 언어�
 - **어떤 학습 방법도 bf16 해당 언어 정확도를 눈에 띄게 넘지 못함**
 - bf16이 틀린 문제는 일부 맞히게 됨, 그러나 bf16이 맞힌 문제를 더 많이 잃음
 - kl, on policy reasoning은 잃은 만큼 더 맞혀 bf16과 비슷
-- *추측) bf16이 해당 언어로 맞힌 문제만 학습에 써서, 잘못 이해하던 것을 고치지 못함*
+- *추측) bf16이 해당 언어로 맞힌 문제만 학습에 써서, 잘못 이해하던 문제에서 배울 신호가 적음*
