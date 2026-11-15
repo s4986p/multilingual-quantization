@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from statistics import mean
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -7,6 +6,7 @@ from matplotlib.ticker import PercentFormatter
 from simple_parsing import parse
 
 from utils.hub import load_result
+from utils.metrics import get_loop_ratio, get_truncated_ratio
 from utils.paths import make_hub_path
 from utils.dataset import LANGUAGES
 from utils.plot import ACCURACY_YMAX, QUANTIZATION_METHODS, add_language_legend, fit_bar_width, get_accuracy, get_figsize, get_panel_width, plot_language_bars, save_figure
@@ -23,24 +23,6 @@ class Config:
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
     bf16_seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def get_truncated_ratio(
-    result: dict,
-) -> float:
-    return mean(truncated and not correct for correct, truncated in zip(result["corrects"], result["truncateds"]))
-
-
-def is_loop(
-    text: str | None,
-) -> bool:
-    return text is not None and len(text) > 200 and text[:-200].count(text[-200:-150]) >= 5
-
-
-def get_loop_ratio(
-    result: dict,
-) -> float:
-    return mean(is_loop(reasoning) or is_loop(response) for reasoning, response in zip(result["reasonings"], result["responses"]))
 
 
 def main() -> None:

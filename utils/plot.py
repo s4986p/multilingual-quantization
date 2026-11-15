@@ -194,6 +194,9 @@ def fit_bar_width(
         axes_width = sum(ax.get_window_extent().width for ax in axes) / fig.dpi
         num_bars = sum(ax.get_xlim()[1] - ax.get_xlim()[0] for ax in axes)
         fig.set_figwidth(fig.get_figwidth() + BAR_INCHES * num_bars - axes_width)
+    # 막대가 적으면 범례가 그림보다 넓어 잘리기 때문에 범례 너비까지 넓힘
+    legend_width = max((legend.get_window_extent().width for legend in fig.legends), default=0) / fig.dpi
+    fig.set_figwidth(max(fig.get_figwidth(), legend_width + PANEL_MARGIN))
 
 
 def save_figure(

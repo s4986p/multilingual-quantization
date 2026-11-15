@@ -22,6 +22,7 @@ MAX_UNDERSTANDING_LEN = 512
 MAX_REASONING_LEN = 2048
 
 # sample: (학습 중인 모델 prompt_ids, bf16 prompt_ids, 학습할 text_ids)
+# ce_kl은 (학습 중인 모델과 bf16 prompt_ids, 영어 question_ids, reasoning_ids)
 Sample = tuple[Tensor, Tensor, Tensor]
 
 
@@ -82,6 +83,8 @@ def train(
     num_epochs: int,
     warmup_ratio: float,
     batch_size: int,
+    save_steps: tuple[int, ...] = (),
+    save_checkpoint: Callable[[int], None] | None = None,
 ) -> None:
     for weight in weights:
         weight.requires_grad_(True)
@@ -112,3 +115,6 @@ def train(
                 losses = []
                 start_time = time.perf_counter()
                 torch.cuda.reset_peak_memory_stats()
+            # save_steps와 마지막 step에서 checkpoint 저장
+            if save_checkpoint is not None and (step in save_steps or step == num_steps):
+                save_checkpoint(step)
