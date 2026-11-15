@@ -210,3 +210,24 @@ bf16이 해당 언어 prompt에 쓴 understanding에는, bf16이 해당 언어�
 - **gemma mxfp4에서, 영어 question만으로 bf16 해당 언어 정확도를 넘음**
 - gemma mxfp4의 영어와의 손실 격차는 대부분 줄어듦, 그러나 스와힐리어는 절반쯤 남음
 - qwen mxfp4는 많이 잘려 회복이 제한되고, 영어와의 손실 격차가 오히려 커짐
+
+### 영어 understanding finetune
+
+영어 question만 넣어 줘도 bf16 해당 언어 정확도를 넘었다. 그렇다면 넣어 주지 않아도 영어 question을 본 것처럼 이해하도록 학습할 수 있는지 확인해 본다. 양자화 모델을 바로 학습하면 손실을 회복한 것인지 이해가 나아진 것인지 구분할 수 없어, 먼저 bf16을 학습한다.
+
+해당 언어 prompt 뒤, reasoning 시작에 bf16이 영어 prompt에 쓴 understanding을 넣고, 그 위치의 다음 token 예측만 학습한다. 학습 중인 모델이 직접 쓴 understanding이나 reasoning으로도 학습해 본다. 학습으로 더 맞힌 문제와 잃은 문제를 보려고, bf16이 맞힌 문제와 틀린 문제로도 나눠 본다.
+
+#### 설정
+- on policy: 학습 중인 모델이 해당 언어 prompt에 쓴 understanding 또는 reasoning
+- 모델은 gemma, 벤치마크는 mgsm
+- 학습 방법은 ce, kl, hidden, kl과 hidden은 영어 prompt를 받은 bf16에 맞춤
+- 학습 언어는 중국어, 일본어, 스와힐리어, 텔루구어
+- 학습 문제는 gsm8k train 4000개, bf16이 해당 언어로 맞힌 문제만 사용
+- bf16이 맞힌 문제와 틀린 문제는 다른 두 bf16 seed로 나누고, 남은 seed로 채점
+
+#### 요약
+![](figures/gemma-4-E2B-it/mgsm_finetune.png)
+- **어떤 학습 방법도 bf16 해당 언어 정확도를 눈에 띄게 넘지 못함**
+- bf16이 틀린 문제는 일부 맞히게 됨, 그러나 bf16이 맞힌 문제를 더 많이 잃음
+- kl, on policy reasoning은 잃은 만큼 더 맞혀 bf16과 비슷
+- *추측) bf16이 해당 언어로 맞힌 문제만 학습에 써서, 잘못 이해하던 것을 고치지 못함*
