@@ -12,7 +12,7 @@ def make_hub_path(
     return f"{method}/{model_name}/calibration_languages={'_'.join(calibration_languages)},num_bits={num_bits},group_size={group_size},num_chunks={num_chunks}"
 
 
-def make_finetune_path(
+def make_training_path(
     method: str,
     model_name: str,
     loss: str,
@@ -21,10 +21,12 @@ def make_finetune_path(
     num_samples: int | None = None,
     num_trained_samples: int | None = None,
 ) -> str:
-    # en_question은 checkpoint마다 학습 전체 sample 수와 지금까지 학습한 sample 수 추가
-    # ce는 mcot 영어 question만 학습해 reasoning_source 없음
-    if train_part == "en_question" and loss == "ce":
-        return f"{method}/{model_name}/loss={loss},train_part={train_part},num_samples={num_samples},num_trained_samples={num_trained_samples}"
-    if train_part == "en_question":
-        return f"{method}/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part},num_samples={num_samples},num_trained_samples={num_trained_samples}"
-    return f"{method}/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part}"
+    # en_question의 ce는 mcot 영어 question만 학습해 reasoning_source 없음
+    # checkpoint를 저장한 학습은 학습 전체 sample 수와 지금까지 학습한 sample 수 추가
+    settings = [f"loss={loss}"]
+    if not (train_part == "en_question" and loss == "ce"):
+        settings.append(f"reasoning_source={reasoning_source}")
+    settings.append(f"train_part={train_part}")
+    if num_samples is not None:
+        settings += [f"num_samples={num_samples}", f"num_trained_samples={num_trained_samples}"]
+    return f"{method}/{model_name}/{','.join(settings)}"

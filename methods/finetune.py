@@ -14,7 +14,7 @@ from transformers import AutoTokenizer, PreTrainedModel, PreTrainedTokenizerBase
 from utils.dataset import LANGUAGES, MGSM_PROMPTS, get_mgsm_question, load_mcot, load_mgsm
 from utils.hub import load_tensors, save_model
 from utils.model import GENERATION_CONFIGS, get_logits, get_prompt_ids, get_reasoning_hiddens, get_reasoning_ids, load_model
-from utils.paths import make_finetune_path, make_hub_path
+from utils.paths import make_hub_path, make_training_path
 from utils.training import MAX_REASONING_LEN, Sample, generate_reasonings, load_gsm8k_reasonings, train
 from utils.understanding import get_understanding
 
@@ -131,7 +131,8 @@ def get_kl_losses(
     bf16_model: PreTrainedModel,
     batch: list[Sample],
 ) -> Iterator[Tensor]:
-    # 같은 text를 학습 중인 모델에는 해당 언어 prompt 뒤에, bf16에는 영어 prompt 뒤에 넣음
+    # 같은 text를 학습 중인 모델에는 해당 언어 prompt 뒤에, bf16에는 sample의 bf16 prompt 뒤에 넣음
+    # finetune은 bf16 prompt가 영어 prompt, qat는 같은 해당 언어 prompt
     # text 위치에서만 다음 token 예측을 bf16에 kl로 맞춤
     num_positions = sum(len(text_ids) for _, _, text_ids in batch)
     for prompt_ids, en_prompt_ids, text_ids in batch:
@@ -220,7 +221,7 @@ def save_checkpoint(
     num_trained_samples = min(step * config.batch_size, config.num_epochs * config.num_samples)
     fp32_weights = [weight.detach().clone() for weight in weights]
     model.to(torch.bfloat16)
-    save_model(make_finetune_path("finetune", config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, num_trained_samples), model)
+    save_model(make_training_path("finetune", config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, num_trained_samples), model)
     model.float()
     with torch.no_grad():
         for weight, fp32_weight in zip(weights, fp32_weights):
@@ -258,7 +259,7 @@ def main() -> None:
     train(weights, samples, get_batch_losses, config.lr, config.num_epochs, config.warmup_ratio, config.batch_size)
 
     model.to(torch.bfloat16)
-    save_model(make_finetune_path("finetune", config.model_name, config.loss, config.reasoning_source, config.train_part), model)
+    save_model(make_training_path("finetune", config.model_name, config.loss, config.reasoning_source, config.train_part), model)
 
 
 if __name__ == "__main__":

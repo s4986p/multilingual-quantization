@@ -8,7 +8,7 @@ from torch.nn import Linear
 
 from utils.hub import download_model, save_model
 from utils.model import load_model
-from utils.paths import make_finetune_path, make_hub_path
+from utils.paths import make_hub_path, make_training_path
 
 MXFP4_GROUP_SIZE = 32
 
@@ -53,8 +53,8 @@ def quantize_weight(
 def main() -> None:
     config = parse(Config)
     if config.finetune:
-        model = load_model(download_model(make_finetune_path("finetune", config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, config.num_trained_samples)))
-        hub_path = make_finetune_path("finetune_mxfp4", config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, config.num_trained_samples)
+        model = load_model(download_model(make_training_path("finetune", config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, config.num_trained_samples)))
+        hub_path = make_training_path("finetune_mxfp4", config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, config.num_trained_samples)
     else:
         model = load_model(config.model_name)
         hub_path = make_hub_path("mxfp4", config.model_name)

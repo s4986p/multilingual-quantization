@@ -8,7 +8,7 @@ from simple_parsing import parse
 from utils.dataset import LANGUAGES
 from utils.hub import load_result
 from utils.metrics import get_bf16_solved_mask, get_bf16_unsolved_mask
-from utils.paths import make_finetune_path, make_hub_path
+from utils.paths import make_hub_path, make_training_path
 from utils.plot import ACCURACY_YMAX, LANGUAGE_COLORS, LANGUAGE_NAMES, add_language_legend, fit_bar_width, get_accuracy, get_figsize, get_panel_width, get_subset_accuracy, plot_bars, plot_language_bars, save_figure
 
 CASES = {
@@ -34,7 +34,7 @@ def main() -> None:
     bf16_results = [load_result("mgsm", make_hub_path("bf16", config.model_name), file_name) for file_name in file_names]
     results = {}
     for case, (loss, reasoning_source, train_part) in CASES.items():
-        hub_path = make_finetune_path("finetune", config.model_name, loss, reasoning_source, train_part)
+        hub_path = make_training_path("finetune", config.model_name, loss, reasoning_source, train_part)
         results[case] = [load_result("mgsm", hub_path, file_name) for file_name in file_names]
 
     fig, axes = plt.subplots(1 + len(GROUPS), 1, figsize=get_figsize([get_panel_width(len(CASES), len(LANGUAGES))], 1 + len(GROUPS)), layout="constrained")
