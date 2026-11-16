@@ -6,7 +6,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, PercentFormatter
+from matplotlib.ticker import PercentFormatter
 
 from utils.dataset import LANGUAGES
 
@@ -18,7 +18,6 @@ BF16_HATCH = "////"
 # 삽입으로 오른 정확도를 같은 언어 색의 연한 버전으로 표시
 INSERT_ALPHA = 0.35
 ACCURACY_YMAX = 1.15
-LOSS_GAP_YLIM = (-0.05, 0.15)
 NUM_POSITION_BINS = 5
 POSITION_LABELS = [f"{index * 100 // NUM_POSITION_BINS}~{(index + 1) * 100 // NUM_POSITION_BINS}%" for index in range(NUM_POSITION_BINS)]
 BAR_INCHES = 0.45
@@ -121,48 +120,34 @@ def plot_language_bars(
     plot_bars(ax, list(case_results), series, bf16_values)
 
 
-def plot_insert_bars(
+def plot_insert_loss_bars(
     ax: Axes,
     case_labels: list[str],
-    case_accuracies: dict[str, list[tuple[list[float], list[float] | None]]],
+    case_losses: dict[str, list[tuple[float, float]]],
+    recovery_cases: tuple[str, ...] = (),
 ) -> None:
-    # case마다 (삽입 없음, 삽입) seed별 정확도를 받아 삽입 없음 위에 삽입으로 오른 정확도를 겹쳐 그림
-    # 삽입이 None이면 삽입 없음만 그림
+    # case마다 (삽입 없음, 삽입) 손실을 받아 삽입 없음 위에 삽입 뒤 손실을 겹쳐 그림
+    # 연한 부분이 삽입으로 줄어든 손실, recovery_cases에는 회복 비율도 표시
     case_width = len(LANGUAGES) + BAR_GAP
     for language_index, language in enumerate(LANGUAGES):
         color = LANGUAGE_COLORS[language]
-        for case_index, (base_accuracies, insert_accuracies) in enumerate(case_accuracies[language]):
+        for case_index, (base_loss, insert_loss) in enumerate(case_losses[language]):
             x = case_index * case_width + language_index - (len(LANGUAGES) - 1) / 2
-            base = mean(base_accuracies)
-            if insert_accuracies is None:
-                ax.bar(x, base, width=1, color=color)
-                ax.annotate(f"{base:.1%}", (x, base), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
-                continue
-            inserted = mean(insert_accuracies)
-            ax.bar(x, inserted, width=1, color=color, alpha=INSERT_ALPHA)
-            ax.bar(x, base, width=1, color=color)
-            ax.annotate(format_accuracy(inserted, base), (x, max(base, inserted)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+            ax.bar(x, base_loss, width=1, color=color, alpha=INSERT_ALPHA)
+            ax.bar(x, insert_loss, width=1, color=color)
+            # 숫자가 옆과 겹치지 않게 삽입 뒤 손실이 음수면 막대 아래에 따로 표시, bf16처럼 삽입 없음 손실이 0이면 생략
+            texts = [f"{base_loss:.1%}p"] if base_loss else []
+            if insert_loss >= 0:
+                texts.append(f"→{insert_loss:.1%}p")
+            else:
+                ax.annotate(f"{insert_loss:.1%}p", (x, insert_loss), xytext=(0, -3), textcoords="offset points", ha="center", va="top", fontsize=8)
+            if case_labels[case_index] in recovery_cases:
+                texts.append(f"{(base_loss - insert_loss) / base_loss:.0%} 회복")
+            ax.annotate("\n".join(texts), (x, max(base_loss, insert_loss, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+    # 0 아래는 bf16을 넘은 만큼
+    ax.axhline(0, color="#808080", linewidth=0.8)
     ax.set_xticks([case_index * case_width for case_index in range(len(case_labels))], case_labels)
     ax.set_xlim(-case_width / 2, (len(case_labels) - 0.5) * case_width)
-
-
-def plot_loss_gap_bars(
-    ax: Axes,
-    case_labels: list[str],
-    bf16_accuracies: dict[str, list[list[float]]],
-    quantized_accuracies: dict[str, list[list[float]]],
-) -> None:
-    # 손실 격차: 해당 언어 손실 - 영어 손실, seed마다 계산
-    losses = {language: [[bf16 - quantized for bf16, quantized in zip(bf16_seed_accuracies, quantized_seed_accuracies)] for bf16_seed_accuracies, quantized_seed_accuracies in zip(bf16_accuracies[language], quantized_accuracies[language])] for language in LANGUAGES}
-    series = []
-    for language in LANGUAGES[1:]:
-        loss_gaps = [[loss - en_loss for loss, en_loss in zip(seed_losses, en_seed_losses)] for seed_losses, en_seed_losses in zip(losses[language], losses["en"])]
-        values = [mean(seed_loss_gaps) for seed_loss_gaps in loss_gaps]
-        texts = [f"{round(mean(seed_loss_gaps), 3) + 0.0:+.1%}p\n±{stdev(seed_loss_gaps):.1%}p" for seed_loss_gaps in loss_gaps]
-        series.append((values, LANGUAGE_COLORS[language], texts))
-    plot_bars(ax, case_labels, series)
-    ax.set_ylim(*LOSS_GAP_YLIM)
-    ax.yaxis.set_major_locator(MultipleLocator(0.05))
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol="%p"))
 
 
