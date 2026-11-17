@@ -9,14 +9,16 @@ from utils.metrics import get_loop_ratio, get_truncated_ratio
 from utils.paths import make_hub_path, make_training_path
 from utils.plot import VALUE_MARGIN, CASE_WIDTH, RATIO_YMAX, add_language_legend, get_figsize, get_losses, get_mean_values, get_title, plot_language_bars, save_figure
 
-# x축 이름과 (loss, reasoning_source, 학습 데이터 수, finetune한 sample 수)
+# x축 이름과 (loss, 학습 데이터 수, finetune한 sample 수)
 CASES = {
-    "ce\n800 sample": ("ce", "", 50000, 800),
-    "ce_kl\n800 sample": ("ce_kl", "bf16_en_question_insert", 20000, 800),
-    "ce_kl\n4000 sample": ("ce_kl", "bf16_en_question_insert", 20000, 4000),
-    "ce_kl\n20000 sample": ("ce_kl", "bf16_en_question_insert", 20000, 20000),
-    "ce_kl\n29492 sample": ("ce_kl", "bf16_en_question_insert", 29492, 29492),
+    "ce\n800 sample": ("ce", 20000, 800),
+    "ce_kl\n800 sample": ("ce_kl", 20000, 800),
+    "ce_kl\n4000 sample": ("ce_kl", 20000, 4000),
+    "ce_kl\n20000 sample": ("ce_kl", 20000, 20000),
+    "ce_kl\n29492 sample": ("ce_kl", 29492, 29492),
 }
+# ce는 대부분 잘려 중앙값이 최대 길이라, ce_kl 막대가 보이도록 y축 상한 고정
+LEN_RATIO_YMAX = 2.0
 
 
 @dataclass
@@ -36,8 +38,8 @@ def get_median_reasoning_len(
 def main() -> None:
     config = parse(Config)
     results = {"bf16": load_results("mgsm", make_hub_path("bf16", config.model_name), config.max_generation_len, config.seeds)}
-    for case, (loss, reasoning_source, num_samples, num_trained_samples) in CASES.items():
-        hub_path = make_training_path("finetune", config.model_name, loss, reasoning_source, "en_question", num_samples, num_trained_samples)
+    for case, (loss, num_samples, num_trained_samples) in CASES.items():
+        hub_path = make_training_path("finetune", config.model_name, loss, "bf16_en_question_insert", "en_question", num_samples, num_trained_samples)
         results[case] = load_results("mgsm", hub_path, config.max_generation_len, config.seeds)
 
     # 잘림과 반복은 bf16도 함께 표시
@@ -54,9 +56,10 @@ def main() -> None:
     # 손실과 reasoning 길이에는 bf16 case가 없어서, 잘림, 반복과 위치를 맞추려고 bf16 자리를 비워 둠
     for ax in [axes[0], axes[3]]:
         ax.set_xlim(-1.5 * CASE_WIDTH, (len(CASES) - 0.5) * CASE_WIDTH)
-        ax.margins(y=VALUE_MARGIN)
+    axes[0].margins(y=VALUE_MARGIN)
     for ax in axes[1:3]:
         ax.set_ylim(0, RATIO_YMAX)
+    axes[3].set_ylim(0, LEN_RATIO_YMAX)
 
     fig.suptitle(get_title(config.model_name, "mgsm", "영어 question finetune"))
     add_language_legend(fig, results["bf16"])
