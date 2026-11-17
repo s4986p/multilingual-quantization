@@ -97,8 +97,8 @@
 
 ### understanding 삽입
 - [reasoning 위치별 kl](#reasoning-위치별-kl)과 [오류 유형](EXPERIMENTS.md#오류-유형)에서, 양자화 모델은 reasoning 앞부분의 question 이해에서 bf16과 어긋남
-- 생성된 reasoning을 보면, gemma는 앞부분에 question을 정리하는 understanding 단계가 있음
-- 그렇다면 understanding만 bf16 것으로 삽입해 손실이 회복되는지 확인
+- 그렇다면 gemma reasoning 앞부분에 있는 understanding 단계만 bf16 것으로 바꿔도 손실이 회복되는지 확인
+- bf16 understanding을 양자화 모델에 삽입하고 손실 비교
 #### 설정
 - understanding은 같은 seed의 bf16이 해당 언어 prompt에 쓴 것
 - understanding 구분: 제목에 calculate, determine, compute, solve, perform, set up, formulate가 처음 나오는 단계 앞까지
@@ -124,7 +124,22 @@
 - 모든 양자화 방법에서, 영어 외 모든 언어가 bf16을 넘음
 - 따라서 양자화 모델도 영어 question을 받으면 해당 언어에서 bf16을 넘음
 
-### 영어 question finetune과 qat
+### qat
+- [영어 question finetune](EXPERIMENTS.md#영어-question-finetune)에서, 영어 question과 그 뒤 reasoning을 함께 finetune하면 효과가 있음을 bf16에서 확인
+- 그렇다면 이제 양자화 모델에서도 이 finetune으로 bf16을 넘는지 확인
+- finetune 뒤 mxfp4로 양자화한 것과 qat의 손실 비교
+#### 설정
+- ce_kl: 영어 question은 ce, 그 뒤 reasoning은 같은 입력을 받은 bf16에 kl로 맞춤
+- qat: forward는 mxfp4로 양자화한 weight, backward는 양자화를 건너뛰어 원래 weight를 업데이트
+- kl qat: 영어 question 없이 해당 언어 reasoning만 같은 입력을 받은 bf16에 kl로 맞춰, 손실만 회복
+- 학습 데이터는 gsm8k train 20000개, ce_kl은 영어 question finetune과 같음
+- 양자화 방법은 mxfp4
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_qat.png)
+- ce_kl finetune을 mxfp4로 양자화하면 모든 언어에서 다시 잃음
+- kl qat는 mxfp4 손실을 대부분 회복하지만 bf16을 넘지 못함
+- ce_kl qat는 영어 외 모든 언어에서 bf16을 넘음
+- 따라서 양자화 모델이 bf16을 넘는 것은 손실 회복이 아니라 영어 question을 쓰도록 finetune한 덕분
 
 ---
 - 전체 실험은 [EXPERIMENTS.md](EXPERIMENTS.md)

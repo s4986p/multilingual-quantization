@@ -11,14 +11,15 @@ from utils.paths import make_hub_path, make_training_path
 @dataclass
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
-    method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4", "finetune"] = "bf16"
+    # finetune_mxfp4: finetune한 모델을 mxfp4로 양자화, qat: mxfp4로 양자화한 채로 finetune
+    method: Literal["bf16", "gptq", "awq", "nf4", "mxfp4", "finetune", "finetune_mxfp4", "qat"] = "bf16"
     calibration_languages: tuple[Literal["en", "zh", "ja", "sw", "te"], ...] = ("en",)
     num_bits: int = 4
     group_size: int = 128
     num_chunks: int = 128
     # finetune 설정, methods/finetune.py와 같음
     loss: Literal["ce", "kl", "hidden", "ce_kl"] = "ce"
-    reasoning_source: Literal["bf16_en", "on_policy", "bf16_en_question_insert"] = "bf16_en"
+    reasoning_source: Literal["bf16_en", "on_policy", "bf16_en_question_insert", "bf16_native"] = "bf16_en"
     train_part: Literal["understanding", "reasoning", "en_question"] = "understanding"
     num_samples: int | None = None
     num_trained_samples: int | None = None
@@ -28,7 +29,7 @@ class Config:
 
 def main() -> None:
     config = parse(Config)
-    if config.method == "finetune":
+    if config.method in ("finetune", "finetune_mxfp4", "qat"):
         hub_path = make_training_path(config.method, config.model_name, config.loss, config.reasoning_source, config.train_part, config.num_samples, config.num_trained_samples)
     else:
         hub_path = make_hub_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_chunks)
