@@ -203,8 +203,22 @@
 - mxfp4는 손실이 줄지만 bf16을 넘지 못함
 - 따라서 모델이 영어 question을 직접 쓰도록 finetune이 필요할 수 있음
 
-### 영어 question finetune
+### 번역 먼저 쓰기
 - [bf16 번역 삽입](#bf16-번역-삽입)에서, 모델이 영어 question을 직접 쓰도록 finetune이 필요할 수 있음
+- 그렇다면 finetune 없이 instruction만으로 reasoning 시작에 번역을 쓰게 할 수 있는지 확인
+- 해당 언어 prompt 뒤에 reasoning을 영어 번역부터 쓰라는 instruction을 붙이고 손실 비교
+#### 설정
+- instruction은 해당 언어 prompt 뒤에 붙인 영어 한 문장
+- 번역 씀: reasoning 앞에서 영어 question 길이의 4배 안에 영어 question 단어의 70% 이상이 나오는 문제
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_translate_first.png)
+- 영어 외 언어에서 번역을 쓴 문제는 instruction 없을 때보다 늘지만 절반에 못 미침
+- mxfp4는 손실이 조금 줄지만 bf16을 넘지 못함
+- [영어 question 삽입](#영어-question-삽입)보다 손실이 훨씬 덜 줄어듦
+- 따라서 reasoning 시작에 번역을 쓰게 하려면 finetune이 필요할 수 있음
+
+### 영어 question finetune
+- [번역 먼저 쓰기](#번역-먼저-쓰기)에서, reasoning 시작에 번역을 쓰게 하려면 finetune이 필요할 수 있음
 - [영어 understanding finetune](#영어-understanding-finetune)에서 understanding만으로는 신호가 부족할 수 있어, 그 뒤 reasoning까지 함께 finetune하는 경우도 확인
 - reasoning 시작에 영어 question만 쓰도록(ce), 또는 그 뒤 reasoning까지 함께(ce_kl) finetune
 #### 설정
