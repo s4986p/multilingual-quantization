@@ -24,6 +24,11 @@
 - 언어별 손실 뒤 실험은 gemma mgsm만 써서, 다른 모델과 benchmark에서는 확인하지 않음
 - understanding 구분은 gemma reasoning에 맞춘 규칙이라, 다른 모델에는 맞지 않을 수 있음
 
+## 남은 실험
+- 다른 benchmark에서도 ce_kl qat가 bf16을 넘는지 확인
+- 다른 모델에서도 넘는지 확인
+- 다른 qat 방법이나 finetune 방법과 ce_kl qat의 손실 비교
+
 ## 관련 연구
 #### [the multilingual quantization tax](https://arxiv.org/abs/2608.09941)
 - 양자화하면 저자원 언어가 더 많이 잃는다고 보고
