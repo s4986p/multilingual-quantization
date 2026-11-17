@@ -167,7 +167,27 @@
 - 따라서 번역해 삽입하는 것으로는 부족하고, 모델이 영어 question을 직접 쓰도록 finetune이 필요함
 
 ### 영어 question finetune
-
-### 영어 question과 reasoning finetune
+- [bf16 번역 삽입](#bf16-번역-삽입)에서, 번역해 삽입하는 것으로는 부족함
+- [영어 understanding finetune](#영어-understanding-finetune)에서는, understanding만으로는 finetune 신호가 부족했을 수 있음
+- 그렇다면 신호가 더 많고 [영어 question 삽입](#영어-question-삽입)에서 더 크게 회복된 영어 question을, reasoning 시작에 직접 쓰도록 finetune
+#### 설정
+- ce: 영어 question 위치만 ce로 finetune
+- ce_kl: 영어 question은 ce, 그 뒤 reasoning은 같은 입력을 받은 bf16에 kl로 맞춤, 두 loss를 각자의 token 수로 나눔
+- finetune 언어는 중국어, 일본어, 스와힐리어, 텔루구어
+- ce 학습 데이터는 mgsm과 겹치지 않는 mcot 50000개, 800 sample까지 finetune한 모델로 평가
+- ce_kl 학습 데이터는 gsm8k train 중 reasoning이 2048 token 이하인 29492개, reasoning은 bf16이 영어 question 삽입으로 쓴 것
+- 두 학습 데이터 모두 정답 여부로 거르지 않음
+- ce_kl은 20000개로 800, 4000, 20000 sample까지 finetune한 모델과 29492개를 모두 finetune한 모델로 평가
+- reasoning 길이: 언어마다 reasoning token 수 중앙값의 bf16 대비 배, 잘린 reasoning이 평균을 크게 끌어올려 중앙값 사용
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_en_question_finetune.png)
+- ce는 800 sample만 finetune해도 영어 외 언어에서 손실이 크게 늘어남
+- ce는 영어 외 언어에서 많이 잘리고, 잘린 문제는 대부분 반복
+- ce는 영어 외 언어에서 reasoning이 bf16보다 길어짐
+- ce_kl은 거의 잘리지 않음
+- ce_kl은 모든 언어에서 reasoning이 bf16보다 짧아짐
+- ce_kl은 20000 sample까지 finetune하면 중국어, 스와힐리어, 텔루구어에서 bf16을 넘음
+- 29492개를 모두 finetune해도 20000 sample과 비슷
+- 따라서 영어 question 뒤 reasoning까지 함께 finetune하면, 삽입 없이도 bf16을 넘음
 
 ### qat

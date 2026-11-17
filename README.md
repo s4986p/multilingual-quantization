@@ -124,7 +124,7 @@
 - 모든 양자화 방법에서, 영어 외 모든 언어가 bf16을 넘음
 - 따라서 양자화 모델도 영어 question을 받으면 해당 언어에서 bf16을 넘음
 
-### 영어 question과 reasoning finetune과 qat
+### 영어 question finetune과 qat
 
 ---
 - 전체 실험은 [EXPERIMENTS.md](EXPERIMENTS.md)

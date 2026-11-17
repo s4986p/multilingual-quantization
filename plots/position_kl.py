@@ -58,7 +58,7 @@ def main() -> None:
                 position_kls[language] = torch.stack([torch.stack([bin_kl.mean() for bin_kl in kl.tensor_split(NUM_POSITION_BINS)]) for kl in problem_kls]).mean(dim=0).tolist()
 
     fig, axes = plt.subplots(2, 1, figsize=get_figsize(len(QUANTIZATION_METHODS), 2), layout="constrained")
-    plot_language_bars(axes[0], QUANTIZATION_METHODS, kls, "")
+    plot_language_bars(axes[0], QUANTIZATION_METHODS, kls, "kl")
     for language in LANGUAGES:
         axes[1].plot(range(NUM_POSITION_BINS), position_kls[language], color=LANGUAGE_COLORS[language], marker="o", linewidth=2)
     axes[1].set_xticks(range(NUM_POSITION_BINS), POSITION_LABELS)

@@ -36,6 +36,17 @@ def make_training_path(
     loss: str,
     reasoning_source: str,
     train_part: str,
+    num_samples: int | None = None,
+    num_trained_samples: int | None = None,
 ) -> str:
+    # en_question의 ce는 mcot 영어 question만 finetune해 reasoning_source 없음
+    # checkpoint를 저장한 finetune은 학습 데이터 수와 지금까지 finetune한 sample 수 추가
     # 예시) "finetune/google/gemma-4-E2B-it/loss=kl,reasoning_source=on_policy,train_part=understanding"
-    return f"{method}/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part}"
+    # 예시) "finetune/google/gemma-4-E2B-it/loss=ce,train_part=en_question,num_samples=50000,num_trained_samples=800"
+    settings = [f"loss={loss}"]
+    if not (train_part == "en_question" and loss == "ce"):
+        settings.append(f"reasoning_source={reasoning_source}")
+    settings.append(f"train_part={train_part}")
+    if num_samples is not None:
+        settings += [f"num_samples={num_samples}", f"num_trained_samples={num_trained_samples}"]
+    return f"{method}/{model_name}/{','.join(settings)}"

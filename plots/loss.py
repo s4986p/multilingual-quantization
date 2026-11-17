@@ -1,17 +1,13 @@
 from dataclasses import dataclass
-from statistics import mean
 from typing import Literal
 
 import matplotlib.pyplot as plt
 from simple_parsing import parse
 
 from utils.hub import load_results
+from utils.metrics import get_loop_ratio, get_truncated_ratio
 from utils.paths import make_hub_path
-from utils.plot import CASE_WIDTH, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_losses, get_mean_values, get_title, plot_language_bars, save_figure
-
-# 잘림과 반복은 모델끼리 비교하기 쉽게 y축 고정
-RATIO_YMAX = 0.6
-
+from utils.plot import CASE_WIDTH, QUANTIZATION_METHODS, RATIO_YMAX, add_language_legend, get_figsize, get_losses, get_mean_values, get_title, plot_language_bars, save_figure
 
 @dataclass
 class Config:
@@ -24,24 +20,6 @@ class Config:
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
     bf16_seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def get_truncated_ratio(
-    result: dict,
-) -> float:
-    return mean(truncated and not correct for correct, truncated in zip(result["corrects"], result["truncateds"]))
-
-
-def is_loop(
-    text: str | None,
-) -> bool:
-    return text is not None and len(text) > 200 and text[:-200].count(text[-200:-150]) >= 5
-
-
-def get_loop_ratio(
-    result: dict,
-) -> float:
-    return mean(is_loop(reasoning) or is_loop(response) for reasoning, response in zip(result["reasonings"], result["responses"]))
 
 
 def main() -> None:

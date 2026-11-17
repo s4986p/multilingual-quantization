@@ -6,7 +6,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter
+from matplotlib.ticker import MultipleLocator, PercentFormatter, StrMethodFormatter
 
 from utils.dataset import LANGUAGES
 
@@ -22,6 +22,12 @@ BAR_GAP = 1
 CASE_WIDTH = len(LANGUAGES) + BAR_GAP
 PANEL_HEIGHT = 3.0
 PANEL_MARGIN = 0.9
+# 손실은 %p, 비율은 %, 나머지는 format_value에서 kl과 배로 표시
+PERCENT_UNITS = ["%p", "%"]
+# 잘림과 반복은 plot끼리 비교하기 쉽게 y축 고정
+RATIO_YMAX = 0.6
+# bf16 대비 배는 0.5배 간격 눈금
+RATIO_YTICK = 0.5
 # case가 적어도 3열 범례가 잘리지 않는 너비
 MIN_FIGURE_WIDTH = 9.0
 # 삽입 plot끼리 비교하기 쉽게 y축 고정, 삽입하면 bf16보다 높아져 손실이 음수일 수 있음
@@ -112,27 +118,39 @@ def get_figsize(
     return max(BAR_INCHES * CASE_WIDTH * num_cases + PANEL_MARGIN, MIN_FIGURE_WIDTH), PANEL_HEIGHT * num_panels + 1
 
 
+def format_value(
+    value: float,
+    unit: str,
+) -> str:
+    # 예시) "%p" → "5.2%p", "%" → "5.2%", "kl" → "0.123", "배" → "1.97배"
+    if unit in PERCENT_UNITS:
+        return f"{round(value * 100, 1) + 0.0:.1f}{unit}"
+    if unit == "kl":
+        return f"{value:.3f}"
+    return f"{value:.2f}{unit}"
+
+
 def plot_language_bars(
     ax: Axes,
     cases: list[str],
     values: dict[str, list[float]],
     unit: str,
 ) -> None:
-    # case마다 언어 막대를 나란히 그리고 막대 위에 값 표시
-    # unit이 비어 있으면 비율이 아닌 값 그대로 표시 (예: kl)
-    # 예시) unit "%p" → 막대 위 "5.2%p", y축 "5%p"
-    # 예시) unit "" → 막대 위 "0.123"
+    # case마다 언어 막대를 나란히 그리고 막대 위에 format_value로 값 표시
     for language_index, language in enumerate(LANGUAGES):
         xs = [case_index * CASE_WIDTH + language_index - (len(LANGUAGES) - 1) / 2 for case_index in range(len(cases))]
         ax.bar(xs, values[language], width=1, color=LANGUAGE_COLORS[language])
         for x, value in zip(xs, values[language]):
-            text = f"{round(value * 100, 1) + 0.0:.1f}{unit}" if unit else f"{value:.3f}"
-            ax.annotate(text, (x, max(value, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
-    ax.axhline(0, color="#808080", linewidth=0.8)
+            ax.annotate(format_value(value, unit), (x, max(value, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+    # 배는 1배가 기준
+    ax.axhline(1 if unit == "배" else 0, color="#808080", linewidth=0.8)
     ax.set_xticks([case_index * CASE_WIDTH for case_index in range(len(cases))], cases)
     ax.set_xlim(-CASE_WIDTH / 2, (len(cases) - 0.5) * CASE_WIDTH)
-    if unit:
+    if unit in PERCENT_UNITS:
         ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol=unit))
+    if unit == "배":
+        ax.yaxis.set_major_locator(MultipleLocator(RATIO_YTICK))
+        ax.yaxis.set_major_formatter(StrMethodFormatter("{x:.1f}배"))
 
 
 def plot_insert_bars(

@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from datasets import load_dataset
 import torch
 from torch import Tensor
@@ -58,3 +60,34 @@ def get_mgsm_question(
     # instruction과 question 사이 빈 줄로 나눠 question만 추출
     # 예시) instruction + "\n\n" + question → question
     return prompt.split("\n\n", 1)[1]
+
+
+def load_mcot(
+    languages: list[str],
+) -> dict[str, dict[str, str]]:
+    # 같은 문제는 언어마다 mcot id가 같기 때문에 question을 id로 묶음
+    # 예시) "en-54530", "sw-54530" → questions["54530"] = {"en": ..., "sw": ...}
+    mcot = load_dataset("laihuiyuan/mCoT-MATH", data_files="train_part_*.jsonl", split="train").select_columns(["question", "lang-id"])
+    questions = defaultdict(dict)
+    for batch in mcot.iter(batch_size=100000):
+        for question, language_id in zip(batch["question"], batch["lang-id"]):
+            language, mcot_id = language_id.split("-")
+            if language in languages:
+                questions[mcot_id][language] = question.strip()
+    return questions
+
+
+def load_gsm8k() -> dict[str, list[tuple[str, int]]]:
+    gsm8k = load_dataset("openai/gsm8k", "main", split="train")
+    questions = load_mcot(LANGUAGES)
+
+    # gsm8k train question마다 공백만 다른 mcot 영어 question을 찾아 각 언어 question 연결
+    questions_by_en = {" ".join(language_questions["en"].split()): language_questions for language_questions in questions.values()}
+    problems = {language: [] for language in LANGUAGES}
+    for row in gsm8k:
+        language_questions = questions_by_en[" ".join(row["question"].split())]
+        # 예시) "...\n#### 72" → 72
+        answer = int(row["answer"].split("####")[-1].replace(",", ""))
+        for language in LANGUAGES:
+            problems[language].append((MGSM_PROMPTS[language].format(question=language_questions[language]), answer))
+    return problems
