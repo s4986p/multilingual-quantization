@@ -15,6 +15,10 @@
 - 영어 question과 그 뒤 reasoning을 함께 finetune하면, 삽입 없이도 모든 언어에서 bf16을 넘음
 - ce_kl로 qat하면 양자화 모델도 영어 외 언어에서 bf16을 넘음
 
+## 한계
+- gemma mgsm만 써서, 다른 모델과 benchmark에서는 확인하지 않음
+- understanding 구분은 gemma reasoning에 맞춘 규칙이라, 다른 모델에는 맞지 않을 수 있음
+
 ## 관련 연구
 #### [the multilingual quantization tax](https://arxiv.org/abs/2608.09941)
 - 양자화하면 저자원 언어가 더 많이 잃는다고 보고
