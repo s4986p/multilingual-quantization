@@ -2,6 +2,23 @@
 - 공통 설정은 [README](README.md#공통-설정)
 
 ### 언어별 손실
+- [the multilingual quantization tax](https://arxiv.org/abs/2608.09941)의 언어별 손실이 thinking mode를 켜도 나타나는지 확인
+- bf16과 양자화 모델로 mgsm과 mmlu-prox-lite를 풀고, 언어마다 손실 비교
+#### 설정
+- 잘림: 최대 생성 길이에 닿고 틀린 문제
+- 반복: reasoning 또는 response 끝에서 200~150번째 글자 50개가 그 앞에 5번 이상 나오는 문제
+- mmlu-prox-lite는 bf16 seed 0, 1, 양자화 모델 seed 0
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_loss.png)
+![](figures/gemma-4-E2B-it/mmlu_prox_lite_loss.png)
+![](figures/Qwen3.5-2B/mgsm_loss.png)
+![](figures/Qwen3.5-2B/mmlu_prox_lite_loss.png)
+- gemma mgsm에서, 스와힐리어와 텔루구어가 가장 많이 잃음
+- 양자화 방법 중에서는 mxfp4가 가장 많이 잃음
+- mmlu-prox-lite에서는, 영어보다 눈에 띄게 더 잃는 언어가 없음
+- qwen은 양자화하면 많이 잘리고, 잘린 문제는 대부분 반복
+- gemma는 거의 잘리지 않음
+- 따라서 반복 없이 언어별 손실만 보려고, 이후 실험은 gemma mgsm만 사용
 
 ### calibration 언어별 손실
 
