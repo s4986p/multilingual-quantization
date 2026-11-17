@@ -17,7 +17,6 @@ from utils.paths import make_result_name
 MGSM_ANSWER_PREFIXES = {"en": "Answer", "zh": "答案", "ja": "答え", "sw": "Jibu", "te": "సమాధానం"}
 
 
-
 def load_vllm(
     model_path: str,
     model_name: str,

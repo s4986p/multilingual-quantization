@@ -18,7 +18,7 @@
 - mmlu-prox-lite에서는, 영어보다 눈에 띄게 더 잃는 언어가 없음
 - qwen은 양자화하면 많이 잘리고, 잘린 문제는 대부분 반복
 - gemma는 거의 잘리지 않음
-- 따라서 반복 없이 언어별 손실만 보려고, 이후 실험은 gemma mgsm만 사용
+- 따라서 이후 실험은 반복이 적은 gemma와 언어별 손실이 나타난 mgsm만 사용
 
 ### calibration 언어별 손실
 - gptq와 awq는 calibration 언어에 따라 손실이 달라질 수 있음
@@ -46,11 +46,11 @@
 ![](figures/gemma-4-E2B-it/mgsm_position_kl.png)
 - 스와힐리어와 텔루구어에서, 영어와의 kl 차이가 reasoning 위치 0~20%에서 가장 큼
 - kl이 큰 언어가 손실도 큼
-- 그러나 양자화 방법끼리는 그렇지 않음, gptq는 kl이 크지만 손실은 작음
+- 그러나 양자화 방법끼리는 그렇지 않고, gptq는 kl이 크지만 손실은 작음
 - 따라서 스와힐리어와 텔루구어의 손실은 reasoning 앞부분에서 생길 수 있음
 
 ### 오류 유형
-- 스와힐리어와 텔루구어는 영어와의 kl 차이가 reasoning 앞부분에서 가장 큼
+- [reasoning 위치별 kl](#reasoning-위치별-kl)에서, 스와힐리어와 텔루구어는 영어와의 kl 차이가 reasoning 앞부분에서 가장 큼
 - 그렇다면 양자화 모델이 무엇을 틀리는지, 판정 모델로 대략적인 경향 확인
 - mxfp4가 틀린 reasoning을 영어 question, 정답, bf16 reasoning과 함께 판정 모델에 넣고, 처음 틀린 줄과 오류 유형을 고름
 #### 설정
@@ -89,7 +89,7 @@
 - 따라서 손실은 solving보다 주로 understanding에서 생김
 
 ### reasoning 앞부분 길이별 삽입
-- [understanding 삽입](#understanding-삽입)에서, understanding만 삽입해도 손실이 절반 넘게 줄어듦
+- [understanding 삽입](#understanding-삽입)에서, mxfp4는 understanding만 삽입해도 손실이 절반 넘게 줄어듦
 - 그러나 understanding 내용 덕분인지, 단지 bf16 reasoning 앞부분을 삽입한 덕분인지 모름
 - bf16 reasoning을 understanding 길이의 여러 배에서 잘라 삽입하고 손실 비교
 #### 설정

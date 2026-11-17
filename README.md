@@ -15,7 +15,7 @@
 - 그러나 nf4 하나로, thinking mode를 끄고 확인
 - 이 프로젝트는 thinking mode를 켜고 여러 양자화 방법으로 다시 확인
 #### [why do multilingual reasoning gaps emerge in reasoning language models](https://arxiv.org/abs/2510.27269)
-- bf16에서 reasoning 시작에 영어 question을 넣으면 언어 간 차이가 대부분 사라진다고 보고
+- bf16에서 reasoning 시작에 영어 question을 삽입하면 언어 간 차이가 대부분 사라진다고 보고
 - 그러나 양자화 모델은 보지 않음
 - 이 프로젝트는 같은 방법을 양자화 모델에 적용
 
@@ -29,7 +29,7 @@
 - 해당 언어: question과 같은 언어
 - 영어 question: 같은 문제의 영어 원문
 - 삽입: reasoning 시작에 넣고, 이어서 모델이 씀
-- 손실: bf16 정확도에서 정확도를 뺀 값
+- 손실: bf16 정확도에서 양자화 모델 정확도를 뺀 값
 - 넘음: 삽입 없는 bf16의 해당 언어 정확도보다 높음
 - qat: 양자화한 채로 finetune
 #### 모델
@@ -67,7 +67,7 @@
 - gemma mgsm에서, 스와힐리어와 텔루구어가 가장 많이 잃음
 - mmlu-prox-lite에서는, 영어보다 눈에 띄게 더 잃는 언어가 없음
 - qwen은 양자화하면 많이 잘리고, 잘린 문제는 대부분 반복
-- 따라서 반복 없이 언어별 손실만 보려고, 이후 실험은 gemma mgsm만 사용
+- 따라서 이후 실험은 반복이 적은 gemma와 언어별 손실이 나타난 mgsm만 사용
 
 ### calibration 언어별 손실
 - gptq와 awq는 calibration 언어에 따라 손실이 달라질 수 있음
