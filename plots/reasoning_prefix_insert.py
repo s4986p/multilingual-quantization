@@ -38,6 +38,8 @@ def main() -> None:
         insert_results = [load_results("bf16_native_reasoning_prefix_insert/mgsm", hub_path, config.max_generation_len, config.seeds, length_ratio) for length_ratio in LENGTH_RATIOS]
         # 모든 길이에서 같은 문제를 쓰기 때문에 첫 길이의 문제로 bf16, 삽입 없음, 삽입 정확도를 계산
         problem_indices = {language: [set(result[language]["problem_indices"]) for result in insert_results[0]] for language in LANGUAGES}
+        # 모든 양자화 방법이 같은 bf16 reasoning을 삽입해 문제 수가 같음
+        num_problems = {language: round(mean(len(indices) for indices in problem_indices[language])) for language in LANGUAGES}
         losses = {}
         for language in LANGUAGES:
             bf16_accuracy, no_insert_accuracy = [mean(get_subset_accuracy(result[language], indices) for result, indices in zip(results, problem_indices[language])) for results in [bf16_results, no_insert_results]]
@@ -49,7 +51,6 @@ def main() -> None:
         ax.yaxis.set_major_locator(MultipleLocator(INSERT_LOSS_YTICK))
 
     fig.suptitle(get_title(config.model_name, "mgsm", "reasoning 앞부분 길이별 삽입"))
-    num_problems = {language: round(mean(len(indices) for indices in problem_indices[language])) for language in LANGUAGES}
     add_language_legend(fig, bf16_results, num_problems, get_insert_handles())
     save_figure(fig, config.model_name, "mgsm_reasoning_prefix_insert")
 

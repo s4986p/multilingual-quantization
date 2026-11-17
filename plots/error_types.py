@@ -12,7 +12,7 @@ from utils.dataset import LANGUAGES
 from utils.hub import load_results
 from utils.metrics import get_bf16_solved_mask
 from utils.paths import make_hub_path
-from utils.plot import LANGUAGE_NAMES, NUM_POSITION_BINS, POSITION_LABELS, get_figsize, get_title, save_figure
+from utils.plot import LANGUAGE_NAMES, NUM_POSITION_BINS, POSITION_LABELS, VALUE_FONTSIZE, VALUE_OFFSET, get_figsize, get_title, save_figure
 
 ERROR_TYPE_NAMES = {"fact": "사실 오류", "relation": "관계 오류", "target": "목표 오류", "doubt": "조건 무시", "arithmetic": "계산 오류", "other": "기타"}
 ERROR_TYPE_COLORS = {"fact": "#2a78d6", "relation": "#eb6834", "target": "#1baf7a", "doubt": "#eda100", "arithmetic": "#e87ba4", "other": "#a3a29b"}
@@ -20,6 +20,9 @@ ERROR_TYPE_COLORS = {"fact": "#2a78d6", "relation": "#eb6834", "target": "#1baf7
 MIN_LABEL_RATIO = 0.05
 # 막대 위 합이 제목과 겹치지 않게 가장 높은 막대보다 y축을 늘리는 비율
 YMAX_RATIO = 1.15
+# 쌓은 막대의 너비와 조각 사이 흰 경계 두께
+STACK_BAR_WIDTH = 0.7
+STACK_EDGE_WIDTH = 2
 
 
 @dataclass
@@ -46,11 +49,11 @@ def plot_error_type_bars(
         bottom = 0
         for error_type, color in ERROR_TYPE_COLORS.items():
             ratio = case_ratios[error_type]
-            ax.bar(x, ratio, bottom=bottom, width=0.7, color=color, edgecolor="white", linewidth=2)
+            ax.bar(x, ratio, bottom=bottom, width=STACK_BAR_WIDTH, color=color, edgecolor="white", linewidth=STACK_EDGE_WIDTH)
             if ratio >= max_total * MIN_LABEL_RATIO:
-                ax.text(x, bottom + ratio / 2, f"{ratio:.1%}", ha="center", va="center", fontsize=8)
+                ax.text(x, bottom + ratio / 2, f"{ratio:.1%}", ha="center", va="center", fontsize=VALUE_FONTSIZE)
             bottom += ratio
-        ax.annotate(f"{bottom:.1%}", (x, bottom), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+        ax.annotate(f"{bottom:.1%}", (x, bottom), xytext=(0, VALUE_OFFSET), textcoords="offset points", ha="center", va="bottom", fontsize=VALUE_FONTSIZE)
     ax.set_xticks(range(len(cases)), cases)
     ax.set_ylim(0, max_total * YMAX_RATIO)
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
@@ -94,7 +97,7 @@ def main() -> None:
     axes[0].set_ylabel("오류 비율")
     plot_error_type_bars(axes[1], POSITION_LABELS, position_ratios)
     axes[1].set_title(f"{config.method} 모든 언어")
-    axes[1].set_ylabel("첫 오류 중 비율")
+    axes[1].set_ylabel("첫 오류 위치")
 
     fig.suptitle(get_title(config.model_name, "mgsm", "오류 유형"))
     fig.legend(handles=[Patch(color=color, label=ERROR_TYPE_NAMES[error_type]) for error_type, color in ERROR_TYPE_COLORS.items()], loc="outside lower center", ncol=3)

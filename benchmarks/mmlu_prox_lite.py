@@ -23,6 +23,9 @@ MMLU_PROX_LITE_SUBJECTS = {
     "te": {"biology": "జీవశాస్త్రం", "business": "వ్యాపారం", "chemistry": "రసాయన శాస్త్రం", "computer science": "కంప్యూటర్ సైన్స్", "economics": "ఆర్థిక శాస్త్రం", "engineering": "ఇంజనీరింగ్", "health": "ఆరోగ్యం", "history": "చరిత్ర", "law": "న్యాయశాస్త్రం", "math": "గణితం", "other": "ఇతరమైన", "philosophy": "తత్వవేత్త", "physics": "భౌతిక శాస్త్రం", "psychology": "మనోవిజ్ఞానశాస్త్రం"},
 }
 
+# 선택지 열은 option_0부터 option_9까지
+MAX_NUM_OPTIONS = 10
+
 
 @dataclass
 class Config:
@@ -45,7 +48,7 @@ def load_mmlu_prox_lite(
         dataset = load_dataset("li-lab/MMLU-ProX-Lite", language, split="test")
         problems[language] = []
         for row in dataset:
-            options = [row[f"option_{index}"] for index in range(10) if row[f"option_{index}"] is not None]
+            options = [row[f"option_{index}"] for index in range(MAX_NUM_OPTIONS) if row[f"option_{index}"] is not None]
             prompt = instruction.format(subject=MMLU_PROX_LITE_SUBJECTS[language][row["category"]], answer_format=answer_format.format("X"))
             prompt += f"\n\n{question_label}\n{row['question']}\n{options_label}\n"
             prompt += "".join(f"{chr(ord('A') + index)}. {option}\n" for index, option in enumerate(options))

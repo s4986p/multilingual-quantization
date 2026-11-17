@@ -25,7 +25,7 @@ PANEL_MARGIN = 0.9
 # 손실은 %p, 비율은 %, 나머지는 format_value에서 kl과 배로 표시
 PERCENT_UNITS = ["%p", "%"]
 # 잘림과 반복은 plot끼리 비교하기 쉽게 y축 고정
-RATIO_YMAX = 0.6
+RATIO_YMAX = 1.0
 # bf16 대비 배는 0.5배 간격 눈금
 RATIO_YTICK = 0.5
 # case가 적어도 3열 범례가 잘리지 않는 너비
@@ -40,6 +40,12 @@ EN_INSERT_LOSS_YMIN = -0.2
 VALUE_MARGIN = 0.15
 # 삽입 없음을 같은 언어 색의 연한 막대로 표시
 NO_INSERT_ALPHA = 0.35
+# 막대 위 값 글자 크기와 막대에서 띄우는 point 수
+VALUE_FONTSIZE = 8
+VALUE_OFFSET = 3
+# 기준선과 삽입 범례의 회색
+NEUTRAL_COLOR = "#808080"
+BASELINE_WIDTH = 0.8
 NUM_POSITION_BINS = 5
 # 예시) ["reasoning 0~20%", ..., "reasoning 80~100%"]
 POSITION_LABELS = [f"reasoning {index * 100 // NUM_POSITION_BINS}~{(index + 1) * 100 // NUM_POSITION_BINS}%" for index in range(NUM_POSITION_BINS)]
@@ -125,6 +131,7 @@ def format_value(
     unit: str,
 ) -> str:
     # 예시) "%p" → "5.2%p", "%" → "5.2%", "kl" → "0.123", "배" → "1.97배"
+    # 반올림해 0이 된 음수가 "-0.0"으로 표시되지 않게 0.0을 더함
     if unit in PERCENT_UNITS:
         return f"{round(value * 100, 1) + 0.0:.1f}{unit}"
     if unit == "kl":
@@ -143,9 +150,9 @@ def plot_language_bars(
         xs = [case_index * CASE_WIDTH + language_index - (len(LANGUAGES) - 1) / 2 for case_index in range(len(cases))]
         ax.bar(xs, values[language], width=1, color=LANGUAGE_COLORS[language])
         for x, value in zip(xs, values[language]):
-            ax.annotate(format_value(value, unit), (x, max(value, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+            ax.annotate(format_value(value, unit), (x, max(value, 0)), xytext=(0, VALUE_OFFSET), textcoords="offset points", ha="center", va="bottom", fontsize=VALUE_FONTSIZE)
     # 배는 1배가 기준
-    ax.axhline(1 if unit == "배" else 0, color="#808080", linewidth=0.8)
+    ax.axhline(1 if unit == "배" else 0, color=NEUTRAL_COLOR, linewidth=BASELINE_WIDTH)
     ax.set_xticks([case_index * CASE_WIDTH for case_index in range(len(cases))], cases)
     ax.set_xlim(-CASE_WIDTH / 2, (len(cases) - 0.5) * CASE_WIDTH)
     if unit in PERCENT_UNITS:
@@ -170,16 +177,16 @@ def plot_insert_bars(
             ax.bar(x, no_insert_loss, width=1, color=LANGUAGE_COLORS[language], alpha=NO_INSERT_ALPHA)
             ax.bar(x, insert_loss, width=1, color=LANGUAGE_COLORS[language])
             # 삽입 손실이 음수면 막대 아래에 따로 표시, 옆 값과 붙지 않게 화살표 생략
-            insert_text = f"{round(insert_loss * 100, 1) + 0.0:.1f}%p"
-            texts = [f"{round(no_insert_loss * 100, 1) + 0.0:.1f}%p"]
+            insert_text = format_value(insert_loss, "%p")
+            texts = [format_value(no_insert_loss, "%p")]
             if insert_loss >= 0:
                 texts.append("→" + insert_text)
             else:
-                ax.annotate(insert_text, (x, insert_loss), xytext=(0, -3), textcoords="offset points", ha="center", va="top", fontsize=8)
+                ax.annotate(insert_text, (x, insert_loss), xytext=(0, -VALUE_OFFSET), textcoords="offset points", ha="center", va="top", fontsize=VALUE_FONTSIZE)
             if cases[case_index] in recovery_cases:
                 texts.append(f"{(no_insert_loss - insert_loss) / no_insert_loss:.0%} 회복")
-            ax.annotate("\n".join(texts), (x, max(no_insert_loss, insert_loss, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
-    ax.axhline(0, color="#808080", linewidth=0.8)
+            ax.annotate("\n".join(texts), (x, max(no_insert_loss, insert_loss, 0)), xytext=(0, VALUE_OFFSET), textcoords="offset points", ha="center", va="bottom", fontsize=VALUE_FONTSIZE)
+    ax.axhline(0, color=NEUTRAL_COLOR, linewidth=BASELINE_WIDTH)
     ax.set_xticks([case_index * CASE_WIDTH for case_index in range(len(cases))], cases)
     ax.set_xlim(-CASE_WIDTH / 2, (len(cases) - 0.5) * CASE_WIDTH)
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol="%p"))
@@ -190,7 +197,7 @@ def get_insert_handles(
     insert_label: str = "삽입",
 ) -> tuple[Patch, Patch]:
     # plot_insert_bars의 연한 막대와 진한 막대를 설명하는 범례, 삽입이 아닌 비교는 label을 바꿈
-    return Patch(color="#808080", alpha=NO_INSERT_ALPHA, label=no_insert_label), Patch(color="#808080", label=insert_label)
+    return Patch(color=NEUTRAL_COLOR, alpha=NO_INSERT_ALPHA, label=no_insert_label), Patch(color=NEUTRAL_COLOR, label=insert_label)
 
 
 def add_language_legend(
