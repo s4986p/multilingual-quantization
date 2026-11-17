@@ -11,6 +11,8 @@ from matplotlib.ticker import PercentFormatter
 from utils.dataset import LANGUAGES
 
 QUANTIZATION_METHODS = ["gptq", "awq", "nf4", "mxfp4"]
+# bf16도 삽입을 받는 plot은 bf16을 함께 표시
+METHODS = ["bf16", *QUANTIZATION_METHODS]
 MODEL_NAMES = {"Qwen/Qwen3.5-2B": "qwen3.5-2b", "google/gemma-4-E2B-it": "gemma-4-e2b-it"}
 BENCHMARK_NAMES = {"mgsm": "mgsm", "mmlu_prox_lite": "mmlu-prox-lite"}
 LANGUAGE_NAMES = {"en": "영어", "zh": "중국어", "ja": "일본어", "sw": "스와힐리어", "te": "텔루구어"}
@@ -24,6 +26,8 @@ PANEL_MARGIN = 0.9
 INSERT_LOSS_YMIN = -0.05
 INSERT_LOSS_YMAX = 0.2
 INSERT_LOSS_YTICK = 0.05
+# 영어 삽입은 bf16을 넘어 손실이 크게 음수
+EN_INSERT_LOSS_YMIN = -0.2
 # 삽입 없음을 같은 언어 색의 연한 막대로 표시
 NO_INSERT_ALPHA = 0.35
 NUM_POSITION_BINS = 5
@@ -132,25 +136,36 @@ def plot_language_bars(
 def plot_insert_bars(
     ax: Axes,
     cases: list[str],
-    values: dict[str, list[tuple[float, float]]],
+    losses: dict[str, list[tuple[float, float]]],
     recovery_cases: list[str],
 ) -> None:
-    # case마다 (삽입 없음, 삽입) 값을 받아 삽입 없음 막대 위에 삽입 막대를 겹쳐 그림
-    # 손실이면 recovery_cases에 회복 비율도 표시
+    # case마다 (삽입 없음, 삽입) 손실을 받아 연한 삽입 없음 막대 위에 삽입 막대를 겹쳐 그림
+    # recovery_cases에는 회복 비율도 표시
     # 예시) 막대 위 "13.6%p\n→5.8%p\n57% 회복"
     for language_index, language in enumerate(LANGUAGES):
-        for case_index, (no_insert_value, insert_value) in enumerate(values[language]):
+        for case_index, (no_insert_loss, insert_loss) in enumerate(losses[language]):
             x = case_index * CASE_WIDTH + language_index - (len(LANGUAGES) - 1) / 2
-            ax.bar(x, no_insert_value, width=1, color=LANGUAGE_COLORS[language], alpha=NO_INSERT_ALPHA)
-            ax.bar(x, insert_value, width=1, color=LANGUAGE_COLORS[language])
-            texts = [f"{round(no_insert_value * 100, 1) + 0.0:.1f}%p", f"→{round(insert_value * 100, 1) + 0.0:.1f}%p"]
+            ax.bar(x, no_insert_loss, width=1, color=LANGUAGE_COLORS[language], alpha=NO_INSERT_ALPHA)
+            ax.bar(x, insert_loss, width=1, color=LANGUAGE_COLORS[language])
+            # 삽입 손실이 음수면 옆 숫자와 겹치지 않게 막대 아래에 따로 표시
+            insert_text = f"→{round(insert_loss * 100, 1) + 0.0:.1f}%p"
+            texts = [f"{round(no_insert_loss * 100, 1) + 0.0:.1f}%p"]
+            if insert_loss >= 0:
+                texts.append(insert_text)
+            else:
+                ax.annotate(insert_text, (x, insert_loss), xytext=(0, -3), textcoords="offset points", ha="center", va="top", fontsize=8)
             if cases[case_index] in recovery_cases:
-                texts.append(f"{(no_insert_value - insert_value) / no_insert_value:.0%} 회복")
-            ax.annotate("\n".join(texts), (x, max(no_insert_value, insert_value, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+                texts.append(f"{(no_insert_loss - insert_loss) / no_insert_loss:.0%} 회복")
+            ax.annotate("\n".join(texts), (x, max(no_insert_loss, insert_loss, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
     ax.axhline(0, color="#808080", linewidth=0.8)
     ax.set_xticks([case_index * CASE_WIDTH for case_index in range(len(cases))], cases)
     ax.set_xlim(-CASE_WIDTH / 2, (len(cases) - 0.5) * CASE_WIDTH)
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol="%p"))
+
+
+def get_no_insert_handle() -> Patch:
+    # plot_insert_bars의 삽입 없음 막대와 같은 모양의 범례
+    return Patch(color="#808080", alpha=NO_INSERT_ALPHA, label="삽입 없음 손실")
 
 
 def add_language_legend(

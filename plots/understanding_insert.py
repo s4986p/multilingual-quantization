@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import Literal
 
-from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from simple_parsing import parse
@@ -10,7 +9,7 @@ from simple_parsing import parse
 from utils.dataset import LANGUAGES
 from utils.hub import load_results
 from utils.paths import make_hub_path
-from utils.plot import INSERT_LOSS_YMAX, INSERT_LOSS_YMIN, INSERT_LOSS_YTICK, NO_INSERT_ALPHA, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_subset_accuracy, get_title, plot_insert_bars, save_figure
+from utils.plot import INSERT_LOSS_YMAX, INSERT_LOSS_YMIN, INSERT_LOSS_YTICK, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_no_insert_handle, get_subset_accuracy, get_title, plot_insert_bars, save_figure
 from utils.understanding import get_understanding_problem_indices
 
 # 회복 비율을 표시할 양자화 방법, 나머지는 손실이 작아 비율이 의미 없음
@@ -52,7 +51,7 @@ def main() -> None:
 
     fig.suptitle(get_title(config.model_name, "mgsm", "understanding 삽입"))
     num_problems = {language: round(mean(len(indices) for indices in problem_indices[language])) for language in LANGUAGES}
-    add_language_legend(fig, bf16_results, num_problems, (Patch(color="#808080", alpha=NO_INSERT_ALPHA, label="삽입 없음 손실"),))
+    add_language_legend(fig, bf16_results, num_problems, (get_no_insert_handle(),))
     save_figure(fig, config.model_name, "mgsm_understanding_insert")
 
 

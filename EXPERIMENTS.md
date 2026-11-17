@@ -106,7 +106,7 @@
 ### 영어 understanding 삽입
 - [understanding 삽입](#understanding-삽입)에서, bf16 understanding만 삽입해도 손실이 크게 회복됨
 - 그렇다면 해당 언어 question을 영어처럼 곧이곧대로 이해한 understanding을 삽입하면, 영어만큼 회복되는지 확인
-- bf16이 영어 prompt에 쓴 understanding을 bf16과 양자화 모델에 삽입하고 bf16 대비 정확도 차이 비교
+- bf16이 영어 prompt에 쓴 understanding을 bf16과 양자화 모델에 삽입하고 손실 비교
 #### 설정
 - understanding은 같은 seed의 bf16이 영어 prompt에 쓴 것
 - bf16도 자기와 다른 understanding을 받으므로 bf16에도 삽입
@@ -120,6 +120,19 @@
 - 따라서 영어처럼 이해하면 bf16을 넘을 만큼 회복되지만, understanding만으로는 영어만큼 회복되지 않음
 
 ### 영어 question 삽입
+- [영어 understanding 삽입](#영어-understanding-삽입)에서, understanding만으로는 영어만큼 회복되지 않음
+- 그렇다면 [why do multilingual reasoning gaps emerge in reasoning language models](https://arxiv.org/abs/2510.27269)처럼 영어 question 자체를 삽입하면, 양자화 모델도 더 회복되는지 확인
+- 같은 문제의 영어 question을 bf16과 양자화 모델에 삽입하고 손실 비교
+#### 설정
+- 해당 논문과 달리 문장으로 감싸지 않고 영어 question만 삽입
+- 문제는 모든 문제
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_en_question_insert.png)
+- 모든 양자화 방법에서, 영어 외 모든 언어가 bf16을 넘음
+- 영어 understanding 삽입보다 대부분 더 오름
+- bf16은 해당 논문처럼 영어 외 언어가 영어 정확도에 가까워짐
+- 그러나 양자화 모델은 아직 영어 정확도에 못 미침
+- 따라서 양자화 모델도 영어 question을 받으면 해당 언어에서 bf16을 넘음
 
 ### bf16 번역 삽입
 

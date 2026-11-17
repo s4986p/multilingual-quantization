@@ -30,7 +30,7 @@
 - 영어 question: 같은 문제의 영어 원문
 - 삽입: reasoning 시작에 넣고, 이어서 모델이 씀
 - 손실: bf16 정확도에서 양자화 모델 정확도를 뺀 값
-- 넘음: 삽입 없는 bf16의 해당 언어 정확도보다 높음
+- 넘음: 삽입 없는 bf16의 해당 언어 정확도보다 높음, 그림에서는 손실이 0 아래
 - qat: 양자화한 채로 finetune
 #### 모델
 - qwen3.5-2b와 gemma-4-e2b-it, thinking mode를 켜고 bf16과 비교
@@ -113,6 +113,16 @@
 - 따라서 손실은 solving보다 주로 understanding에서 생김
 
 ### 영어 question 삽입
+- [영어 understanding 삽입](EXPERIMENTS.md#영어-understanding-삽입)에서, understanding만으로는 영어만큼 회복되지 않음
+- 그렇다면 [why do multilingual reasoning gaps emerge in reasoning language models](https://arxiv.org/abs/2510.27269)처럼 영어 question 자체를 삽입하면, 양자화 모델도 더 회복되는지 확인
+- 같은 문제의 영어 question을 bf16과 양자화 모델에 삽입하고 손실 비교
+#### 설정
+- 해당 논문과 달리 문장으로 감싸지 않고 영어 question만 삽입
+- 문제는 모든 문제
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_en_question_insert.png)
+- 모든 양자화 방법에서, 영어 외 모든 언어가 bf16을 넘음
+- 따라서 양자화 모델도 영어 question을 받으면 해당 언어에서 bf16을 넘음
 
 ### 영어 question과 reasoning finetune과 qat
 

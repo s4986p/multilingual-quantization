@@ -5,7 +5,7 @@ from typing import Literal
 
 from simple_parsing import parse
 
-from utils.dataset import LANGUAGES, load_mgsm
+from utils.dataset import LANGUAGES, get_mgsm_question, load_mgsm
 from utils.evaluation import generate_vllm, load_vllm, split_outputs
 from utils.format import format_duration
 from utils.hub import load_result, load_results, result_exists, save_result
@@ -62,14 +62,6 @@ class Config:
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
     bf16_seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def get_mgsm_question(
-    prompt: str,
-) -> str:
-    # instruction과 question 사이 빈 줄로 나눠 question만 추출
-    # 예시) instruction + "\n\n" + question → question
-    return prompt.split("\n\n", 1)[1]
 
 
 def main() -> None:

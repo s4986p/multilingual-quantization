@@ -50,3 +50,11 @@ def load_mgsm(
         dataset = load_dataset("juletxara/mgsm", language, split="test")
         problems[language] = [(MGSM_PROMPTS[language].format(question=row["question"]), row["answer_number"]) for row in dataset]
     return problems
+
+
+def get_mgsm_question(
+    prompt: str,
+) -> str:
+    # instruction과 question 사이 빈 줄로 나눠 question만 추출
+    # 예시) instruction + "\n\n" + question → question
+    return prompt.split("\n\n", 1)[1]
