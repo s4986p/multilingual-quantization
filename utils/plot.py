@@ -95,16 +95,20 @@ def plot_language_bars(
     unit: str,
 ) -> None:
     # case마다 언어 막대를 나란히 그리고 막대 위에 값 표시
+    # unit이 비어 있으면 비율이 아닌 값 그대로 표시 (예: kl)
     # 예시) unit "%p" → 막대 위 "5.2%p", y축 "5%p"
+    # 예시) unit "" → 막대 위 "0.123"
     for language_index, language in enumerate(LANGUAGES):
         xs = [case_index * CASE_WIDTH + language_index - (len(LANGUAGES) - 1) / 2 for case_index in range(len(cases))]
         ax.bar(xs, values[language], width=1, color=LANGUAGE_COLORS[language])
         for x, value in zip(xs, values[language]):
-            ax.annotate(f"{value * 100 + 0.0:.1f}{unit}", (x, max(value, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+            text = f"{value * 100 + 0.0:.1f}{unit}" if unit else f"{value:.3f}"
+            ax.annotate(text, (x, max(value, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
     ax.axhline(0, color="#808080", linewidth=0.8)
     ax.set_xticks([case_index * CASE_WIDTH for case_index in range(len(cases))], cases)
     ax.set_xlim(-CASE_WIDTH / 2, (len(cases) - 0.5) * CASE_WIDTH)
-    ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol=unit))
+    if unit:
+        ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol=unit))
 
 
 def add_language_legend(

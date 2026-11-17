@@ -82,6 +82,18 @@
 - 따라서 calibration 언어는 손실의 원인이 아님
 
 ### reasoning 위치별 kl
+- 양자화 모델의 예측이 reasoning의 어디서 bf16과 가장 달라지는지 확인
+- bf16 reasoning을 bf16과 양자화 모델에 똑같이 넣고, reasoning token마다 다음 token 예측의 kl 비교
+#### 설정
+- reasoning 위치: 문제마다 reasoning token을 5등분한 구간
+- kl은 문제마다 token 평균을 낸 뒤 문제 평균
+- reasoning은 bf16 seed 0
+- 문제는 모든 bf16 seed가 맞힌 문제만
+- reasoning 위치별 kl은 mxfp4만
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_position_kl.png)
+- 스와힐리어와 텔루구어에서, 영어와의 kl 차이가 reasoning 위치 0~20%에서 가장 큼
+- 따라서 스와힐리어와 텔루구어의 손실은 reasoning 앞부분에서 생길 수 있음
 
 ### understanding 삽입
 
