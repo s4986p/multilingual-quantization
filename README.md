@@ -6,6 +6,12 @@
 - 이 프로젝트는 손실이 어디서 생기는지 찾아 고치고, 양자화 모델이 bf16을 넘을 수 있는지 확인
 
 ## 요약
+- gemma mgsm에서, 양자화하면 스와힐리어와 텔루구어가 가장 많이 잃음
+- 이 손실은 주로 reasoning 앞부분의 understanding에서 생김
+- 영어 understanding을 삽입하면 양자화 모델도 bf16을 넘음
+- 영어 question을 삽입하면 더 크게 넘음
+- 영어 question과 그 뒤 reasoning을 함께 finetune하면, 삽입 없이도 대부분 언어에서 bf16을 넘음
+- qat하면 양자화 모델도 bf16을 넘음
 
 ## 관련 연구
 #### [the multilingual quantization tax](https://arxiv.org/abs/2608.09941)
