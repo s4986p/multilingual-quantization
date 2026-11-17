@@ -134,6 +134,22 @@
 - 그러나 양자화 모델은 아직 영어 정확도에 못 미침
 - 따라서 양자화 모델도 영어 question을 받으면 해당 언어에서 bf16을 넘음
 
+### 영어 understanding finetune
+- [영어 understanding 삽입](#영어-understanding-삽입)에서, 영어처럼 이해한 understanding을 삽입하면 bf16을 넘음
+- 그렇다면 삽입 없이도 그렇게 이해하도록 finetune할 수 있는지, 양자화 손실과 섞이지 않게 bf16에서 먼저 확인
+- 해당 언어 prompt 뒤, reasoning 시작에 bf16이 영어 prompt에 쓴 understanding을 넣고 그 위치만 finetune
+#### 설정
+- on policy: finetune 중인 모델이 해당 언어 prompt에 쓴 understanding 또는 reasoning
+- loss는 ce, kl, hidden, kl과 hidden은 영어 prompt를 받은 bf16에 맞춤
+- finetune 언어는 중국어, 일본어, 스와힐리어, 텔루구어
+- 학습 데이터는 gsm8k train 4000개, bf16이 해당 언어로 맞힌 것만
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_en_understanding_finetune.png)
+- 어떤 loss도 bf16을 눈에 띄게 넘지 못함
+- kl, on policy reasoning만 bf16과 비슷함
+- 나머지는 오히려 bf16보다 잃음
+- bf16이 해당 언어로 맞힌 문제만 학습 데이터로 써서, 잘못 이해하던 문제에서 배울 신호가 적었을 수 있음
+
 ### bf16 번역 삽입
 - [영어 question 삽입](#영어-question-삽입)에서, 양자화 모델도 영어 question을 받으면 bf16을 넘음
 - 그러나 실제로는 영어 question이 없으므로, finetune 없이 bf16이 먼저 번역해 삽입하는 것으로 충분한지 확인
@@ -148,9 +164,7 @@
 - bf16은 영어 question 삽입보다 훨씬 적게 오름
 - 텔루구어는 bf16에서 거의 오르지 않음
 - mxfp4는 손실이 줄지만 bf16을 넘지 못함
-- 따라서 번역해 삽입하는 것으로는 부족하고, 모델이 스스로 영어처럼 이해하도록 finetune이 필요함
-
-### 영어 understanding finetune
+- 따라서 번역해 삽입하는 것으로는 부족하고, 모델이 영어 question을 직접 쓰도록 finetune이 필요함
 
 ### 영어 question finetune
 

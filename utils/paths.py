@@ -28,3 +28,14 @@ def make_translation_name(
     seed: int,
 ) -> str:
     return f"max_translation_len={max_translation_len},seed={seed}"
+
+
+def make_training_path(
+    method: str,
+    model_name: str,
+    loss: str,
+    reasoning_source: str,
+    train_part: str,
+) -> str:
+    # 예시) "finetune/google/gemma-4-E2B-it/loss=kl,reasoning_source=on_policy,train_part=understanding"
+    return f"{method}/{model_name}/loss={loss},reasoning_source={reasoning_source},train_part={train_part}"

@@ -5,15 +5,14 @@ from typing import Literal
 
 from simple_parsing import parse
 import torch
-from torch import Tensor
 from torch.nn.functional import log_softmax
-from transformers import AutoTokenizer, PreTrainedModel
+from transformers import AutoTokenizer
 
 from utils.dataset import LANGUAGES, load_mgsm
 from utils.format import format_duration, format_memory
 from utils.hub import download_model, load_result, load_results, save_tensors, tensors_exist
 from utils.metrics import get_bf16_solved_mask
-from utils.model import get_prompt_ids, get_reasoning_ids, load_model
+from utils.model import get_logits, get_prompt_ids, get_reasoning_hiddens, get_reasoning_ids, load_model
 from utils.paths import make_hub_path, make_result_name
 
 
@@ -29,27 +28,6 @@ class Config:
     max_generation_len: int = 16384
     seed: int = 0
     bf16_seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def get_reasoning_hiddens(
-    model: PreTrainedModel,
-    input_ids: Tensor,
-    prompt_len: int,
-) -> Tensor:
-    # t의 hidden이 t+1 token을 예측하기 때문에 마지막 prompt token부터 끝에서 두 번째 reasoning token까지 유지
-    # 예시) 입력 [p0, p1, p2, r0, r1, r2]
-    # 예시) 유지 [        p2, r0, r1    ] (각각 r0, r1, r2 예측)
-    return model.model(input_ids=input_ids[None, :].to(model.device), use_cache=False).last_hidden_state[0, prompt_len - 1 : -1]
-
-
-def get_logits(
-    model: PreTrainedModel,
-    hiddens: Tensor,
-) -> Tensor:
-    logits = model.lm_head(hiddens).float()
-    # lm_head만 직접 부르면 gemma forward의 logit softcap이 빠지기 때문에 여기서 적용 (qwen은 softcap 없음)
-    softcapping = getattr(model.config.get_text_config(), "final_logit_softcapping", None)
-    return logits if softcapping is None else torch.tanh(logits / softcapping) * softcapping
 
 
 @torch.no_grad()
