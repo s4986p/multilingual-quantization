@@ -9,7 +9,7 @@ from simple_parsing import parse
 from utils.dataset import LANGUAGES
 from utils.hub import load_results
 from utils.paths import make_hub_path
-from utils.plot import EN_INSERT_LOSS_YMIN, INSERT_LOSS_YMAX, INSERT_LOSS_YTICK, METHODS, add_language_legend, get_figsize, get_no_insert_handle, get_subset_accuracy, get_title, plot_insert_bars, save_figure
+from utils.plot import EN_INSERT_LOSS_YMIN, INSERT_LOSS_YMAX, INSERT_LOSS_YTICK, METHODS, add_language_legend, get_figsize, get_insert_handles, get_subset_accuracy, get_title, plot_insert_bars, save_figure
 from utils.understanding import get_understanding_problem_indices
 
 
@@ -48,7 +48,7 @@ def main() -> None:
 
     fig.suptitle(get_title(config.model_name, "mgsm", "영어 understanding 삽입"))
     num_problems = {language: round(mean(len(indices) for indices in problem_indices[language])) for language in LANGUAGES}
-    add_language_legend(fig, bf16_results, num_problems, (get_no_insert_handle(),))
+    add_language_legend(fig, bf16_results, num_problems, get_insert_handles())
     save_figure(fig, config.model_name, "mgsm_en_understanding_insert")
 
 

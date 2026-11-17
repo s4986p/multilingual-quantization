@@ -185,9 +185,12 @@ def plot_insert_bars(
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol="%p"))
 
 
-def get_no_insert_handle() -> Patch:
-    # plot_insert_bars의 삽입 없음 막대와 같은 모양의 범례
-    return Patch(color="#808080", alpha=NO_INSERT_ALPHA, label="삽입 없음 손실")
+def get_insert_handles(
+    no_insert_label: str = "삽입 없음",
+    insert_label: str = "삽입",
+) -> tuple[Patch, Patch]:
+    # plot_insert_bars의 연한 막대와 진한 막대를 설명하는 범례, 삽입이 아닌 비교는 label을 바꿈
+    return Patch(color="#808080", alpha=NO_INSERT_ALPHA, label=no_insert_label), Patch(color="#808080", label=insert_label)
 
 
 def add_language_legend(

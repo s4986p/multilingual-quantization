@@ -8,7 +8,7 @@ from simple_parsing import parse
 from utils.dataset import LANGUAGES
 from utils.hub import load_results
 from utils.paths import make_hub_path
-from utils.plot import EN_INSERT_LOSS_YMIN, INSERT_LOSS_YMAX, INSERT_LOSS_YTICK, METHODS, add_language_legend, get_accuracy, get_figsize, get_mean_values, get_no_insert_handle, get_title, plot_insert_bars, save_figure
+from utils.plot import EN_INSERT_LOSS_YMIN, INSERT_LOSS_YMAX, INSERT_LOSS_YTICK, METHODS, add_language_legend, get_accuracy, get_figsize, get_mean_values, get_insert_handles, get_title, plot_insert_bars, save_figure
 
 # 삽입할 영어 question마다 hub 결과 경로, 섹션 이름, 그림 이름, 결과가 있는 방법
 EN_QUESTIONS = {
@@ -53,7 +53,7 @@ def main() -> None:
     ax.yaxis.set_major_locator(MultipleLocator(INSERT_LOSS_YTICK))
 
     fig.suptitle(get_title(config.model_name, "mgsm", section_name))
-    add_language_legend(fig, bf16_results, extra_handles=(get_no_insert_handle(),))
+    add_language_legend(fig, bf16_results, extra_handles=get_insert_handles())
     save_figure(fig, config.model_name, file_name)
 
 
