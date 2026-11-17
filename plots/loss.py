@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from dataclasses import dataclass
 from statistics import mean
 from typing import Literal
@@ -6,10 +5,9 @@ from typing import Literal
 import matplotlib.pyplot as plt
 from simple_parsing import parse
 
-from utils.dataset import LANGUAGES
-from utils.hub import load_result
+from utils.hub import load_results
 from utils.paths import make_hub_path
-from utils.plot import CASE_WIDTH, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_title, plot_language_bars, save_figure
+from utils.plot import CASE_WIDTH, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_losses, get_mean_values, get_title, plot_language_bars, save_figure
 
 # 잘림과 반복은 모델끼리 비교하기 쉽게 y축 고정
 RATIO_YMAX = 0.6
@@ -26,12 +24,6 @@ class Config:
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
     bf16_seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def get_accuracy(
-    result: dict,
-) -> float:
-    return result["accuracy"]
 
 
 def get_truncated_ratio(
@@ -52,33 +44,20 @@ def get_loop_ratio(
     return mean(is_loop(reasoning) or is_loop(response) for reasoning, response in zip(result["reasonings"], result["responses"]))
 
 
-def get_mean_values(
-    results: dict[str, list[dict]],
-    cases: list[str],
-    get_value: Callable[[dict], float],
-) -> dict[str, list[float]]:
-    # 언어와 case마다 seed 평균
-    return {language: [mean(get_value(result[language]) for result in results[case]) for case in cases] for language in LANGUAGES}
-
-
 def main() -> None:
     config = parse(Config)
     results = {}
     for method, seeds in [("bf16", config.bf16_seeds)] + [(method, config.seeds) for method in QUANTIZATION_METHODS]:
         hub_path = make_hub_path(method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_chunks)
-        results[method] = [load_result(config.benchmark, hub_path, f"max_generation_len={config.max_generation_len},seed={seed}") for seed in seeds]
+        results[method] = load_results(config.benchmark, hub_path, config.max_generation_len, seeds)
 
-    # 1. 손실: bf16 정확도에서 양자화 모델 정확도를 뺀 값
-    accuracies = get_mean_values(results, list(results), get_accuracy)
-    losses = {language: [language_accuracies[0] - accuracy for accuracy in language_accuracies[1:]] for language, language_accuracies in accuracies.items()}
-
-    # 2. 잘림과 반복은 bf16도 함께 표시
+    # 잘림과 반복은 bf16도 함께 표시
     fig, axes = plt.subplots(3, 1, figsize=get_figsize(len(results), 3), layout="constrained")
-    plot_language_bars(axes[0], QUANTIZATION_METHODS, losses, "%p")
+    plot_language_bars(axes[0], QUANTIZATION_METHODS, get_losses(results["bf16"], results, QUANTIZATION_METHODS), "%p")
     plot_language_bars(axes[1], list(results), get_mean_values(results, list(results), get_truncated_ratio), "%")
     plot_language_bars(axes[2], list(results), get_mean_values(results, list(results), get_loop_ratio), "%")
-    for ax, title in zip(axes, ["손실", "잘림", "반복"]):
-        ax.set_title(title)
+    for ax, ylabel in zip(axes, ["손실", "잘림", "반복"]):
+        ax.set_ylabel(ylabel)
     # 손실에는 bf16 case가 없어서, 잘림, 반복과 양자화 방법 위치를 맞추려고 bf16 자리를 비워 둠
     axes[0].set_xlim(-1.5 * CASE_WIDTH, (len(QUANTIZATION_METHODS) - 0.5) * CASE_WIDTH)
     axes[0].margins(y=0.15)

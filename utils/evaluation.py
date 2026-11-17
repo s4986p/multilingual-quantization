@@ -10,6 +10,7 @@ from utils.dataset import LANGUAGES
 from utils.format import format_duration
 from utils.hub import download_model, load_result, result_exists, save_result
 from utils.model import GENERATION_CONFIGS
+from utils.paths import make_result_name
 
 
 def load_vllm(
@@ -98,7 +99,7 @@ def evaluate_benchmark(
     seeds: tuple[int, ...],
     max_generation_len: int,
 ) -> None:
-    file_names = {seed: f"max_generation_len={max_generation_len},seed={seed}" for seed in seeds}
+    file_names = {seed: make_result_name(max_generation_len, seed) for seed in seeds}
 
     # 1. seed마다 hub result에서 빠진 언어 확인, 빠진 것이 없으면 종료
     results = {}

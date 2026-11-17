@@ -5,6 +5,8 @@ from tempfile import TemporaryDirectory
 from huggingface_hub import HfApi, hf_hub_download, snapshot_download
 from transformers import PreTrainedModel
 
+from utils.paths import make_result_name
+
 REPO_NAME = "s4986p/multilingual-quantization"
 
 
@@ -49,3 +51,12 @@ def load_result(
     file_name: str,
 ) -> dict:
     return json.loads(Path(hf_hub_download(REPO_NAME, f"{experiment_name}/{hub_path}/{file_name}.json")).read_text())
+
+
+def load_results(
+    experiment_name: str,
+    hub_path: str,
+    max_generation_len: int,
+    seeds: tuple[int, ...],
+) -> list[dict]:
+    return [load_result(experiment_name, hub_path, make_result_name(max_generation_len, seed)) for seed in seeds]

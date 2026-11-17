@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 from statistics import mean, stdev
 
@@ -43,6 +44,32 @@ plt.rcParams.update({
     "legend.frameon": False,
     "savefig.dpi": 200,
 })
+
+
+def get_accuracy(
+    result: dict,
+) -> float:
+    return result["accuracy"]
+
+
+def get_mean_values(
+    results: dict[str, list[dict]],
+    cases: list[str],
+    get_value: Callable[[dict], float],
+) -> dict[str, list[float]]:
+    # 언어와 case마다 seed 평균
+    return {language: [mean(get_value(result[language]) for result in results[case]) for case in cases] for language in LANGUAGES}
+
+
+def get_losses(
+    bf16_results: list[dict],
+    results: dict[str, list[dict]],
+    cases: list[str],
+) -> dict[str, list[float]]:
+    # 언어와 case마다 bf16 정확도에서 정확도를 뺀 값
+    bf16_accuracies = get_mean_values({"bf16": bf16_results}, ["bf16"], get_accuracy)
+    accuracies = get_mean_values(results, cases, get_accuracy)
+    return {language: [bf16_accuracies[language][0] - accuracy for accuracy in accuracies[language]] for language in LANGUAGES}
 
 
 def get_title(

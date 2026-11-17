@@ -21,6 +21,17 @@
 - 따라서 반복 없이 언어별 손실만 보려고, 이후 실험은 gemma mgsm만 사용
 
 ### calibration 언어별 손실
+- gptq와 awq는 calibration 언어에 따라 손실이 달라질 수 있음
+- 해당 언어로도 calibration해 손실 비교
+#### 설정
+- 양자화 방법은 gptq, awq
+- calibration 언어는 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합
+- 다섯 언어 혼합은 언어마다 chunk 25~26개
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_calibration.png)
+- gptq와 awq 모두, 해당 언어나 다섯 언어 혼합으로 calibration해도 스와힐리어와 텔루구어 손실이 눈에 띄게 줄지 않음
+- 언어별 손실에서도 calibration이 없는 mxfp4가 가장 많이 잃음
+- 따라서 calibration 언어는 손실의 원인이 아님
 
 ### reasoning 위치별 kl
 

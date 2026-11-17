@@ -10,3 +10,10 @@ def make_hub_path(
     if method in ("bf16", "nf4", "mxfp4"):
         return f"{method}/{model_name}"
     return f"{method}/{model_name}/calibration_languages={'_'.join(calibration_languages)},num_bits={num_bits},group_size={group_size},num_chunks={num_chunks}"
+
+
+def make_result_name(
+    max_generation_len: int,
+    seed: int,
+) -> str:
+    return f"max_generation_len={max_generation_len},seed={seed}"
