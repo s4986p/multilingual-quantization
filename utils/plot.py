@@ -118,6 +118,7 @@ def add_language_legend(
     fig: Figure,
     bf16_results: list[dict],
     num_problems: dict[str, int] | None = None,
+    extra_handles: tuple[Patch, ...] = (),
 ) -> None:
     # 언어마다 bf16 정확도의 seed 평균과 표준편차 표시, 일부 문제만 쓰면 문제 수도 표시
     # 예시) "스와힐리어 (bf16 74.0% ±2.1%p, 166문제)"
@@ -127,7 +128,8 @@ def add_language_legend(
         label = f"{LANGUAGE_NAMES[language]} (bf16 {mean(bf16_accuracies):.1%} ±{stdev(bf16_accuracies):.1%}p"
         label += ")" if num_problems is None else f", {num_problems[language]}문제)"
         handles.append(Patch(color=LANGUAGE_COLORS[language], label=label))
-    fig.legend(handles=handles, loc="outside lower center", ncol=3)
+    # 언어 뒤에 plot마다 다른 표시 추가 (예: 삽입 없음 손실)
+    fig.legend(handles=handles + list(extra_handles), loc="outside lower center", ncol=3)
 
 
 def save_figure(

@@ -7,13 +7,13 @@ from simple_parsing import parse
 import torch
 from torch import Tensor
 from torch.nn.functional import log_softmax
-from transformers import AutoTokenizer, PreTrainedModel, PreTrainedTokenizerBase
+from transformers import AutoTokenizer, PreTrainedModel
 
 from utils.dataset import LANGUAGES, load_mgsm
 from utils.format import format_duration, format_memory
 from utils.hub import download_model, load_result, load_results, save_tensors, tensors_exist
 from utils.metrics import get_bf16_solved_mask
-from utils.model import GENERATION_CONFIGS, load_model
+from utils.model import get_prompt_ids, get_reasoning_ids, load_model
 from utils.paths import make_hub_path, make_result_name
 
 
@@ -29,23 +29,6 @@ class Config:
     max_generation_len: int = 16384
     seed: int = 0
     bf16_seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def get_prompt_ids(
-    tokenizer: PreTrainedTokenizerBase,
-    prompt: str,
-) -> Tensor:
-    return tokenizer.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True, enable_thinking=True, return_tensors="pt")["input_ids"][0]
-
-
-def get_reasoning_ids(
-    tokenizer: PreTrainedTokenizerBase,
-    model_name: str,
-    reasoning: str,
-) -> Tensor:
-    # evaluation.py의 split_outputs가 skip_special_tokens로 decode해 저장된 reasoning에는 reasoning_start token이 없음
-    # 따라서 reasoning_start token 다시 추가
-    return tokenizer(GENERATION_CONFIGS[model_name]["reasoning_start"] + reasoning, add_special_tokens=False, return_tensors="pt")["input_ids"][0]
 
 
 def get_reasoning_hiddens(

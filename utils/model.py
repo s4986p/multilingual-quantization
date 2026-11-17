@@ -1,5 +1,6 @@
 import torch
-from transformers import AutoModelForImageTextToText, PreTrainedModel
+from torch import Tensor
+from transformers import AutoModelForImageTextToText, PreTrainedModel, PreTrainedTokenizerBase
 
 # reasoning_start: reasoning 시작 token
 # reasoning_end: reasoning과 response를 나누는 token
@@ -19,3 +20,20 @@ def load_model(
     model = AutoModelForImageTextToText.from_pretrained(model_path, dtype=torch.bfloat16, device_map="auto")
     model.requires_grad_(False)
     return model
+
+
+def get_prompt_ids(
+    tokenizer: PreTrainedTokenizerBase,
+    prompt: str,
+) -> Tensor:
+    return tokenizer.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True, enable_thinking=True, return_tensors="pt")["input_ids"][0]
+
+
+def get_reasoning_ids(
+    tokenizer: PreTrainedTokenizerBase,
+    model_name: str,
+    reasoning: str,
+) -> Tensor:
+    # evaluation.py의 split_outputs가 skip_special_tokens로 decode해 저장된 reasoning에는 reasoning_start token이 없음
+    # 따라서 reasoning_start token 다시 추가
+    return tokenizer(GENERATION_CONFIGS[model_name]["reasoning_start"] + reasoning, add_special_tokens=False, return_tensors="pt")["input_ids"][0]
