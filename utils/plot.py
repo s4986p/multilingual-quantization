@@ -20,6 +20,9 @@ BAR_GAP = 1
 CASE_WIDTH = len(LANGUAGES) + BAR_GAP
 PANEL_HEIGHT = 3.0
 PANEL_MARGIN = 0.9
+NUM_POSITION_BINS = 5
+# 예시) ["reasoning 0~20%", ..., "reasoning 80~100%"]
+POSITION_LABELS = [f"reasoning {index * 100 // NUM_POSITION_BINS}~{(index + 1) * 100 // NUM_POSITION_BINS}%" for index in range(NUM_POSITION_BINS)]
 
 plt.rcParams.update({
     "font.family": "Apple SD Gothic Neo",
@@ -114,12 +117,16 @@ def plot_language_bars(
 def add_language_legend(
     fig: Figure,
     bf16_results: list[dict],
+    num_problems: dict[str, int] | None = None,
 ) -> None:
-    # 언어마다 bf16 정확도의 seed 평균과 표준편차 표시
+    # 언어마다 bf16 정확도의 seed 평균과 표준편차 표시, 일부 문제만 쓰면 문제 수도 표시
+    # 예시) "스와힐리어 (bf16 74.0% ±2.1%p, 166문제)"
     handles = []
     for language in LANGUAGES:
         bf16_accuracies = [bf16_result[language]["accuracy"] for bf16_result in bf16_results]
-        handles.append(Patch(color=LANGUAGE_COLORS[language], label=f"{LANGUAGE_NAMES[language]} (bf16 {mean(bf16_accuracies):.1%} ±{stdev(bf16_accuracies):.1%}p)"))
+        label = f"{LANGUAGE_NAMES[language]} (bf16 {mean(bf16_accuracies):.1%} ±{stdev(bf16_accuracies):.1%}p"
+        label += ")" if num_problems is None else f", {num_problems[language]}문제)"
+        handles.append(Patch(color=LANGUAGE_COLORS[language], label=label))
     fig.legend(handles=handles, loc="outside lower center", ncol=3)
 
 

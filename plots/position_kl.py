@@ -10,11 +10,7 @@ from utils.dataset import LANGUAGES
 from utils.hub import load_results, load_tensors
 from utils.metrics import get_bf16_solved_mask
 from utils.paths import make_hub_path, make_result_name
-from utils.plot import LANGUAGE_COLORS, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_title, plot_language_bars, save_figure
-
-NUM_POSITION_BINS = 5
-# 예시) ["reasoning 0~20%", ..., "reasoning 80~100%"]
-POSITION_LABELS = [f"reasoning {index * 100 // NUM_POSITION_BINS}~{(index + 1) * 100 // NUM_POSITION_BINS}%" for index in range(NUM_POSITION_BINS)]
+from utils.plot import LANGUAGE_COLORS, NUM_POSITION_BINS, POSITION_LABELS, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_title, plot_language_bars, save_figure
 
 
 @dataclass
@@ -51,8 +47,10 @@ def main() -> None:
     # 2. mxfp4는 문제마다 reasoning을 NUM_POSITION_BINS 구간으로 나눠 구간별로도 평균
     kls = {language: [] for language in LANGUAGES}
     position_kls = {}
+    num_problems = {}
     for language in LANGUAGES:
         bf16_solved_mask = get_bf16_solved_mask(bf16_results, language)
+        num_problems[language] = sum(bf16_solved_mask)
         for method, result in results.items():
             problem_kls = split_problems(result[f"{language}/kl"], result[f"{language}/problem_indices"], bf16_solved_mask)
             kls[language].append(torch.stack([kl.mean() for kl in problem_kls]).mean().item())
@@ -70,7 +68,7 @@ def main() -> None:
         ax.margins(y=0.15)
 
     fig.suptitle(get_title(config.model_name, "mgsm", "reasoning 위치별 kl"))
-    add_language_legend(fig, bf16_results)
+    add_language_legend(fig, bf16_results, num_problems)
     save_figure(fig, config.model_name, "mgsm_position_kl")
 
 
