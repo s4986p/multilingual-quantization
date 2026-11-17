@@ -1,12 +1,13 @@
 from dataclasses import dataclass
+from statistics import median
 
 import matplotlib.pyplot as plt
 from simple_parsing import parse
 
 from utils.hub import load_results
-from utils.metrics import get_loop_ratio, get_median_reasoning_len, get_truncated_ratio
+from utils.metrics import get_loop_ratio, get_truncated_ratio
 from utils.paths import make_hub_path, make_training_path
-from utils.plot import CASE_WIDTH, RATIO_YMAX, add_language_legend, get_figsize, get_losses, get_mean_values, get_title, plot_language_bars, save_figure
+from utils.plot import VALUE_MARGIN, CASE_WIDTH, RATIO_YMAX, add_language_legend, get_figsize, get_losses, get_mean_values, get_title, plot_language_bars, save_figure
 
 # x축 이름과 (loss, reasoning_source, 학습 데이터 수, finetune한 sample 수)
 CASES = {
@@ -23,6 +24,13 @@ class Config:
     model_name: str = "google/gemma-4-E2B-it"
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
+
+
+def get_median_reasoning_len(
+    result: dict,
+) -> float:
+    # 잘린 reasoning이 평균을 크게 끌어올리기 때문에 중앙값
+    return median(result["reasoning_lens"])
 
 
 def main() -> None:
@@ -46,7 +54,7 @@ def main() -> None:
     # 손실과 reasoning 길이에는 bf16 case가 없어서, 잘림, 반복과 위치를 맞추려고 bf16 자리를 비워 둠
     for ax in [axes[0], axes[3]]:
         ax.set_xlim(-1.5 * CASE_WIDTH, (len(CASES) - 0.5) * CASE_WIDTH)
-        ax.margins(y=0.15)
+        ax.margins(y=VALUE_MARGIN)
     for ax in axes[1:3]:
         ax.set_ylim(0, RATIO_YMAX)
 

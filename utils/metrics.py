@@ -1,4 +1,9 @@
-from statistics import mean, median
+from statistics import mean
+
+# 반복: 끝에서 LOOP_TAIL_LEN번째부터 LOOP_PATTERN_LEN 글자가 그 앞에 MIN_LOOP_COUNT번 이상 나옴
+LOOP_TAIL_LEN = 200
+LOOP_PATTERN_LEN = 50
+MIN_LOOP_COUNT = 5
 
 
 def get_bf16_solved_mask(
@@ -18,17 +23,10 @@ def get_truncated_ratio(
 def is_loop(
     text: str | None,
 ) -> bool:
-    return text is not None and len(text) > 200 and text[:-200].count(text[-200:-150]) >= 5
+    return text is not None and len(text) > LOOP_TAIL_LEN and text[:-LOOP_TAIL_LEN].count(text[-LOOP_TAIL_LEN : -LOOP_TAIL_LEN + LOOP_PATTERN_LEN]) >= MIN_LOOP_COUNT
 
 
 def get_loop_ratio(
     result: dict,
 ) -> float:
     return mean(is_loop(reasoning) or is_loop(response) for reasoning, response in zip(result["reasonings"], result["responses"]))
-
-
-def get_median_reasoning_len(
-    result: dict,
-) -> float:
-    # 잘린 reasoning이 평균을 크게 끌어올리기 때문에 중앙값
-    return median(result["reasoning_lens"])

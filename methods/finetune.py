@@ -29,6 +29,8 @@ TRAIN_LANGUAGES = [language for language in LANGUAGES if language != "en"]
 MAX_UNDERSTANDING_LEN = 512
 # gsm8k 해당 언어 reasoning의 약 98%가 들어가는 길이
 MAX_REASONING_LEN = 2048
+# 이 step마다 loss 출력
+LOG_STEPS = 16
 
 # sample: (finetune 중인 모델 prompt_ids, bf16 prompt_ids, finetune할 text_ids)
 # ce_kl은 (finetune 중인 모델과 bf16 prompt_ids, 영어 question_ids, reasoning_ids)
@@ -38,19 +40,19 @@ Sample = tuple[Tensor, Tensor, Tensor]
 @dataclass
 class Config:
     model_name: str = "google/gemma-4-E2B-it"
-    lr: float = 1e-5
-    num_epochs: int = 1
-    warmup_ratio: float = 0.05
-    batch_size: int = 8
     # bf16 대신 mxfp4로 양자화한 채로 finetune
     qat: bool = False
     # ce_kl: en_question에서 영어 question은 ce, 뒤 reasoning은 kl
     loss: Literal["ce", "kl", "hidden", "ce_kl"] = "ce"
+    lr: float = 1e-5
+    num_epochs: int = 1
+    warmup_ratio: float = 0.05
+    batch_size: int = 8
     # 학습 데이터
     # bf16_en: bf16이 영어 prompt에 쓴 reasoning
     # on_policy: finetune 중인 모델이 해당 언어 prompt에 쓴 reasoning
     # bf16_en_question_insert: bf16이 해당 언어 prompt + 영어 question 삽입 뒤에 쓴 reasoning
-    # bf16_native: bf16이 해당 언어 prompt에 쓴 reasoning, kl은 같은 입력을 받은 bf16에 맞춤
+    # bf16_native: bf16이 해당 언어 prompt에 쓴 reasoning, kl은 같은 prompt와 reasoning을 받은 bf16에 맞춤
     reasoning_source: Literal["bf16_en", "on_policy", "bf16_en_question_insert", "bf16_native"] = "bf16_en"
     # reasoning_source 중 finetune할 부분
     # en_question: 영어 question, ce는 reasoning_source를 쓰지 않고 ce_kl은 영어 question 뒤에 reasoning_source를 씀
@@ -123,7 +125,7 @@ def load_en_question_samples(
     num_samples: int,
 ) -> list[Sample]:
     # mcot에서 모든 언어 question이 있고 mgsm과 겹치지 않는 문제를 뽑아 언어마다 (해당 언어 prompt, 영어 prompt, 영어 question)
-    # finetune할 text가 영어 원문이라 bf16 정답 여부로 거르지 않음
+    # finetune할 text가 영어 question이라 bf16 정답 여부로 거르지 않음
     # 예시) 스와힐리어 prompt + "<|channel>thought\n" + 영어 question + "\n\n"
     mgsm_en_questions = {" ".join(get_mgsm_question(prompt).split()) for prompt, _ in load_mgsm(["en"])["en"]}
     problems = [language_questions for language_questions in load_mcot(LANGUAGES).values() if len(language_questions) == len(LANGUAGES) and " ".join(language_questions["en"].split()) not in mgsm_en_questions]
@@ -230,12 +232,13 @@ def get_kl_losses(
     bf16_model: PreTrainedModel,
     batch: list[Sample],
 ) -> Iterator[Tensor]:
-    # 같은 text를 finetune 중인 모델에는 해당 언어 prompt 뒤에, bf16에는 영어 prompt 뒤에 넣음
+    # 같은 text를 finetune 중인 모델에는 해당 언어 prompt 뒤에, bf16에는 sample의 bf16 prompt 뒤에 넣음
+    # bf16 prompt는 bf16_en, on_policy에서는 영어 prompt, bf16_native에서는 같은 해당 언어 prompt
     # text 위치에서만 다음 token 예측을 bf16에 kl로 맞춤
     num_positions = sum(len(text_ids) for _, _, text_ids in batch)
-    for prompt_ids, en_prompt_ids, text_ids in batch:
+    for prompt_ids, bf16_prompt_ids, text_ids in batch:
         with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-            bf16_logprobs = log_softmax(get_logits(bf16_model, get_reasoning_hiddens(bf16_model, torch.cat([en_prompt_ids, text_ids]), len(en_prompt_ids))), dim=-1)
+            bf16_logprobs = log_softmax(get_logits(bf16_model, get_reasoning_hiddens(bf16_model, torch.cat([bf16_prompt_ids, text_ids]), len(bf16_prompt_ids))), dim=-1)
         with torch.autocast("cuda", dtype=torch.bfloat16):
             logprobs = log_softmax(get_logits(model, get_reasoning_hiddens(model, torch.cat([prompt_ids, text_ids]), len(prompt_ids))), dim=-1)
         yield (bf16_logprobs.exp() * (bf16_logprobs - logprobs)).sum() / num_positions
@@ -247,7 +250,7 @@ def get_ce_kl_losses(
     batch: list[Sample],
 ) -> Iterator[Tensor]:
     # 해당 언어 prompt 뒤에 영어 question과 reasoning을 넣고 영어 question 위치는 ce로 finetune
-    # reasoning 위치는 같은 입력을 넣은 bf16에 kl로 맞춤
+    # reasoning 위치는 같은 prompt, 영어 question, reasoning을 넣은 bf16에 kl로 맞춤
     # reasoning이 영어 question보다 훨씬 길어 두 loss를 각자의 위치 수로 나눔
     num_question_positions = sum(len(question_ids) for _, question_ids, _ in batch)
     num_reasoning_positions = sum(len(reasoning_ids) for _, _, reasoning_ids in batch)
@@ -268,7 +271,7 @@ def get_layer_hiddens(
     input_ids: Tensor,
     prompt_len: int,
 ) -> Tensor:
-    # layer마다 text 위치 hidden, embedding은 두 입력에서 같아 제외
+    # layer마다 text 위치 hidden, embedding은 같은 text라 두 모델에서 같아 제외
     hidden_states = model.model(input_ids=input_ids[None, :].to(model.device), output_hidden_states=True, use_cache=False).hidden_states
     return torch.stack(hidden_states[1:])[:, 0, prompt_len:]
 
@@ -280,9 +283,9 @@ def get_hidden_losses(
 ) -> Iterator[Tensor]:
     # kl과 같이 넣고 text 위치에서 layer마다 hidden을 bf16에 cosine 유사도로 맞춤
     num_positions = sum(len(text_ids) for _, _, text_ids in batch)
-    for prompt_ids, en_prompt_ids, text_ids in batch:
+    for prompt_ids, bf16_prompt_ids, text_ids in batch:
         with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-            bf16_hiddens = get_layer_hiddens(bf16_model, torch.cat([en_prompt_ids, text_ids]), len(en_prompt_ids))
+            bf16_hiddens = get_layer_hiddens(bf16_model, torch.cat([bf16_prompt_ids, text_ids]), len(bf16_prompt_ids))
         with torch.autocast("cuda", dtype=torch.bfloat16):
             hiddens = get_layer_hiddens(model, torch.cat([prompt_ids, text_ids]), len(prompt_ids))
         yield (1 - cosine_similarity(hiddens.float(), bf16_hiddens.float(), dim=-1)).mean(0).sum() / num_positions
@@ -344,7 +347,7 @@ def train(
             scheduler.step()
             optimizer.zero_grad()
             losses.append(batch_loss)
-            if step == 1 or step % 16 == 0:
+            if step == 1 or step % LOG_STEPS == 0:
                 print(f"epoch {epoch + 1}/{num_epochs} batch {batch_index + 1}/{num_batches} loss {mean(losses):.4f} lr {scheduler.get_last_lr()[0]:.2e} time {format_duration(time.perf_counter() - start_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")
                 losses = []
                 start_time = time.perf_counter()

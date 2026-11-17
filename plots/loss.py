@@ -7,7 +7,8 @@ from simple_parsing import parse
 from utils.hub import load_results
 from utils.metrics import get_loop_ratio, get_truncated_ratio
 from utils.paths import make_hub_path
-from utils.plot import CASE_WIDTH, QUANTIZATION_METHODS, RATIO_YMAX, add_language_legend, get_figsize, get_losses, get_mean_values, get_title, plot_language_bars, save_figure
+from utils.plot import VALUE_MARGIN, CASE_WIDTH, QUANTIZATION_METHODS, RATIO_YMAX, add_language_legend, get_figsize, get_losses, get_mean_values, get_title, plot_language_bars, save_figure
+
 
 @dataclass
 class Config:
@@ -38,7 +39,7 @@ def main() -> None:
         ax.set_ylabel(ylabel)
     # 손실에는 bf16 case가 없어서, 잘림, 반복과 양자화 방법 위치를 맞추려고 bf16 자리를 비워 둠
     axes[0].set_xlim(-1.5 * CASE_WIDTH, (len(QUANTIZATION_METHODS) - 0.5) * CASE_WIDTH)
-    axes[0].margins(y=0.15)
+    axes[0].margins(y=VALUE_MARGIN)
     for ax in axes[1:]:
         ax.set_ylim(0, RATIO_YMAX)
 

@@ -6,6 +6,10 @@ from torch import Tensor
 from transformers import AutoTokenizer
 
 LANGUAGES = ["en", "zh", "ja", "sw", "te"]
+# wikipedia streaming shuffle에 쓰는 row 수
+SHUFFLE_BUFFER_SIZE = 10000
+# mcot를 한 번에 읽는 row 수
+MCOT_BATCH_SIZE = 100000
 MGSM_PROMPTS = {
     "en": """Solve this math problem. Give the reasoning steps before giving the final answer on the last line by itself in the format of "Answer:". Do not add anything other than the integer answer after "Answer:".\n\n{question}""",
     "zh": """解决这个数学问题。在最后一行给出答案前，请提供推理步骤。最后一行应该以 "答案: " 的形式独立给出答案。在 "答案：" 后不要添加除整数答案之外的任何内容。\n\n{question}""",
@@ -30,7 +34,7 @@ def load_wikipedia(
     for language_index, language in enumerate(languages):
         # 나누어떨어지지 않으면 남는 chunk를 앞 언어부터 하나씩 더함
         num_language_chunks = num_chunks // len(languages) + (language_index < num_chunks % len(languages))
-        dataset = load_dataset("wikimedia/wikipedia", f"20231101.{language}", split="train", streaming=True).shuffle(seed=shuffle_seed, buffer_size=10000)
+        dataset = load_dataset("wikimedia/wikipedia", f"20231101.{language}", split="train", streaming=True).shuffle(seed=shuffle_seed, buffer_size=SHUFFLE_BUFFER_SIZE)
         token_ids = []
         language_chunks = []
         for row in dataset:
@@ -69,7 +73,7 @@ def load_mcot(
     # 예시) "en-54530", "sw-54530" → questions["54530"] = {"en": ..., "sw": ...}
     mcot = load_dataset("laihuiyuan/mCoT-MATH", data_files="train_part_*.jsonl", split="train").select_columns(["question", "lang-id"])
     questions = defaultdict(dict)
-    for batch in mcot.iter(batch_size=100000):
+    for batch in mcot.iter(batch_size=MCOT_BATCH_SIZE):
         for question, language_id in zip(batch["question"], batch["lang-id"]):
             language, mcot_id = language_id.split("-")
             if language in languages:

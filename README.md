@@ -1,17 +1,19 @@
 # multilingual quantization
 
 ## 배경
-- 모델은 대부분 영어로 학습되어, 양자화하면 영어가 아닌 언어에서 더 잃을 수 있음
-- [the multilingual quantization tax](https://arxiv.org/abs/2608.09941)는 이 손실을 보고했지만, 줄이는 방법은 다루지 않음
-- 이 프로젝트는 손실이 어디서 생기는지 찾아 고치고, 양자화 모델이 bf16을 넘을 수 있는지 확인
+- 모델은 대부분 영어로 사전 학습되어, 양자화하면 영어 외 언어에서 더 잃을 수 있음
+- [the multilingual quantization tax](https://arxiv.org/abs/2608.09941)는 이 손실을 보고함
+- 다만 nf4 하나로, thinking mode를 끄고만 확인해 허술함
+- 이 프로젝트는 thinking mode를 켜고 여러 양자화 방법으로 손실을 다시 확인
+- 그 뒤 손실이 어디서 생기는지, 줄일 방법이 있는지 확인
 
 ## 요약
 - gemma mgsm에서, 양자화하면 스와힐리어와 텔루구어가 가장 많이 잃음
 - 이 손실은 주로 reasoning 앞부분의 understanding에서 생김
 - 영어 understanding을 삽입하면 양자화 모델도 bf16을 넘음
 - 영어 question을 삽입하면 더 크게 넘음
-- 영어 question과 그 뒤 reasoning을 함께 finetune하면, 삽입 없이도 대부분 언어에서 bf16을 넘음
-- qat하면 양자화 모델도 bf16을 넘음
+- 영어 question과 그 뒤 reasoning을 함께 finetune하면, 삽입 없이도 모든 언어에서 bf16을 넘음
+- ce_kl로 qat하면 양자화 모델도 영어 외 언어에서 bf16을 넘음
 
 ## 관련 연구
 #### [the multilingual quantization tax](https://arxiv.org/abs/2608.09941)
@@ -31,14 +33,16 @@
 - reasoning: thinking mode에서 쓴 text
 - response: reasoning 뒤 text
 - understanding: reasoning 앞부분에서 question을 이해하는 부분
+- understanding 구분: 제목에 calculate, determine, compute, solve, perform, set up, formulate가 처음 나오는 단계 앞까지
+- reasoning 위치: 문제마다 reasoning token을 5등분한 구간
 - 해당 언어: question과 같은 언어
-- 영어 question: 같은 문제의 영어 원문
+- 영어 question: 데이터셋에 있는 같은 문제의 영어 question
 - 삽입: reasoning 시작에 넣고, 이어서 모델이 씀
 - 손실: 삽입 없는 bf16의 해당 언어 정확도에서 정확도를 뺀 값
 - 넘음: 손실이 0보다 작음, 즉 삽입 없는 bf16보다 정확도가 높음
 - 잘림: 최대 생성 길이에 닿고 틀린 문제
 - 반복: reasoning 또는 response 끝에서 200~150번째 글자 50개가 그 앞에 5번 이상 나오는 문제
-- ce_kl: 영어 question은 ce, 그 뒤 reasoning은 같은 입력을 받은 bf16에 kl로 맞추는 finetune
+- ce_kl: 영어 question은 ce, 그 뒤 reasoning은 같은 text를 받은 bf16에 kl로 맞추는 finetune
 #### 모델
 - qwen3.5-2b와 gemma-4-e2b-it, thinking mode를 켜고 bf16과 비교
 - 양자화는 language model layer의 linear weight만 4 bit로
@@ -71,13 +75,13 @@
 ![](figures/Qwen3.5-2B/mmlu_prox_lite_loss.png)
 - gemma mgsm에서, 스와힐리어와 텔루구어가 가장 많이 잃음
 - 양자화 방법 중에서는 mxfp4가 가장 많이 잃음
-- mmlu-prox-lite에서는, 언어마다 손실이 비슷함
-- qwen은 양자화하면 많이 잘리고, 대부분 반복
+- mmlu-prox-lite에서는, 영어 외 언어가 영어보다 눈에 띄게 더 잃지 않음
+- qwen은 양자화하면 잘림과 반복이 함께 늘어남
 - 따라서 이후 실험은 gemma mgsm만 사용
 
 ### calibration 언어별 손실
-- gptq와 awq는 calibration 언어에 따라 손실이 달라질 수 있음
-- 해당 언어로도 calibration해 손실 비교
+- [언어별 손실](#언어별-손실)에서, gptq와 awq는 영어로만 calibration해서 영어 외 언어가 더 잃을 수 있음
+- calibration 언어를 바꿔 손실 비교
 #### 설정
 - calibration 언어는 영어, 스와힐리어, 텔루구어, 다섯 언어 혼합
 #### 결과
@@ -86,10 +90,11 @@
 - 따라서 calibration 언어는 손실의 원인이 아님
 
 ### reasoning 위치별 kl
-- 양자화 모델의 예측이 reasoning의 어디서 bf16과 가장 달라지는지 확인
+- [calibration 언어별 손실](#calibration-언어별-손실)에서, calibration 언어는 손실의 원인이 아님
+- 그렇다면 양자화 모델의 예측이 reasoning의 어디서 bf16과 가장 달라지는지 확인
 - 같은 bf16 reasoning을 두 모델에 넣고, token마다 다음 token 예측의 kl 비교
 #### 설정
-- reasoning 위치: 문제마다 reasoning token을 5등분한 구간
+- bf16 reasoning은 seed 0만
 - 문제는 모든 bf16 seed가 맞힌 문제만
 - reasoning 위치별 kl은 mxfp4만
 #### 결과
@@ -105,11 +110,12 @@
 - 사실 오류: question의 숫자, 단위, 단어, 이름을 잘못 옮김
 - 관계 오류: 양 사이의 관계를 잘못 이해함
 - 목표 오류: 묻는 것과 다른 양을 구함
-- 조건 무시: 주어진 조건을 없거나, 애매하거나, 상관없다고 보고 버림
+- 조건 무시: 주어진 조건을 없다고, 애매하다고, 또는 상관없다고 보고 버림
 - 계산 오류: 식은 맞지만 계산이 틀림
 - 기타: 위에 없거나 판정을 읽지 못함
 - 판정 모델은 qwen3.5-27b, 영어 question, 정답, bf16 reasoning도 함께 받음
-- 문제는 모든 bf16 seed가 맞히고 mxfp4가 틀린 문제만
+- 판정은 모든 bf16 seed가 맞히고 mxfp4가 틀린 문제만
+- 오류 비율: 모든 bf16 seed가 맞힌 문제 중 mxfp4가 그 유형으로 틀린 비율
 #### 결과
 ![](figures/gemma-4-E2B-it/mgsm_error_types.png)
 - 스와힐리어와 텔루구어에서, 오류는 대부분 사실 오류와 관계 오류
@@ -117,18 +123,17 @@
 - 따라서 question을 잘못 이해해서 틀린 것일 수 있음
 
 ### understanding 삽입
-- [reasoning 위치별 kl](#reasoning-위치별-kl)과 [오류 유형](#오류-유형)에서, 양자화 모델은 reasoning 앞부분의 question 이해에서 bf16과 어긋남
-- 그렇다면 gemma reasoning 앞부분의 understanding만 bf16 것으로 바꿔도 손실이 회복되는지 확인
+- [reasoning 위치별 kl](#reasoning-위치별-kl)과 [오류 유형](#오류-유형)에서, 양자화 모델은 reasoning 앞부분의 understanding에서 bf16과 어긋날 수 있음
+- 그렇다면 understanding만 bf16과 같게 해도 손실이 회복되는지 확인
 - bf16 understanding을 양자화 모델에 삽입하고 손실 비교
 #### 설정
 - understanding은 같은 seed의 bf16이 해당 언어 prompt에 쓴 것
-- understanding 구분: 제목에 calculate, determine, compute, solve, perform, set up, formulate가 처음 나오는 단계 앞까지
 - 문제는 해당 언어와 영어 bf16 reasoning 모두에 understanding이 있는 문제만
 #### 결과
 ![](figures/gemma-4-E2B-it/mgsm_understanding_insert.png)
 - mxfp4에서, 모든 언어의 손실이 절반 넘게 줄어듦
 - 스와힐리어와 텔루구어가 영어보다 더 잃는 정도도 크게 줄어듦
-- 따라서 손실은 주로 understanding에서 생김
+- 따라서 손실은 주로 understanding에서 생길 수 있음
 
 ### reasoning 앞부분 길이별 삽입
 - [understanding 삽입](#understanding-삽입)에서 손실이 줄어든 것이 understanding 내용 덕분인지, bf16 reasoning 앞부분을 삽입한 덕분인지 확인
@@ -146,7 +151,7 @@
 - 그렇다면 영어처럼 이해한 understanding을 삽입하면, 영어만큼 회복되는지 확인
 - bf16이 영어 prompt에 쓴 understanding을 bf16과 양자화 모델에 삽입하고 손실 비교
 #### 설정
-- 문제는 understanding 삽입과 같음
+- 문제는 [understanding 삽입](#understanding-삽입)과 같음
 #### 결과
 ![](figures/gemma-4-E2B-it/mgsm_en_understanding_insert.png)
 - 모든 양자화 방법에서, 영어 외 모든 언어가 bf16을 넘음
@@ -162,48 +167,57 @@
 #### 결과
 ![](figures/gemma-4-E2B-it/mgsm_en_question_insert.png)
 - 모든 양자화 방법에서, 영어 외 모든 언어가 bf16을 넘음
-- 영어 understanding 삽입보다 대부분 손실이 더 작음
+- [영어 understanding 삽입](#영어-understanding-삽입)보다 대부분 손실이 더 작음
 - 따라서 양자화 모델도 영어 question을 삽입하면 bf16을 넘음
 
 ### 영어 understanding finetune
 - [영어 understanding 삽입](#영어-understanding-삽입)에서, 영어처럼 이해한 understanding을 삽입하면 bf16을 넘음
 - 그렇다면 삽입 없이도 그렇게 이해하도록 finetune할 수 있는지, 양자화 손실과 섞이지 않게 bf16에서 먼저 확인
-- reasoning 시작에 bf16이 영어 prompt에 쓴 understanding을 넣고 그 위치만 finetune
+- 해당 언어 prompt 뒤 understanding 또는 reasoning 위치를 영어 prompt를 받은 bf16에 맞추도록 finetune
 #### 설정
-- loss는 ce, kl, hidden, kl과 hidden은 영어 prompt를 받은 bf16에 맞춤
+- ce: bf16이 영어 prompt에 쓴 understanding을 ce로 finetune
+- kl: 같은 text를 영어 prompt 뒤에 받은 bf16의 다음 token 예측에 kl로 맞춤
+- hidden: 같은 text를 영어 prompt 뒤에 받은 bf16의 layer마다 hidden에 cosine 유사도로 맞춤
 - on policy: finetune 중인 모델이 해당 언어 prompt에 쓴 understanding 또는 reasoning
-- 학습 데이터는 gsm8k train 4000개, bf16이 해당 언어로 맞힌 것만
+- 학습 데이터는 gsm8k train 4000개, bf16이 영어와 해당 언어로 모두 맞힌 것만
 #### 결과
 ![](figures/gemma-4-E2B-it/mgsm_en_understanding_finetune.png)
-- 어떤 loss도 bf16을 눈에 띄게 넘지 못함
-- bf16이 해당 언어로 맞힌 문제만 학습 데이터로 써서, 배울 신호가 적었을 수 있음
+- 영어 외 언어에서 bf16을 넘는 것은 kl on policy reasoning의 중국어, 일본어, 스와힐리어뿐
+- 나머지는 영어 외 모든 언어에서 bf16보다 잃음
+- 따라서 understanding만 finetune하면 신호가 부족할 수 있음
 
 ### bf16 번역 삽입
 - [영어 question 삽입](#영어-question-삽입)에서, 양자화 모델도 영어 question을 삽입하면 bf16을 넘음
 - 그러나 실제로는 영어 question이 없어, finetune 없이 bf16 번역을 삽입해도 되는지 확인
 - bf16이 번역한 영어 question을 bf16과 mxfp4에 삽입하고 손실 비교
 #### 설정
-- 번역은 bf16이 thinking mode 없이 생성
+- 번역은 bf16이 thinking mode 없이 seed 0으로 한 번 생성
+- 영어는 번역할 것이 없어 영어 question을 그대로 삽입
 #### 결과
 ![](figures/gemma-4-E2B-it/mgsm_bf16_translation_insert.png)
-- bf16은 영어 question 삽입보다 손실이 훨씬 덜 줄어듦
+- bf16은 [영어 question 삽입](#영어-question-삽입)보다 손실이 훨씬 덜 줄어듦
 - mxfp4는 손실이 줄지만 bf16을 넘지 못함
-- 따라서 번역 삽입으로는 부족하고, 모델이 영어 question을 직접 쓰도록 finetune이 필요함
+- 따라서 모델이 영어 question을 직접 쓰도록 finetune이 필요할 수 있음
 
 ### 영어 question finetune
-- [영어 understanding finetune](#영어-understanding-finetune)에서, understanding만으로는 finetune 신호가 부족했을 수 있음
-- 그렇다면 신호가 더 많고 [영어 question 삽입](#영어-question-삽입)에서 더 크게 회복된 영어 question으로 finetune해 bf16을 넘는지 확인
+- [bf16 번역 삽입](#bf16-번역-삽입)에서, 모델이 영어 question을 직접 쓰도록 finetune이 필요할 수 있음
+- [영어 understanding finetune](#영어-understanding-finetune)에서 understanding만으로는 신호가 부족할 수 있어, 그 뒤 reasoning까지 함께 finetune하는 경우도 확인
 - reasoning 시작에 영어 question만 쓰도록(ce), 또는 그 뒤 reasoning까지 함께(ce_kl) finetune
 #### 설정
 - ce: 영어 question 위치만 ce로 finetune
-- ce 학습 데이터는 mgsm과 겹치지 않는 mcot 50000개, 800 sample까지 finetune한 모델로 평가
-- ce_kl 학습 데이터는 gsm8k train 중 reasoning이 2048 token 이하인 29492개, reasoning은 bf16이 영어 question 삽입으로 쓴 것
+- ce 학습 데이터는 mgsm과 겹치지 않는 mcot 50000개
+- ce_kl 학습 데이터는 gsm8k train 중 reasoning이 2048 token 이하인 29492개
+- ce_kl의 reasoning은 bf16이 영어 question 삽입으로 쓴 것
+- sample: 지금까지 finetune한 학습 데이터 수
+- ce는 50000개를 finetune하는 도중 800 sample에서 평가
+- ce_kl 800, 4000, 20000 sample은 학습 데이터 중 20000개를 뽑아 finetune
+- ce_kl 29492 sample은 학습 데이터를 모두 finetune
 - reasoning 길이: 언어마다 reasoning token 수 중앙값의 bf16 대비 배
 #### 결과
 ![](figures/gemma-4-E2B-it/mgsm_en_question_finetune.png)
 - ce는 영어 외 언어에서 많이 잘리고, 대부분 반복
 - ce_kl은 모든 언어에서 reasoning이 bf16보다 짧아짐
-- ce_kl은 20000 sample까지 finetune하면 중국어, 스와힐리어, 텔루구어에서 bf16을 넘음
+- ce_kl은 20000 sample부터 모든 언어에서 bf16을 넘음
 - 따라서 영어 question 뒤 reasoning까지 함께 finetune하면 삽입 없이도 bf16을 넘음
 
 ### qat
@@ -212,8 +226,10 @@
 - finetune 뒤 mxfp4로 양자화한 것과 qat의 손실 비교
 #### 설정
 - qat: forward는 mxfp4로 양자화한 weight, backward는 양자화를 건너뛰어 원래 weight를 업데이트
-- kl qat: 영어 question 없이 해당 언어 reasoning만 bf16에 kl로 맞춤, 손실 회복만 하는 비교 대상
-- 학습 데이터는 gsm8k train 20000개, ce_kl은 영어 question finetune과 같음
+- kl qat: 영어 question 없이 해당 언어 reasoning만 bf16에 kl로 맞춤
+- kl qat는 손실 회복만 하는 비교 대상
+- kl qat 학습 데이터는 bf16이 gsm8k train에 쓴 해당 언어 reasoning 중 2048 token 이하인 20000개
+- ce_kl 학습 데이터는 [영어 question finetune](#영어-question-finetune)의 20000개와 같음
 #### 결과
 ![](figures/gemma-4-E2B-it/mgsm_qat.png)
 - ce_kl finetune을 mxfp4로 양자화하면 모든 언어에서 다시 잃음

@@ -10,7 +10,7 @@ from utils.dataset import LANGUAGES
 from utils.hub import load_results, load_tensors
 from utils.metrics import get_bf16_solved_mask
 from utils.paths import make_hub_path, make_result_name
-from utils.plot import LANGUAGE_COLORS, NUM_POSITION_BINS, POSITION_LABELS, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_title, plot_language_bars, save_figure
+from utils.plot import VALUE_MARGIN, LANGUAGE_COLORS, NUM_POSITION_BINS, POSITION_LABELS, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_title, plot_language_bars, save_figure
 
 
 @dataclass
@@ -65,7 +65,7 @@ def main() -> None:
     axes[1].set_title("mxfp4")
     for ax in axes:
         ax.set_ylabel("kl")
-        ax.margins(y=0.15)
+        ax.margins(y=VALUE_MARGIN)
 
     fig.suptitle(get_title(config.model_name, "mgsm", "reasoning 위치별 kl"))
     add_language_legend(fig, bf16_results, num_problems)

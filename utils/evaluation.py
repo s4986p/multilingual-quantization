@@ -14,6 +14,8 @@ from utils.hub import download_model, load_result, result_exists, save_result
 from utils.model import GENERATION_CONFIGS
 from utils.paths import make_result_name
 
+# vllm이 한 sequence에 받는 prompt와 생성 token 수의 최대 합
+MAX_MODEL_LEN = 40960
 MGSM_ANSWER_PREFIXES = {"en": "Answer", "zh": "答案", "ja": "答え", "sw": "Jibu", "te": "సమాధానం"}
 
 
@@ -22,7 +24,7 @@ def load_vllm(
     model_name: str,
     max_num_seqs: int | None = None,
 ) -> LLM:
-    return LLM(model_path, tokenizer=model_name, dtype="bfloat16", max_model_len=40960, language_model_only=True, max_num_seqs=max_num_seqs)
+    return LLM(model_path, tokenizer=model_name, dtype="bfloat16", max_model_len=MAX_MODEL_LEN, language_model_only=True, max_num_seqs=max_num_seqs)
 
 
 def get_sampling_params(

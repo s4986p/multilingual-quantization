@@ -14,8 +14,8 @@ from utils.hub import download_model, load_result, result_exists, save_result
 from utils.model import GENERATION_CONFIGS, get_prompt_ids, get_reasoning_ids
 from utils.paths import make_hub_path, make_result_name, make_translation_name
 
-# 삽입할 영어 question마다 hub 결과 경로, bf16_translation은 bf16이 thinking mode 없이 번역한 question
-EXPERIMENT_NAMES = {"gold": "en_question_insert/mgsm", "bf16_translation": "bf16_translation_insert/mgsm"}
+# 삽입할 영어 question마다 hub 결과 경로, mgsm은 mgsm의 영어 question, bf16_translation은 bf16이 thinking mode 없이 번역한 question
+EXPERIMENT_NAMES = {"mgsm": "en_question_insert/mgsm", "bf16_translation": "bf16_translation_insert/mgsm"}
 
 
 @dataclass
@@ -27,7 +27,7 @@ class Config:
     group_size: int = 128
     num_chunks: int = 128
     # 삽입할 영어 question
-    en_question: Literal["gold", "bf16_translation"] = "gold"
+    en_question: Literal["mgsm", "bf16_translation"] = "mgsm"
     translation_seed: int = 0
     max_translation_len: int = 512
     max_generation_len: int = 16384
@@ -51,12 +51,12 @@ def main() -> None:
     # 2. 해당 언어 prompt 뒤, reasoning 시작에 같은 문제의 영어 question 삽입
     # bf16_translation에서 영어는 번역할 것이 없어 영어 question 그대로 삽입
     # 예시) 스와힐리어 prompt + "<|channel>thought\n" + 영어 question + "\n\n"
-    gold_questions = [get_mgsm_question(prompt) for prompt, _ in problems["en"]]
-    if config.en_question == "gold":
-        en_questions = {language: gold_questions for language in LANGUAGES}
+    mgsm_en_questions = [get_mgsm_question(prompt) for prompt, _ in problems["en"]]
+    if config.en_question == "mgsm":
+        en_questions = {language: mgsm_en_questions for language in LANGUAGES}
     else:
         translation_result = load_result("translation/mgsm", make_hub_path("bf16", config.model_name), make_translation_name(config.max_translation_len, config.translation_seed))
-        en_questions = {"en": gold_questions} | {language: translation_result[language]["translations"] for language in LANGUAGES[1:]}
+        en_questions = {"en": mgsm_en_questions} | {language: translation_result[language]["translations"] for language in LANGUAGES[1:]}
     reasoning_header = GENERATION_CONFIGS[config.model_name]["reasoning_header"]
     language_input_ids = [torch.cat([get_prompt_ids(tokenizer, prompt), get_reasoning_ids(tokenizer, config.model_name, reasoning_header + en_question + "\n\n")]) for language in LANGUAGES for (prompt, _), en_question in zip(problems[language], en_questions[language])]
     input_ids = language_input_ids * len(missing_seeds)

@@ -63,7 +63,7 @@ def main() -> None:
                 input_ids.append(torch.cat([get_prompt_ids(tokenizer, problems[language][problem_index][0]), get_reasoning_ids(tokenizer, config.model_name, understandings[problem_index])]))
                 prompt_seeds.append(seed)
 
-    # 3. vllm은 띄우는 데 오래 걸리기 때문에 understanding에 이어서 solving과 response를 모아 한 번에 생성
+    # 3. vllm은 띄우는 데 오래 걸리기 때문에 understanding에 이어서 나머지 reasoning과 response를 모아 한 번에 생성
     model_path = config.model_name if config.method == "bf16" else download_model(hub_path)
     model = load_vllm(model_path, config.model_name)
     start_time = time.perf_counter()

@@ -36,6 +36,8 @@ INSERT_LOSS_YMAX = 0.2
 INSERT_LOSS_YTICK = 0.05
 # 영어 삽입은 bf16을 넘어 손실이 크게 음수
 EN_INSERT_LOSS_YMIN = -0.2
+# 막대 위 값이 그림 밖으로 잘리지 않게 y축 위아래 여백 비율
+VALUE_MARGIN = 0.15
 # 삽입 없음을 같은 언어 색의 연한 막대로 표시
 NO_INSERT_ALPHA = 0.35
 NUM_POSITION_BINS = 5
@@ -161,17 +163,17 @@ def plot_insert_bars(
 ) -> None:
     # case마다 (삽입 없음, 삽입) 손실을 받아 연한 삽입 없음 막대 위에 삽입 막대를 겹쳐 그림
     # recovery_cases에는 회복 비율도 표시
-    # 예시) 막대 위 "13.6%p\n→5.8%p\n57% 회복"
+    # 예시) 막대 위 "13.6%p\n→5.8%p\n57% 회복", 삽입 손실이 음수면 막대 아래 "-6.7%p"
     for language_index, language in enumerate(LANGUAGES):
         for case_index, (no_insert_loss, insert_loss) in enumerate(losses[language]):
             x = case_index * CASE_WIDTH + language_index - (len(LANGUAGES) - 1) / 2
             ax.bar(x, no_insert_loss, width=1, color=LANGUAGE_COLORS[language], alpha=NO_INSERT_ALPHA)
             ax.bar(x, insert_loss, width=1, color=LANGUAGE_COLORS[language])
-            # 삽입 손실이 음수면 옆 숫자와 겹치지 않게 막대 아래에 따로 표시
-            insert_text = f"→{round(insert_loss * 100, 1) + 0.0:.1f}%p"
+            # 삽입 손실이 음수면 막대 아래에 따로 표시, 옆 값과 붙지 않게 화살표 생략
+            insert_text = f"{round(insert_loss * 100, 1) + 0.0:.1f}%p"
             texts = [f"{round(no_insert_loss * 100, 1) + 0.0:.1f}%p"]
             if insert_loss >= 0:
-                texts.append(insert_text)
+                texts.append("→" + insert_text)
             else:
                 ax.annotate(insert_text, (x, insert_loss), xytext=(0, -3), textcoords="offset points", ha="center", va="top", fontsize=8)
             if cases[case_index] in recovery_cases:

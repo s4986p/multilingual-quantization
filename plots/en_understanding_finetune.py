@@ -5,7 +5,7 @@ from simple_parsing import parse
 
 from utils.hub import load_results
 from utils.paths import make_hub_path, make_training_path
-from utils.plot import add_language_legend, get_figsize, get_losses, get_title, plot_language_bars, save_figure
+from utils.plot import VALUE_MARGIN, add_language_legend, get_figsize, get_losses, get_title, plot_language_bars, save_figure
 
 # x축 이름과 (loss, reasoning_source, train_part)
 CASES = {
@@ -32,7 +32,7 @@ def main() -> None:
     fig, ax = plt.subplots(figsize=get_figsize(len(CASES), 1), layout="constrained")
     plot_language_bars(ax, list(CASES), get_losses(bf16_results, results, list(CASES)), "%p")
     ax.set_ylabel("손실")
-    ax.margins(y=0.15)
+    ax.margins(y=VALUE_MARGIN)
 
     fig.suptitle(get_title(config.model_name, "mgsm", "영어 understanding finetune"))
     add_language_legend(fig, bf16_results)

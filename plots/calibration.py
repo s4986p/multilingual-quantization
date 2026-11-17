@@ -6,7 +6,7 @@ from simple_parsing import parse
 from utils.dataset import LANGUAGES
 from utils.hub import load_results
 from utils.paths import make_hub_path
-from utils.plot import add_language_legend, get_figsize, get_losses, get_title, plot_language_bars, save_figure
+from utils.plot import VALUE_MARGIN, add_language_legend, get_figsize, get_losses, get_title, plot_language_bars, save_figure
 
 CALIBRATION_METHODS = ["gptq", "awq"]
 # x축 이름과 calibration 언어
@@ -37,7 +37,7 @@ def main() -> None:
         plot_language_bars(ax, list(results), get_losses(bf16_results, results, list(results)), "%p")
         ax.set_title(method)
         ax.set_ylabel("손실")
-    axes[0].margins(y=0.15)
+    axes[0].margins(y=VALUE_MARGIN)
 
     fig.suptitle(get_title(config.model_name, "mgsm", "calibration 언어별 손실"))
     add_language_legend(fig, bf16_results)

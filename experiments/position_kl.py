@@ -15,6 +15,9 @@ from utils.metrics import get_bf16_solved_mask
 from utils.model import get_logits, get_prompt_ids, get_reasoning_hiddens, get_reasoning_ids, load_model
 from utils.paths import make_hub_path, make_result_name
 
+# 이 문제 수마다 진행 상황 출력
+LOG_PROBLEMS = 50
+
 
 @dataclass
 class Config:
@@ -72,7 +75,7 @@ def main() -> None:
                 tensors[f"{language}/kl"].append((bf16_logprobs.exp() * (bf16_logprobs - quantized_logprobs)).sum(dim=-1).cpu())
             tensors[f"{language}/problem_indices"].append(torch.full_like(reasoning_ids, problem_index, dtype=torch.int32))
 
-            if (input_index + 1) % 50 == 0:
+            if (input_index + 1) % LOG_PROBLEMS == 0:
                 print(f"{hub_path} {language} problem {input_index + 1}/{len(problem_inputs)} time {format_duration(time.perf_counter() - start_time)} memory {format_memory(torch.cuda.max_memory_allocated())}")
                 start_time = time.perf_counter()
                 torch.cuda.reset_peak_memory_stats()

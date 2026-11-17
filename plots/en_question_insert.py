@@ -12,7 +12,7 @@ from utils.plot import EN_INSERT_LOSS_YMIN, INSERT_LOSS_YMAX, INSERT_LOSS_YTICK,
 
 # 삽입할 영어 question마다 hub 결과 경로, 섹션 이름, 그림 이름, 결과가 있는 방법
 EN_QUESTIONS = {
-    "gold": ("en_question_insert/mgsm", "영어 question 삽입", "mgsm_en_question_insert", METHODS),
+    "mgsm": ("en_question_insert/mgsm", "영어 question 삽입", "mgsm_en_question_insert", METHODS),
     "bf16_translation": ("bf16_translation_insert/mgsm", "bf16 번역 삽입", "mgsm_bf16_translation_insert", ["bf16", "mxfp4"]),
 }
 
@@ -24,7 +24,7 @@ class Config:
     num_bits: int = 4
     group_size: int = 128
     num_chunks: int = 128
-    en_question: Literal["gold", "bf16_translation"] = "gold"
+    en_question: Literal["mgsm", "bf16_translation"] = "mgsm"
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
 
