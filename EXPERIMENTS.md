@@ -85,9 +85,23 @@
 - mxfp4에서, understanding만 삽입해도 모든 언어에서 손실이 절반 넘게 줄어듦
 - 스와힐리어와 텔루구어가 영어보다 더 잃는 정도도 크게 줄어듦
 - gptq, awq, nf4는 손실이 작아 차이를 보기 어려움
+- [reasoning 앞부분 길이별 삽입](#reasoning-앞부분-길이별-삽입)에서도, mxfp4 손실은 understanding 길이까지 크게 줄고 그 뒤로는 거의 그대로
 - 따라서 손실은 solving보다 주로 understanding에서 생김
 
 ### reasoning 앞부분 길이별 삽입
+- [understanding 삽입](#understanding-삽입)에서, understanding만 삽입해도 손실이 절반 넘게 줄어듦
+- 그러나 understanding 내용 덕분인지, 단지 bf16 reasoning 앞부분을 삽입한 덕분인지 모름
+- bf16 reasoning을 understanding 길이의 여러 배에서 잘라 삽입하고 손실 비교
+#### 설정
+- reasoning은 같은 seed의 bf16이 해당 언어 prompt에 쓴 것
+- 자르는 길이는 understanding token 수의 0.5, 0.75, 1, 1.5, 2배
+- 문제는 reasoning이 understanding token 수의 2배 이상인 문제만
+- 문제 수는 seed마다 달라 그림에는 seed 평균
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_reasoning_prefix_insert.png)
+- mxfp4에서, 손실이 1배까지 크게 줄고 그 뒤로는 거의 그대로
+- gptq, awq, nf4는 손실이 작아 차이를 보기 어려움
+- 따라서 손실이 줄어든 것은 길이보다 understanding 내용 덕분
 
 ### 영어 understanding 삽입
 

@@ -5,13 +5,10 @@ from typing import Literal
 
 from simple_parsing import parse
 import torch
-from torch import Tensor
 from transformers import AutoTokenizer
-from vllm import LLM  # type: ignore
-from vllm.outputs import CompletionOutput  # type: ignore
 
 from utils.dataset import LANGUAGES, load_mgsm
-from utils.evaluation import evaluate_outputs, get_sampling_params, load_vllm, parse_mgsm_prediction
+from utils.evaluation import continue_vllm, evaluate_outputs, load_vllm, parse_mgsm_prediction
 from utils.format import format_duration
 from utils.hub import download_model, load_result, result_exists, save_result
 from utils.model import get_prompt_ids, get_reasoning_ids
@@ -29,21 +26,6 @@ class Config:
     num_chunks: int = 128
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def continue_vllm(
-    model: LLM,
-    model_name: str,
-    input_ids: list[Tensor],
-    prompt_seeds: list[int],
-    max_generation_len: int,
-) -> list[CompletionOutput]:
-    # chat template을 거치지 않고 이미 만든 token 뒤에 이어서 생성
-    # 예시) generate_vllm: "1+2=?" → chat template으로 prompt ids 만듦 → "<|channel>thought\n...<channel|>3" 생성
-    # 예시) continue_vllm: 직접 만든 prompt ids + "<|channel>thought\n" + 삽입한 text → "...<channel|>3" 이어서 생성
-    prompts = [{"prompt_token_ids": ids.tolist()} for ids in input_ids]
-    outputs = model.generate(prompts, get_sampling_params(model_name, prompt_seeds, max_generation_len), use_tqdm=True)
-    return [output.outputs[0] for output in outputs]
 
 
 def main() -> None:

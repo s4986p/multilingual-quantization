@@ -15,5 +15,9 @@ def make_hub_path(
 def make_result_name(
     max_generation_len: int,
     seed: int,
+    length_ratio: float | None = None,
 ) -> str:
-    return f"max_generation_len={max_generation_len},seed={seed}"
+    # reasoning 앞부분 길이별 삽입은 앞에 length_ratio 추가
+    # 예시) "length_ratio=0.5,max_generation_len=16384,seed=0"
+    prefix = "" if length_ratio is None else f"length_ratio={length_ratio},"
+    return f"{prefix}max_generation_len={max_generation_len},seed={seed}"

@@ -20,6 +20,10 @@ BAR_GAP = 1
 CASE_WIDTH = len(LANGUAGES) + BAR_GAP
 PANEL_HEIGHT = 3.0
 PANEL_MARGIN = 0.9
+# 삽입 plot끼리 비교하기 쉽게 y축 고정, 삽입하면 bf16보다 높아져 손실이 음수일 수 있음
+INSERT_LOSS_YMIN = -0.05
+INSERT_LOSS_YMAX = 0.2
+INSERT_LOSS_YTICK = 0.05
 NUM_POSITION_BINS = 5
 # 예시) ["reasoning 0~20%", ..., "reasoning 80~100%"]
 POSITION_LABELS = [f"reasoning {index * 100 // NUM_POSITION_BINS}~{(index + 1) * 100 // NUM_POSITION_BINS}%" for index in range(NUM_POSITION_BINS)]
@@ -53,6 +57,15 @@ def get_accuracy(
     result: dict,
 ) -> float:
     return result["accuracy"]
+
+
+def get_subset_accuracy(
+    result: dict,
+    problem_indices: set[int],
+) -> float:
+    # 일부 문제만 넣은 result는 problem_indices가 있고, 없으면 모든 문제
+    result_problem_indices = result.get("problem_indices", range(len(result["corrects"])))
+    return mean(correct for problem_index, correct in zip(result_problem_indices, result["corrects"]) if problem_index in problem_indices)
 
 
 def get_mean_values(
@@ -105,7 +118,7 @@ def plot_language_bars(
         xs = [case_index * CASE_WIDTH + language_index - (len(LANGUAGES) - 1) / 2 for case_index in range(len(cases))]
         ax.bar(xs, values[language], width=1, color=LANGUAGE_COLORS[language])
         for x, value in zip(xs, values[language]):
-            text = f"{value * 100 + 0.0:.1f}{unit}" if unit else f"{value:.3f}"
+            text = f"{round(value * 100, 1) + 0.0:.1f}{unit}" if unit else f"{value:.3f}"
             ax.annotate(text, (x, max(value, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
     ax.axhline(0, color="#808080", linewidth=0.8)
     ax.set_xticks([case_index * CASE_WIDTH for case_index in range(len(cases))], cases)

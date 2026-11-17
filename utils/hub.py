@@ -66,8 +66,9 @@ def load_results(
     hub_path: str,
     max_generation_len: int,
     seeds: tuple[int, ...],
+    length_ratio: float | None = None,
 ) -> list[dict]:
-    return [load_result(experiment_name, hub_path, make_result_name(max_generation_len, seed)) for seed in seeds]
+    return [load_result(experiment_name, hub_path, make_result_name(max_generation_len, seed, length_ratio)) for seed in seeds]
 
 
 def tensors_exist(

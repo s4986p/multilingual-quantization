@@ -3,6 +3,8 @@ import re
 # 제목에 calculate, calculation처럼 품사가 다른 단어가 나오기 때문에 마지막 e 제거
 SOLVING_WORDS = ["calculat", "determin", "comput", "solv", "perform", "set up", "formulat"]
 STEP_TITLE = re.compile(r"^[ \t]*\d+\.\s+\*\*(.+?)\*\*", re.M)
+# understanding 내용 효과와 bf16 reasoning 앞부분 길이 효과를 구분하기 위해 1배 앞뒤도 비교
+LENGTH_RATIOS = [0.5, 0.75, 1, 1.5, 2]
 
 
 def get_understanding(

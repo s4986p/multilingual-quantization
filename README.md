@@ -109,6 +109,7 @@
 ![](figures/gemma-4-E2B-it/mgsm_understanding_insert.png)
 - mxfp4에서, understanding만 삽입해도 모든 언어에서 손실이 절반 넘게 줄어듦
 - 스와힐리어와 텔루구어가 영어보다 더 잃는 정도도 크게 줄어듦
+- [reasoning 앞부분 길이별 삽입](EXPERIMENTS.md#reasoning-앞부분-길이별-삽입)에서도, mxfp4 손실은 understanding 길이까지 크게 줄고 그 뒤로는 거의 그대로
 - 따라서 손실은 solving보다 주로 understanding에서 생김
 
 ### 영어 question 삽입
