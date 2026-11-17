@@ -135,6 +135,20 @@
 - 따라서 양자화 모델도 영어 question을 받으면 해당 언어에서 bf16을 넘음
 
 ### bf16 번역 삽입
+- [영어 question 삽입](#영어-question-삽입)에서, 양자화 모델도 영어 question을 받으면 bf16을 넘음
+- 그러나 실제로는 영어 question이 없으므로, finetune 없이 bf16이 먼저 번역해 삽입하는 것으로 충분한지 확인
+- bf16이 해당 언어 question을 영어로 번역하고, 그 번역을 bf16과 mxfp4에 삽입해 손실 비교
+#### 설정
+- 번역은 bf16이 thinking mode 없이 "Translate the following question into English. Output only the translation."으로 생성
+- 번역은 seed 0, 최대 생성 길이 512
+- 영어는 번역할 것이 없어 영어 question 그대로 삽입
+- 양자화 방법은 mxfp4
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_bf16_translation_insert.png)
+- bf16은 영어 question 삽입보다 훨씬 적게 오름
+- 텔루구어는 bf16에서 거의 오르지 않음
+- mxfp4는 손실이 줄지만 bf16을 넘지 못함
+- 따라서 번역해 삽입하는 것으로는 부족하고, 모델이 스스로 영어처럼 이해하도록 finetune이 필요함
 
 ### 영어 understanding finetune
 

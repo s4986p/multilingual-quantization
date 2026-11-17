@@ -39,9 +39,10 @@ def generate_vllm(
     prompts: list[str],
     prompt_seeds: list[int],
     max_generation_len: int,
+    enable_thinking: bool = True,
 ) -> list[CompletionOutput]:
     messages = [[{"role": "user", "content": prompt}] for prompt in prompts]
-    outputs = model.chat(messages, get_sampling_params(model_name, prompt_seeds, max_generation_len), use_tqdm=True, chat_template_kwargs={"enable_thinking": True})
+    outputs = model.chat(messages, get_sampling_params(model_name, prompt_seeds, max_generation_len), use_tqdm=True, chat_template_kwargs={"enable_thinking": enable_thinking})
     return [output.outputs[0] for output in outputs]
 
 

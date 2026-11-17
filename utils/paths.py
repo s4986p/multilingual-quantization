@@ -21,3 +21,10 @@ def make_result_name(
     # 예시) "length_ratio=0.5,max_generation_len=16384,seed=0"
     prefix = "" if length_ratio is None else f"length_ratio={length_ratio},"
     return f"{prefix}max_generation_len={max_generation_len},seed={seed}"
+
+
+def make_translation_name(
+    max_translation_len: int,
+    seed: int,
+) -> str:
+    return f"max_translation_len={max_translation_len},seed={seed}"

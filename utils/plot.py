@@ -22,6 +22,8 @@ BAR_GAP = 1
 CASE_WIDTH = len(LANGUAGES) + BAR_GAP
 PANEL_HEIGHT = 3.0
 PANEL_MARGIN = 0.9
+# case가 적어도 3열 범례가 잘리지 않는 너비
+MIN_FIGURE_WIDTH = 9.0
 # 삽입 plot끼리 비교하기 쉽게 y축 고정, 삽입하면 bf16보다 높아져 손실이 음수일 수 있음
 INSERT_LOSS_YMIN = -0.05
 INSERT_LOSS_YMAX = 0.2
@@ -107,7 +109,7 @@ def get_figsize(
     num_cases: int,
     num_panels: int,
 ) -> tuple[float, float]:
-    return BAR_INCHES * CASE_WIDTH * num_cases + PANEL_MARGIN, PANEL_HEIGHT * num_panels + 1
+    return max(BAR_INCHES * CASE_WIDTH * num_cases + PANEL_MARGIN, MIN_FIGURE_WIDTH), PANEL_HEIGHT * num_panels + 1
 
 
 def plot_language_bars(
