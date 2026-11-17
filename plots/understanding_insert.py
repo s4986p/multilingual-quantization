@@ -2,20 +2,17 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import Literal
 
-from matplotlib.axes import Axes
 from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, PercentFormatter
+from matplotlib.ticker import MultipleLocator
 from simple_parsing import parse
 
 from utils.dataset import LANGUAGES
 from utils.hub import load_results
 from utils.paths import make_hub_path
-from utils.plot import CASE_WIDTH, INSERT_LOSS_YMAX, INSERT_LOSS_YMIN, INSERT_LOSS_YTICK, LANGUAGE_COLORS, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_subset_accuracy, get_title, save_figure
+from utils.plot import INSERT_LOSS_YMAX, INSERT_LOSS_YMIN, INSERT_LOSS_YTICK, NO_INSERT_ALPHA, QUANTIZATION_METHODS, add_language_legend, get_figsize, get_subset_accuracy, get_title, plot_insert_bars, save_figure
 from utils.understanding import get_understanding_problem_indices
 
-# 삽입 없음 손실을 같은 언어 색의 연한 막대로 표시
-NO_INSERT_ALPHA = 0.35
 # 회복 비율을 표시할 양자화 방법, 나머지는 손실이 작아 비율이 의미 없음
 RECOVERY_METHODS = ["mxfp4"]
 
@@ -29,28 +26,6 @@ class Config:
     num_chunks: int = 128
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
-
-
-def plot_insert_loss_bars(
-    ax: Axes,
-    cases: list[str],
-    losses: dict[str, list[tuple[float, float]]],
-) -> None:
-    # case마다 (삽입 없음, 삽입) 손실을 받아 삽입 없음 막대 위에 삽입 손실 막대를 겹쳐 그림
-    # 예시) 막대 위 "13.6%p\n→5.8%p\n57% 회복"
-    for language_index, language in enumerate(LANGUAGES):
-        for case_index, (no_insert_loss, insert_loss) in enumerate(losses[language]):
-            x = case_index * CASE_WIDTH + language_index - (len(LANGUAGES) - 1) / 2
-            ax.bar(x, no_insert_loss, width=1, color=LANGUAGE_COLORS[language], alpha=NO_INSERT_ALPHA)
-            ax.bar(x, insert_loss, width=1, color=LANGUAGE_COLORS[language])
-            texts = [f"{round(no_insert_loss * 100, 1) + 0.0:.1f}%p", f"→{round(insert_loss * 100, 1) + 0.0:.1f}%p"]
-            if cases[case_index] in RECOVERY_METHODS:
-                texts.append(f"{(no_insert_loss - insert_loss) / no_insert_loss:.0%} 회복")
-            ax.annotate("\n".join(texts), (x, max(no_insert_loss, insert_loss, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
-    ax.axhline(0, color="#808080", linewidth=0.8)
-    ax.set_xticks([case_index * CASE_WIDTH for case_index in range(len(cases))], cases)
-    ax.set_xlim(-CASE_WIDTH / 2, (len(cases) - 0.5) * CASE_WIDTH)
-    ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol="%p"))
 
 
 def main() -> None:
@@ -70,7 +45,7 @@ def main() -> None:
             losses[language].append((bf16_accuracy - no_insert_accuracy, bf16_accuracy - insert_accuracy))
 
     fig, ax = plt.subplots(figsize=get_figsize(len(QUANTIZATION_METHODS), 1), layout="constrained")
-    plot_insert_loss_bars(ax, QUANTIZATION_METHODS, losses)
+    plot_insert_bars(ax, QUANTIZATION_METHODS, losses, RECOVERY_METHODS)
     ax.set_ylabel("손실")
     ax.set_ylim(INSERT_LOSS_YMIN, INSERT_LOSS_YMAX)
     ax.yaxis.set_major_locator(MultipleLocator(INSERT_LOSS_YTICK))

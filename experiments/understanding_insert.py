@@ -15,6 +15,9 @@ from utils.model import get_prompt_ids, get_reasoning_ids
 from utils.paths import make_hub_path, make_result_name
 from utils.understanding import get_understanding
 
+# understanding을 쓴 bf16 prompt 언어마다 hub 결과 경로
+EXPERIMENT_NAMES = {"native": "bf16_native_understanding_insert/mgsm", "en": "bf16_en_understanding_insert/mgsm"}
+
 
 @dataclass
 class Config:
@@ -24,13 +27,15 @@ class Config:
     num_bits: int = 4
     group_size: int = 128
     num_chunks: int = 128
+    # understanding을 쓴 bf16 prompt 언어, native는 해당 언어
+    understanding_language: Literal["native", "en"] = "native"
     max_generation_len: int = 16384
     seeds: tuple[int, ...] = (0, 1, 2)
 
 
 def main() -> None:
     config = parse(Config)
-    experiment_name = "bf16_native_understanding_insert/mgsm"
+    experiment_name = EXPERIMENT_NAMES[config.understanding_language]
     hub_path = make_hub_path(config.method, config.model_name, config.calibration_languages, config.num_bits, config.group_size, config.num_chunks)
     file_names = {seed: make_result_name(config.max_generation_len, seed) for seed in config.seeds}
 
@@ -42,15 +47,17 @@ def main() -> None:
     problems = load_mgsm(LANGUAGES)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
 
-    # 2. 같은 seed의 bf16이 해당 언어 prompt에 쓴 reasoning에서 understanding을 추출하고 해당 언어 prompt 뒤, reasoning 시작에 삽입
-    # 예시) 스와힐리어 prompt + "<|channel>thought\n" + bf16 스와힐리어 understanding
+    # 2. 같은 seed의 bf16이 해당 언어 또는 영어 prompt에 쓴 reasoning에서 understanding을 추출하고 해당 언어 prompt 뒤, reasoning 시작에 삽입
+    # 예시) native: 스와힐리어 prompt + "<|channel>thought\n" + bf16 스와힐리어 understanding
+    # 예시) en: 스와힐리어 prompt + "<|channel>thought\n" + bf16 영어 understanding
     problem_indices = {}
     input_ids = []
     prompt_seeds = []
     for seed in missing_seeds:
         bf16_result = load_result("mgsm", make_hub_path("bf16", config.model_name), file_names[seed])
         for language in LANGUAGES:
-            understandings = [get_understanding(reasoning) for reasoning in bf16_result[language]["reasonings"]]
+            understanding_language = language if config.understanding_language == "native" else "en"
+            understandings = [get_understanding(reasoning) for reasoning in bf16_result[understanding_language]["reasonings"]]
             problem_indices[seed, language] = [problem_index for problem_index, understanding in enumerate(understandings) if understanding is not None]
             for problem_index in problem_indices[seed, language]:
                 input_ids.append(torch.cat([get_prompt_ids(tokenizer, problems[language][problem_index][0]), get_reasoning_ids(tokenizer, config.model_name, understandings[problem_index])]))

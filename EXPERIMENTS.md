@@ -104,6 +104,20 @@
 - 따라서 손실이 줄어든 것은 길이보다 understanding 내용 덕분
 
 ### 영어 understanding 삽입
+- [understanding 삽입](#understanding-삽입)에서, bf16 understanding만 삽입해도 손실이 크게 회복됨
+- 그렇다면 해당 언어 question을 영어처럼 곧이곧대로 이해한 understanding을 삽입하면, 영어만큼 회복되는지 확인
+- bf16이 영어 prompt에 쓴 understanding을 bf16과 양자화 모델에 삽입하고 bf16 대비 정확도 차이 비교
+#### 설정
+- understanding은 같은 seed의 bf16이 영어 prompt에 쓴 것
+- bf16도 자기와 다른 understanding을 받으므로 bf16에도 삽입
+- 문제는 understanding 삽입과 같음
+- 문제 수는 seed마다 달라 그림에는 seed 평균
+#### 결과
+![](figures/gemma-4-E2B-it/mgsm_en_understanding_insert.png)
+- 모든 양자화 방법에서, 영어 외 모든 언어가 bf16을 넘음
+- bf16도 영어 외 모든 언어에서 크게 오름
+- 그러나 영어 외 언어는 여전히 영어 정확도에 못 미침
+- 따라서 영어처럼 이해하면 bf16을 넘을 만큼 회복되지만, understanding만으로는 영어만큼 회복되지 않음
 
 ### 영어 question 삽입
 

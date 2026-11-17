@@ -24,6 +24,8 @@ PANEL_MARGIN = 0.9
 INSERT_LOSS_YMIN = -0.05
 INSERT_LOSS_YMAX = 0.2
 INSERT_LOSS_YTICK = 0.05
+# 삽입 없음을 같은 언어 색의 연한 막대로 표시
+NO_INSERT_ALPHA = 0.35
 NUM_POSITION_BINS = 5
 # 예시) ["reasoning 0~20%", ..., "reasoning 80~100%"]
 POSITION_LABELS = [f"reasoning {index * 100 // NUM_POSITION_BINS}~{(index + 1) * 100 // NUM_POSITION_BINS}%" for index in range(NUM_POSITION_BINS)]
@@ -125,6 +127,30 @@ def plot_language_bars(
     ax.set_xlim(-CASE_WIDTH / 2, (len(cases) - 0.5) * CASE_WIDTH)
     if unit:
         ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol=unit))
+
+
+def plot_insert_bars(
+    ax: Axes,
+    cases: list[str],
+    values: dict[str, list[tuple[float, float]]],
+    recovery_cases: list[str],
+) -> None:
+    # case마다 (삽입 없음, 삽입) 값을 받아 삽입 없음 막대 위에 삽입 막대를 겹쳐 그림
+    # 손실이면 recovery_cases에 회복 비율도 표시
+    # 예시) 막대 위 "13.6%p\n→5.8%p\n57% 회복"
+    for language_index, language in enumerate(LANGUAGES):
+        for case_index, (no_insert_value, insert_value) in enumerate(values[language]):
+            x = case_index * CASE_WIDTH + language_index - (len(LANGUAGES) - 1) / 2
+            ax.bar(x, no_insert_value, width=1, color=LANGUAGE_COLORS[language], alpha=NO_INSERT_ALPHA)
+            ax.bar(x, insert_value, width=1, color=LANGUAGE_COLORS[language])
+            texts = [f"{round(no_insert_value * 100, 1) + 0.0:.1f}%p", f"→{round(insert_value * 100, 1) + 0.0:.1f}%p"]
+            if cases[case_index] in recovery_cases:
+                texts.append(f"{(no_insert_value - insert_value) / no_insert_value:.0%} 회복")
+            ax.annotate("\n".join(texts), (x, max(no_insert_value, insert_value, 0)), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+    ax.axhline(0, color="#808080", linewidth=0.8)
+    ax.set_xticks([case_index * CASE_WIDTH for case_index in range(len(cases))], cases)
+    ax.set_xlim(-CASE_WIDTH / 2, (len(cases) - 0.5) * CASE_WIDTH)
+    ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0, symbol="%p"))
 
 
 def add_language_legend(
